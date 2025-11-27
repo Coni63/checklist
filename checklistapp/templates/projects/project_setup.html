@@ -1,0 +1,485 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% load project_filters %}
+
+{% block title %}Setup Project: {{ project.name }} - Checklist Manager{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">Setup Project: {{ project.name }}</h1>
+        <p class="page-subtitle">Configure your project by selecting step templates and customizing their names</p>
+    </div>
+
+    <div class="setup-container">
+        {# Current Project Steps #}
+        <div class="current-steps-section">
+            <h2 class="section-title">Current Steps</h2>
+            {% if project_steps %}
+            <div class="steps-grid">
+                {% for step in project_steps %}
+                <div class="step-card" data-step-id="{{ step.id }}">
+                    <div class="step-header">
+                        <span class="step-icon">{{ step.icon }}</span>
+                        <h3 class="step-title">{{ step.title }}</h3>
+                        <span class="step-badge">{{ step.tasks.count }} tasks</span>
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn btn-small btn-danger" onclick="deleteStep({{ step.id }})">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No steps added yet. Select step templates below to get started.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {# Step Template Selection #}
+        <div class="templates-section">
+            <h2 class="section-title">Available Step Templates</h2>
+            <p class="section-description">
+                Select step templates to add to your project. You can add multiple instances of the same template and customize their names.
+            </p>
+
+            <form method="post" class="step-selection-form" id="stepSelectionForm">
+                {% csrf_token %}
+                
+                <div class="templates-grid">
+
+                                    
+                    {% for template in available_templates %}
+                        {% with quantity_name=template.id|quantity_tagname names_name=template.id|names_tagname %}
+                            {% with quantity_field=form|get_item:quantity_name names_field=form|get_item:names_name %}
+                            
+                            <div class="template-card" data-template-id="{{ template.id }}">
+                                <div class="template-header">
+                                    <span class="template-icon">{{ template.icon }}</span>
+                                    <h3 class="template-name">{{ template.name }}</h3>
+                                </div>
+                                
+                                <div class="template-controls">
+                                    <div class="quantity-control">
+                                        {# Use the BoundField objects #}
+                                        <label for="{{ quantity_field.id_for_label }}">Instances:</label>
+                                        {{ quantity_field }} 
+                                    </div>
+                                    
+                                    <div class="name-override">
+                                        {# Use the BoundField objects #}
+                                        <label for="{{ names_field.id_for_label }}">Custom Names (one per line):</label>
+                                        {{ names_field }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {# Close Inner WITH #}
+                            {% endwith %} 
+                            
+                        {# Close Outer WITH #}
+                        {% endwith %}
+                    {% empty %}
+                    <div class="empty-state">
+                        <p>No step templates available. Please contact an administrator to create templates.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {# Form Actions #}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-icon">✓</span>
+                        Save Configuration
+                    </button>
+                    <a href="{% url 'projects:project_list' %}" class="btn btn-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .setup-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+        font-size: 1.1rem;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #3498db;
+    }
+
+    .section-description {
+        color: #6c757d;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    .current-steps-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 3rem;
+        border: 1px solid #e9ecef;
+    }
+
+    .steps-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .step-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+    }
+
+    .step-card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .step-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .step-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .step-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0;
+        flex: 1;
+    }
+
+    .step-badge {
+        background: #3498db;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .step-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .templates-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2.5rem;
+        box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .template-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 2px solid #e9ecef;
+        transition: all 0.2s ease;
+    }
+
+    .template-card:hover {
+        border-color: #3498db;
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
+    }
+
+    .template-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .template-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .template-name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0;
+        flex: 1;
+    }
+
+    .template-description {
+        color: #6c757d;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .template-stats {
+        margin-bottom: 1.5rem;
+    }
+
+    .task-count {
+        background: #e9ecef;
+        color: #6c757d;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .template-controls {
+        border-top: 1px solid #dee2e6;
+        padding-top: 1rem;
+    }
+
+    .quantity-control {
+        margin-bottom: 1rem;
+    }
+
+    .quantity-control label {
+        display: block;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .quantity-select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .name-override label {
+        display: block;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .name-textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .name-textarea:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-start;
+        align-items: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        background: #3498db;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #2980b9;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: #3498db;
+        border: 2px solid #3498db;
+    }
+
+    .btn-outline:hover {
+        background: #3498db;
+        color: white;
+    }
+
+    .btn-danger {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #c0392b;
+    }
+
+    .btn-small {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+
+    .empty-state p {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    @media (max-width: 768px) {
+        .templates-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .steps-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .btn {
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+function deleteStep(stepId) {
+    if (confirm('Are you sure you want to remove this step? This action cannot be undone.')) {
+        // This would typically be an AJAX call to delete the step
+        // For now, we'll just show an alert
+        alert('Step removal functionality would be implemented here with AJAX');
+    }
+}
+
+// Add client-side validation for name overrides
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('stepSelectionForm');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        const templateCards = document.querySelectorAll('.template-card');
+        
+        templateCards.forEach(function(card) {
+            const templateId = card.dataset.templateId;
+            const quantitySelect = document.getElementById('quantity-' + templateId);
+            const nameTextarea = document.getElementById('name-' + templateId);
+            const quantity = parseInt(quantitySelect.value);
+            
+            if (quantity > 0 && nameTextarea.value.trim()) {
+                const customNames = nameTextarea.value.trim().split('\n').filter(function(name) {
+                    return name.trim();
+                });
+                
+                if (customNames.length > 0 && customNames.length !== quantity) {
+                    isValid = false;
+                    alert('For template "' + card.querySelector('.template-name').textContent + '", you specified ' + quantity + ' instances but provided ' + customNames.length + ' custom names. Please provide exactly ' + quantity + ' names or leave the field empty to use the template name.');
+                }
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+    
+    // Update name textarea placeholder based on quantity
+    const quantitySelects = document.querySelectorAll('.quantity-select');
+    quantitySelects.forEach(function(select) {
+        select.addEventListener('change', function() {
+            const templateId = this.id.replace('quantity-', '');
+            const nameTextarea = document.getElementById('name-' + templateId);
+            const quantity = parseInt(this.value);
+            
+            if (quantity > 1) {
+                nameTextarea.placeholder = 'Enter ' + quantity + ' custom names, one per line\nOr leave empty to use template name for all';
+            } else {
+                nameTextarea.placeholder = 'Leave empty to use template name\nOr enter custom name';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

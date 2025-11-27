@@ -1,0 +1,68 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    
+    <title>{% block title %}Checklist Manager{% endblock %}</title>
+    
+    {# Favicon #}
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+    
+    {# CSS #}
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% block extra_css %}{% endblock %}
+    
+    {# Meta tags for SEO #}
+    <meta name="description" content="{% block meta_description %}Manage your projects with multi-step checklists{% endblock %}">
+    
+    {# CSRF Token for AJAX requests #}
+    <script>
+        window.CSRF_TOKEN = '{{ csrf_token }}';
+    </script>
+</head>
+<body>
+    {# Navigation Bar #}
+    {% include 'navbar.html' %}
+    
+    {# Main Content Area #}
+    <main class="main-content">
+        {# Flash Messages #}
+        {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" role="alert">
+                <span class="alert-icon">
+                    {% if message.tags == 'success' %}✓{% elif message.tags == 'error' %}✕{% elif message.tags == 'warning' %}⚠{% else %}ℹ{% endif %}
+                </span>
+                <span class="alert-text">{{ message }}</span>
+                <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {# Page Content #}
+        {% block content %}{% endblock %}
+    </main>
+    
+    {# Footer #}
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; {% now "Y" %} Checklist Manager. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="#">About</a>
+                <a href="#">Help</a>
+                <a href="#">Privacy</a>
+            </div>
+        </div>
+    </footer>
+    
+    {# JavaScript #}
+    <script src="{% static 'js/base.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

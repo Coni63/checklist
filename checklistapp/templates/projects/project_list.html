@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>My Projects</h1>
+        <a href="{% url 'projects:project_create' %}" class="btn btn-primary">
+            + New Project
+        </a>
+    </div>
+    
+    <div class="filters">
+        <a href="?status=active" class="filter {% if status == 'active' %}active{% endif %}">
+            Active
+        </a>
+        <a href="?status=completed" class="filter {% if status == 'completed' %}active{% endif %}">
+            Completed
+        </a>
+        <a href="?status=archived" class="filter {% if status == 'archived' %}active{% endif %}">
+            Archived
+        </a>
+    </div>
+    
+    <div class="project-grid">
+        {% for project in projects %}
+        <div class="project-card">
+            <h3>{{ project.name }}</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ project.get_completion_percentage }}%"></div>
+            </div>
+            <p class="progress-text">
+                {{ project.get_completion_percentage }}% complete
+            </p>
+            <div class="actions">
+
+                <a href="{% url 'projects:project_setup' project.id %}" class="btn">
+                    Configure
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>No projects yet. Create your first one!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
