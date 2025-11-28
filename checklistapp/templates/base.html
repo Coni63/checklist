@@ -8,6 +8,9 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     
     <title>{% block title %}Checklist Manager{% endblock %}</title>
+
+    {# HTMX #}
+    <script src="{% static 'js/htmx.2.0.2.min.js' %}"></script>
     
     {# Favicon #}
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
@@ -63,6 +66,12 @@
     
     {# JavaScript #}
     <script src="{% static 'js/base.js' %}"></script>
+    <script>
+        // Include the token in HTMX calls
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

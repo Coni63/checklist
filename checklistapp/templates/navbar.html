@@ -18,13 +18,6 @@
                     + New Project
                 </a>
                 
-                {# Admin Link (only for staff) #}
-                {% if user.is_staff %}
-                <a href="{% url 'admin:index' %}" class="nav-link" target="_blank">
-                    ⚙️ Admin
-                </a>
-                {% endif %}
-                
                 {# User Menu #}
                 <div class="user-menu">
                     <button class="user-button" onclick="toggleUserDropdown()">
@@ -43,9 +36,14 @@
                         <a href="#" class="dropdown-item">
                             👤 Profile
                         </a>
-                        <a href="#" class="dropdown-item">
+                        {% if user.is_staff %}
+                            <a href="{% url 'admin:index' %}" class="dropdown-item" target="_blank">
+                                ⚙️ Admin
+                            </a>
+                        {% endif %}
+                        <!-- <a href="#" class="dropdown-item">
                             ⚙️ Settings
-                        </a>
+                        </a> -->
                         <div class="dropdown-divider"></div>
                         <a href="{% url 'logout' %}" class="dropdown-item">
                             🚪 Logout

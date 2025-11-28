@@ -16,7 +16,7 @@
             <h2 class="section-title">Available Step Templates</h2>
             <div class="templates-list">
                 {% for template in available_templates %}
-                <div class="template-card" data-template-id="{{ template.id }}">
+                <div class="template-card">
                     <div class="template-header">
                         <span class="template-icon">{{ template.icon }}</span>
                         <div class="template-info">
@@ -24,20 +24,24 @@
                             <span class="template-badge">{{ template.tasks.count }} tasks</span>
                         </div>
                     </div>
-                    <div class="template-actions">
+                    <form 
+                        hx-post="{% url 'projects:add_step' pk=project.pk %}" 
+                        hx-target="#projectStepsList" 
+                        hx-swap="beforeend"
+                        class="template-actions"
+                    >
+                        {% csrf_token %}
+                        <input type="hidden" name="step_template_id" value="{{ template.id }}">
                         <input 
                             type="text" 
+                            name="override_name"
                             class="override-name-input" 
                             placeholder="Custom name (optional)"
-                            data-default="{{ template.title }}"
                         >
-                        <button 
-                            class="btn btn-add" 
-                            onclick="addStep({{ template.id }}, this)"
-                        >
+                        <button type="submit" class="btn btn-add">
                             + Add
                         </button>
-                    </div>
+                    </form>
                 </div>
                 {% empty %}
                 <div class="empty-state">
@@ -53,21 +57,7 @@
             <div class="steps-list" id="projectStepsList">
                 {% if project_steps %}
                     {% for step in project_steps %}
-                    <div class="step-card" data-step-id="{{ step.id }}">
-                        <div class="step-header">
-                            <span class="step-icon">{{ step.icon }}</span>
-                            <div class="step-info">
-                                <h3 class="step-title">{{ step.title }}</h3>
-                                <span class="step-badge">{{ step.tasks.count }} tasks</span>
-                            </div>
-                        </div>
-                        <button 
-                            class="btn btn-remove" 
-                            onclick="removeStep({{ step.id }}, this)"
-                        >
-                            ✕
-                        </button>
-                    </div>
+                        {% include 'projects/partials/step_card.html' %}
                     {% endfor %}
                 {% else %}
                 <div class="empty-state" id="emptyState">
@@ -84,151 +74,6 @@
         </div>
     </div>
 </div>
-
-<script>
-// Get CSRF token
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-const csrftoken = getCookie('csrftoken');
-
-// Add step to project
-function addStep(templateId, button) {
-    const card = button.closest('.template-card');
-    const input = card.querySelector('.override-name-input');
-    const overrideName = input.value.trim();
-    
-    // Disable button during request
-    button.disabled = true;
-    button.textContent = 'Adding...';
-    
-    fetch(window.location.href, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': csrftoken,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: new URLSearchParams({
-            'action': 'add_step',
-            'step_template_id': templateId,
-            'override_name': overrideName
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Remove empty state if it exists
-            const emptyState = document.getElementById('emptyState');
-            if (emptyState) {
-                emptyState.remove();
-            }
-            
-            // Add the new step to the right column
-            const stepsList = document.getElementById('projectStepsList');
-            const stepCard = document.createElement('div');
-            stepCard.className = 'step-card';
-            stepCard.setAttribute('data-step-id', data.step.id);
-            stepCard.innerHTML = `
-                <div class="step-header">
-                    <span class="step-icon">${data.step.icon}</span>
-                    <div class="step-info">
-                        <h3 class="step-title">${data.step.title}</h3>
-                        <span class="step-badge">${data.step.task_count} tasks</span>
-                    </div>
-                </div>
-                <button 
-                    class="btn btn-remove" 
-                    onclick="removeStep(${data.step.id}, this)"
-                >
-                    ✕
-                </button>
-            `;
-            stepsList.appendChild(stepCard);
-            
-            // Clear the input
-            input.value = '';
-            
-            // Show success feedback
-            button.textContent = '✓ Added';
-            setTimeout(() => {
-                button.textContent = '+ Add';
-                button.disabled = false;
-            }, 1500);
-        } else {
-            alert('Error adding step: ' + data.error);
-            button.textContent = '+ Add';
-            button.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error adding step. Please try again.');
-        button.textContent = '+ Add';
-        button.disabled = false;
-    });
-}
-
-// Remove step from project
-function removeStep(stepId, button) {
-    if (!confirm('Are you sure you want to remove this step?')) {
-        return;
-    }
-    
-    const card = button.closest('.step-card');
-    
-    fetch(window.location.href, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': csrftoken,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: new URLSearchParams({
-            'action': 'remove_step',
-            'step_id': stepId
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Remove the card with animation
-            card.style.opacity = '0';
-            setTimeout(() => {
-                card.remove();
-                
-                // Check if list is empty and add empty state
-                const stepsList = document.getElementById('projectStepsList');
-                if (stepsList.children.length === 0) {
-                    const emptyState = document.createElement('div');
-                    emptyState.className = 'empty-state';
-                    emptyState.id = 'emptyState';
-                    emptyState.innerHTML = '<p>No steps added yet. Select templates from the left to get started.</p>';
-                    stepsList.appendChild(emptyState);
-                }
-            }, 300);
-        } else {
-            alert('Error removing step: ' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error removing step. Please try again.');
-    });
-}
-</script>
 
 <style>
 /* Basic layout styles - customize as needed */
@@ -264,7 +109,6 @@ function removeStep(stepId, button) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: opacity 0.3s;
 }
 
 .template-header, .step-header {
@@ -351,5 +195,19 @@ function removeStep(stepId, button) {
     padding-top: 1.5rem;
     border-top: 1px solid #eee;
 }
+
+.error-message {
+    color: #f44336;
+    padding: 0.5rem;
+    background: #ffebee;
+    border-radius: 4px;
+}
+
+/* HTMX loading indicator */
+.htmx-request .btn-add {
+    opacity: 0.6;
+    cursor: wait;
+}
 </style>
+
 {% endblock %}
