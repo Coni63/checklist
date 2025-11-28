@@ -2,11 +2,15 @@
 
 {% block content %}
 <div class="container">
-    <div class="header">
-        <h1>My Projects</h1>
-        <a href="{% url 'projects:project_create' %}" class="btn btn-primary">
-            + New Project
-        </a>
+    <div class="header flex-line">
+        <div>
+            <h1>My Projects</h1>
+        </div>
+        <div>
+            <a href="{% url 'projects:project_create' %}" class="btn btn-circle btn-primary">
+                +
+            </a>
+        </div>
     </div>
     
     <div class="filters">
@@ -21,37 +25,62 @@
         </a>
     </div>
     
+    <!-- Project Grid -->
     <div class="project-grid">
         {% for project in projects %}
         <div class="project-card">
-            <h3>{{ project.name }}</h3>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: {{ project.get_completion_percentage }}%"></div>
+
+            <!-- Title + Status -->
+            <div class="card-header">
+                <a href="{% url 'projects:project_detail' project.id %}"><h3>{{ project.name }}</h3></a>
+                
+                {% if project.status %}
+                    <span class="status-badge status-{{ project.status|lower|slugify }}">
+                        {{ project.get_status_display }}
+                    </span>
+                {% endif %}
             </div>
-            <p class="progress-text">
-                {{ project.get_completion_percentage }}% complete
-            </p>
+
+            <!-- Description -->
+            {% if project.description %}
+            <p class="description">{{ project.description|truncatechars:100 }}</p>
+            {% endif %}
+
+            <!-- Progress Bar -->
+            <div class="progress-bar">
+                <div class="progress-fill" 
+                     style="width: {{ project.get_completion_percentage }}%">
+                </div>
+            </div>
+
+            <!-- Actions -->
             <div class="actions">
-                <a href="{% url 'projects:project_detail' project.id %}" class="btn">
-                    Details
-                </a>
-                <a href="{% url 'projects:project_setup' project.id %}" class="btn">
-                    Configure
-                </a>
-                <!-- <a href="{% url 'projects:project_delete' project.id %}" class="btn">
-                    Delete
-                </a> -->
-                <form action="{% url 'projects:project_delete' project.id %}" method="delete">
-                    {% csrf_token %}
-                    <button type="submit">Delete</button>
-                </form>
+                <div class="progress-text">
+                    {{ project.get_completion_percentage }}% complete
+                </div>
+                <div>
+                    <a href="{% url 'projects:project_setup' project.id %}" class="">⚙️</a>
+    
+                    <form action="{% url 'projects:project_delete' project.id %}" 
+                          method="post" class="inline-form"
+                          onsubmit="return confirm('Delete this project?');">
+                        {% csrf_token %}
+                        <button type="submit" class="">
+                            🗑️
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
+
         {% empty %}
         <div class="empty-state">
             <p>No projects yet. Create your first one!</p>
         </div>
         {% endfor %}
     </div>
+
 </div>
+
+
 {% endblock %}
