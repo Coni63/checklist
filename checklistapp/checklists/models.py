@@ -30,3 +30,7 @@ class TaskComment(models.Model):
     @property
     def is_deleted(self):
         return self.deleted_at is not None
+
+    @property
+    def active_comments_count(self):
+        return self.comments.filter(deleted_at__isnull=True).count()

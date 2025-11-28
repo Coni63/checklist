@@ -1,4 +1,4 @@
-from django.views.generic import ListView, CreateView, DetailView
+from django.views.generic import ListView, CreateView, DetailView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.contrib import messages
@@ -9,10 +9,9 @@ from .forms import ProjectCreationForm
 from core.mixins import UserOwnedMixin
 from django.shortcuts import get_object_or_404
 from django.views import View
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db import models
-
 
 class ProjectListView(UserOwnedMixin, ListView):
     model = Project
@@ -48,9 +47,9 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
         return super().form_invalid(form)
 
 
-class ProjectSetupViewV2(LoginRequiredMixin, DetailView):
+class ProjectSetupView(LoginRequiredMixin, DetailView):
     model = Project
-    template_name = "projects/project_setup_V2.html"
+    template_name = "projects/project_setup.html"
     context_object_name = "project"
 
     def get_context_data(self, **kwargs):
@@ -131,6 +130,22 @@ class AddProjectStepView(LoginRequiredMixin, View):
             )
 
 
+class ProjectStepView(LoginRequiredMixin, DetailView):
+    model = ProjectStep
+    template_name = "projects/partials/step.html"
+    context_object_name = "step"
+
+    def get_queryset(self):
+        return (
+            super().get_queryset()
+            .prefetch_related("tasks")
+        )
+    
+    def get_object(self):
+        obj = super().get_object()
+        print(obj)
+        return obj
+
 class RemoveProjectStepView(LoginRequiredMixin, View):
     """Handle removing a step from a project via HTMX"""
 
@@ -171,3 +186,25 @@ class ProjectDetailView(UserOwnedMixin, DetailView):
         context["steps"] = self.object.steps.prefetch_related("tasks")
         context["completion"] = self.object.get_completion_percentage()
         return context
+
+
+class ProjectDeleteView(UserOwnedMixin, DeleteView):
+    model = Project
+    success_url = reverse_lazy("projects:project_list")
+
+    def delete(self, request, *args, **kwargs):
+        """Override delete to add success/error messages."""
+        self.object = self.get_object()
+
+        try:
+            self.object.delete()
+            messages.success(request, "Project deleted successfully.")
+
+        except Exception:
+            messages.error(request, "Something went wrong deleting the project.")
+
+        return redirect(self.success_url)
+
+    # Optional: allow "GET" request to delete (dangerous but sometimes needed for a simple link)
+    def get(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)

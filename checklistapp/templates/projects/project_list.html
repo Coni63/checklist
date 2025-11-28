@@ -32,10 +32,19 @@
                 {{ project.get_completion_percentage }}% complete
             </p>
             <div class="actions">
-
+                <a href="{% url 'projects:project_detail' project.id %}" class="btn">
+                    Details
+                </a>
                 <a href="{% url 'projects:project_setup' project.id %}" class="btn">
                     Configure
                 </a>
+                <!-- <a href="{% url 'projects:project_delete' project.id %}" class="btn">
+                    Delete
+                </a> -->
+                <form action="{% url 'projects:project_delete' project.id %}" method="delete">
+                    {% csrf_token %}
+                    <button type="submit">Delete</button>
+                </form>
             </div>
         </div>
         {% empty %}

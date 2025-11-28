@@ -1,0 +1,47 @@
+<div class="progress-bar">
+    <div class="progress-info">
+        <span>Progress</span>
+        <span>{{ step.get_progress_text }}</span>
+    </div>
+    <div class="progress-track">
+        <div class="progress-fill" style="width: {{ step.get_percentage_complete }}"></div>
+    </div>
+</div>
+
+<div class="task-list">
+    {% for task in step.tasks.all %}
+        <div class="task-item {{ task.get_classname }}">
+            <div class="task-header">
+                <div class="task-number">{{ forloop.counter }}</div>
+                <div class="task-title {{ task.get_classname }}">{{task.title}}</div>
+                <div class="status-buttons">
+                    <button 
+                        class="status-btn {% if task.state == 'done' %}active done{% endif %}"
+                        onclick="toggleStatus({{ task.id }}, 'done')"
+                    >
+                        {% if task.state == 'done' %}✓ Done{% else %}Done{% endif %}
+                    </button>
+                    <button class="status-btn {% if task.state == 'na' %}active na{% endif %}" 
+                            onclick="toggleStatus({{ task.id }}, 'na')">
+                        {% if task.state == 'na' %}○ N/A{% else %}N/A{% endif %}
+                    </button>
+                    {% if task.info %}<button class="info-btn" onclick="window.open('{{ task.info }}', '_blank')">ℹ Info</button>{% endif %}
+                </div>
+            </div>
+            
+            <div class="comment-section">
+                <span class="toggle-comment" 
+                      hx-get="{% url 'checklists:task_comment_list' task.id %}" 
+                      hx-target="#comment-area-{{ task.id }}"
+                      hx-swap="innerHTML"
+                      style="cursor: pointer;">
+                    💬 Comments
+                </span>
+                
+                <div id="comment-area-{{ task.id }}" class="comment-area" style="display:none;">
+                    <!-- Comments will load here via HTMX -->
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>

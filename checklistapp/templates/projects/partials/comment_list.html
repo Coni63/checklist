@@ -1,0 +1,27 @@
+<div class="comments-container">
+    <div id="comments-list-{{ task_id }}" class="comments-list">
+        {% for comment in comments %}
+            {% include 'projects/partials/comment_item.html' %}
+        {% endfor %}
+    </div>
+    
+    <!-- Formulaire toujours visible en dessous -->
+    <div class="comment-form-container">
+        <form 
+            hx-post="{% url 'checklists:task_comment_create' task_id %}"
+            hx-target="#comments-list-{{ task_id }}"
+            hx-swap="innerHTML"
+            class="comment-form">
+            {% csrf_token %}
+            <textarea 
+                name="comment_text" 
+                placeholder="Add your comment..." 
+                rows="3"
+                required
+                class="comment-textarea"></textarea>
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">Post Comment</button>
+            </div>
+        </form>
+    </div>
+</div>
