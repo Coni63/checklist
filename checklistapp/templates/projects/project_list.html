@@ -14,6 +14,9 @@
     </div>
     
     <div class="filters">
+        <a href="?status=all" class="filter {% if status == 'all' %}active{% endif %}">
+            All
+        </a>
         <a href="?status=active" class="filter {% if status == 'active' %}active{% endif %}">
             Active
         </a>
@@ -46,31 +49,37 @@
             <p class="description">{{ project.description|truncatechars:100 }}</p>
             {% endif %}
 
-            <!-- Progress Bar -->
-            <div class="progress-bar">
-                <div class="progress-fill" 
-                     style="width: {{ project.get_completion_percentage }}%">
-                </div>
-            </div>
+            <div class="spacer"></div>
 
-            <!-- Actions -->
-            <div class="actions">
-                <div class="progress-text">
-                    {{ project.get_completion_percentage }}% complete
+            {% with completion=project.get_completion_percentage %}
+                <!-- Progress Bar -->
+                <div class="progress-bar">
+                    <div class="progress-fill" 
+                        style="width: {{ completion }}">
+                    </div>
                 </div>
-                <div>
-                    <a href="{% url 'projects:project_setup' project.id %}" class="">⚙️</a>
-    
-                    <form action="{% url 'projects:project_delete' project.id %}" 
-                          method="post" class="inline-form"
-                          onsubmit="return confirm('Delete this project?');">
-                        {% csrf_token %}
-                        <button type="submit" class="">
-                            🗑️
-                        </button>
-                    </form>
+                <!-- Actions -->
+                <div class="actions">
+                    <div class="progress-text">
+                        {{ completion }} complete
+                    </div>
+                    <div>
+                        <a href="{% url 'projects:project_setup' project.id %}" class="">⚙️</a>
+        
+                        <form action="{% url 'projects:project_delete' project.id %}" 
+                              method="post" class="inline-form"
+                              onsubmit="return confirm('Delete this project?');">
+                            {% csrf_token %}
+                            <button type="submit" class="">
+                                🗑️
+                            </button>
+                        </form>
+                    </div>
                 </div>
-            </div>
+            {% endwith %}
+
+            
+
         </div>
 
         {% empty %}

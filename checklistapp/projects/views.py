@@ -13,6 +13,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db import models
 
+
 class ProjectListView(UserOwnedMixin, ListView):
     model = Project
     template_name = "projects/project_list.html"
@@ -21,10 +22,17 @@ class ProjectListView(UserOwnedMixin, ListView):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        status = self.request.GET.get("status")
-        if status:
+        status = self.request.GET.get("status", "active")
+        if status and status != "all":
             qs = qs.filter(status=status)
         return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["status"] = self.request.GET.get(
+            "status", "active"
+        )  # Valeur par défaut si non précisé
+        return context
 
 
 class ProjectCreateView(LoginRequiredMixin, CreateView):
@@ -136,15 +144,8 @@ class ProjectStepView(LoginRequiredMixin, DetailView):
     context_object_name = "step"
 
     def get_queryset(self):
-        return (
-            super().get_queryset()
-            .prefetch_related("tasks")
-        )
-    
-    def get_object(self):
-        obj = super().get_object()
-        print(obj)
-        return obj
+        return super().get_queryset().prefetch_related("tasks")
+
 
 class RemoveProjectStepView(LoginRequiredMixin, View):
     """Handle removing a step from a project via HTMX"""

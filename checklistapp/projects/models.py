@@ -26,13 +26,17 @@ class Project(models.Model):
         return self.name
 
     def get_completion_percentage(self):
+        import random
+
+        return f"{(random.random()):.0%}"
+
         total_tasks = ProjectTask.objects.filter(project_step__project=self).count()
         if total_tasks == 0:
             return 0
         completed_tasks = ProjectTask.objects.filter(
             project_step__project=self, status__in=["done", "na"]
         ).count()
-        return int((completed_tasks / total_tasks) * 100)
+        return f"{(completed_tasks / total_tasks):.0%}"
 
 
 class ProjectStep(models.Model):
@@ -76,14 +80,18 @@ class ProjectStep(models.Model):
         total = self.tasks.count()
         completed = self.tasks.filter(status__in=["done", "na"]).count()
         return f"{completed} of {total} tasks"
-    
+
     def get_percentage_complete(self):
+        import random
+
+        return f"{(random.random()):.2%}"
+
         total = self.tasks.count()
         if total == 0:
             return 0
         completed = self.tasks.filter(status__in=["done", "na"]).count()
         # return int((completed / total) * 100)
-        return f"{(completed / total):.2%}"
+        return f"{(completed / total):.0%}"
 
     def get_badge_text(self):
         total = self.tasks.count()
@@ -94,7 +102,8 @@ class ProjectStep(models.Model):
             return "Completed"
         else:
             return "In progress"
-    
+
+
 class ProjectTask(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),
@@ -152,6 +161,6 @@ class ProjectTask(models.Model):
             return "na-status"
         else:
             return ""
-        
+
     def has_comment(self):
         return bool(self.comment.strip())
