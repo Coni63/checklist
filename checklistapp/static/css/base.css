@@ -786,8 +786,7 @@ a:hover {
 .sidebar {
     width: 25%;
     min-width: 320px;
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    color: var(--color-gray-900);
     padding: 30px 20px;
     overflow-y: auto;
 }
@@ -814,7 +813,11 @@ a:hover {
 }
 
 .tasks-area-header {
-    margin-bottom: 30px;
+    margin-bottom: var(--spacing-lg);
+}
+
+.tasks-area-progress {
+    margin-bottom: var(--spacing-lg);
 }
 
 .tasks-area-header h1 {
@@ -835,7 +838,7 @@ a:hover {
 }
 
 .step-item {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--progress-dark);
     border: 2px solid transparent;
     border-radius: 12px;
     padding: var(--spacing-sm);
@@ -845,7 +848,7 @@ a:hover {
 }
 
 .step-item:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--progress-light);
     transform: translateX(5px);
 }
 
@@ -884,13 +887,6 @@ a:hover {
     font-size: 1em;
 }
 
-/* .step-badge {
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-size: 0.75em;
-    font-weight: 600;
-} */
-
 .step-progress {
     font-size: 0.85em;
     opacity: 0.9;
@@ -910,8 +906,10 @@ a:hover {
 
 .task-item {
     padding: 20px;
+    padding-left: 24px;
     border-bottom: 1px solid #f0f0f0;
-    transition: background 0.2s;
+    border-left: 8px solid transparent;
+    transition: background 0.2s, border-left-color 0.2s;
 }
 
 .task-item:hover {
@@ -922,12 +920,16 @@ a:hover {
     border-bottom: none;
 }
 
-.task-item.completed {
-    background: #f1f8f4;
+.task-item.task-completed {
+    border-left-color: var(--color-success);
 }
 
-.task-item.na-status {
-    background: #fff8f0;
+.task-item.task-na-status {
+    border-left-color: var(--color-warning);
+}
+
+.task-item.task-pending {
+    border-left-color: var(--color-danger);
 }
 
 .task-header {
@@ -940,8 +942,8 @@ a:hover {
 .task-number {
     min-width: 32px;
     height: 32px;
-    background: #667eea;
-    color: white;
+    background: var(--color-primary);
+    color: var(--white);
     border-radius: 50%;
     display: flex;
     align-items: center;

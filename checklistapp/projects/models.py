@@ -171,7 +171,7 @@ class ProjectTask(models.Model):
         elif self.status == "na":
             return "na-status"
         else:
-            return ""
+            return "pending"
 
     def has_comment(self):
         return bool(self.comment.strip())
