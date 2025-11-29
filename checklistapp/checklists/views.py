@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from .models import TaskComment, ProjectTask
+from django.template.loader import render_to_string
 
 
 class TaskCommentListView(LoginRequiredMixin, ListView):
@@ -36,20 +37,10 @@ class TaskCommentCreateView(LoginRequiredMixin, CreateView):
         form.instance.project_task_id = self.kwargs.get("task_id")
         self.object = form.save()
 
-        # Return only the updated comment list
-        comments = TaskComment.objects.filter(
-            project_task_id=self.kwargs.get("task_id"),
-            deleted_at__isnull=True,
-            parent_comment__isnull=True,
-        ).select_related("user")
-
-        from django.template.loader import render_to_string
-
         html = render_to_string(
-            "projects/partials/comment_list_only.html",
+            "projects/partials/comment_item.html",
             {
-                "comments": comments,
-                "task_id": self.kwargs.get("task_id"),
+                "comment": self.object,
                 "user": self.request.user,
             },
         )
@@ -57,10 +48,11 @@ class TaskCommentCreateView(LoginRequiredMixin, CreateView):
 
 
 class TaskCommentUpdateView(LoginRequiredMixin, UpdateView):
+    # TODO: adjust & test when developped
     model = TaskComment
     fields = ["comment_text"]
-    template_name = "projects/partials/comment_edit_form.html"
     pk_url_kwarg = "comment_id"
+    template_name = "projects/partials/comment_form.html"
 
     def get_queryset(self):
         # Only allow editing own comments
@@ -71,21 +63,13 @@ class TaskCommentUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         self.object = form.save()
 
-        # Return the updated comment item
-        from django.template.loader import render_to_string
-
         html = render_to_string(
             "projects/partials/comment_item.html",
-            {"comment": self.object, "user": self.request.user},
+            {
+                "comment": self.object,
+                "user": self.request.user,
+            },
         )
-        return HttpResponse(html)
-
-    def get(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        context = self.get_context_data(object=self.object)
-        from django.template.loader import render_to_string
-
-        html = render_to_string(self.template_name, context)
         return HttpResponse(html)
 
 

@@ -1,0 +1,70 @@
+<div class="task-item task-{{ task.get_classname }}">
+    <div class="task-header">
+        <div class="task-number">{{ task.order }}</div>
+        <div class="task-title task-{{ task.get_classname }}">{{task.title}}</div>
+        <div class="status-buttons">
+            {% if task.info %}
+                <a href="{{ task.info }}" target="_blank" class="btn btn-sm btn-primary">ℹ Info</a>
+            {% endif %}
+
+            {% if task.status == 'done' %}
+                <a 
+                    hx-post="{% url 'projects:update_task' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
+                    hx-vals='{"status": "undone"}'
+                    hx-target="closest .task-item"
+                    hx-swap="outerHTML"
+                    class="btn btn-sm btn-success">✓ Done</a>
+            {% else %}
+                <a 
+                    hx-post="{% url 'projects:update_task' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
+                    hx-vals='{"status": "done"}'
+                    hx-target="closest .task-item"
+                    hx-swap="outerHTML"
+                    class="btn btn-sm btn-primary">Done</a>
+            {% endif %}
+
+            {% if task.status == 'na' %}
+                <a 
+                    hx-post="{% url 'projects:update_task' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
+                    hx-vals='{"status": "unna"}'
+                    hx-target="closest .task-item"
+                    hx-swap="outerHTML"
+                    class="btn btn-sm btn-warning">○ N/A</a>
+            {% else %}
+                <a 
+                    hx-post="{% url 'projects:update_task' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
+                    hx-vals='{"status": "na"}'
+                    hx-target="closest .task-item"
+                    hx-swap="outerHTML"
+                    class="btn btn-sm btn-primary">N/A</a>
+            {% endif %}
+
+
+        </div>
+    </div>
+    
+    <div class="comment-section">
+        <span class="toggle-comment"
+            hx-get="{% url 'checklists:task_comment_list' task.id %}"
+            hx-target="#comment-area-{{ task.id }}"
+            hx-swap="innerHTML"
+            hx-trigger="click once"
+            onclick="toggleComment('{{ task.id }}')"
+            style="cursor: pointer;">
+            💬 Comments
+        </span>
+
+        <div id="comment-area-{{ task.id }}" class="comment-area" style="display:none;">
+            <!-- commentaire -->
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    function toggleComment(taskId) {
+        const el = document.getElementById("comment-area-" + taskId);
+        el.classList.toggle("open");
+    }
+</script>
+{% endblock %}

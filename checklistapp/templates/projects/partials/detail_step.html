@@ -1,12 +1,14 @@
 <div class="step-item"  
-    hx-get="{% url 'projects:step_tasks' step.id %}"
-    hx-target="#contentArea"
+    hx-get="{% url 'projects:step_tasks' project_id=project.id step_id=step.id %}"
+    hx-target="#tasks-area-list"
     hx-swap="innerHTML">
 <!-- <div class="step-item ${status} ${isActive ? 'active' : ''}" onclick="selectStep('${step.id}')"> -->
     <div class="step-header">
-        <span class="step-icon">{{step.icon}}</span>
-        <span class="step-title">{{step.title}}</span>
-        <span class="step-badge">{{step.get_badge_text}}</span>
+        <span class="step-title">{{step.to_str}}</span>
+         <span class="status-badge status-step-{{ step.get_status|lower|slugify }}">
+            {{ step.get_status }}
+        </span>
     </div>
     <div class="step-progress">{{step.get_progress_text}}</div>
+     
 </div>

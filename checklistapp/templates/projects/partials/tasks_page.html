@@ -1,0 +1,28 @@
+<div class="tasks-area-header">
+    <h1 id="contentTitle">{{ step.to_str }}</h1>
+    <p class="subtitle" id="contentSubtitle"></p>
+    <!-- TODO, add maybe a description to a step -->
+</div>
+
+{% with completion=step.get_percentage_complete %}
+    <!-- Progress Bar -->
+     <div class="progress-info">
+        <span>Progress</span>
+        <span>{{ step.get_progress_text }}</span>
+    </div>
+    <div class="progress-bar">
+        <div class="progress-fill" 
+            style="width: {{ completion }}">
+        </div>
+    </div>
+    <div class="progress-text">
+        {{ completion }} complete
+    </div>
+{% endwith %}
+
+
+<div class="task-list">
+    {% for task in step.tasks.all %}
+        {% include 'projects/partials/task_row.html' with task=task index=forloop.counter %}
+    {% endfor %}
+</div>

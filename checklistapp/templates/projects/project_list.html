@@ -7,9 +7,7 @@
             <h1>My Projects</h1>
         </div>
         <div>
-            <a href="{% url 'projects:project_create' %}" class="btn btn-circle btn-primary">
-                +
-            </a>
+            <a href="{% url 'projects:project_create' %}" class="task-number">+</a>
         </div>
     </div>
     
@@ -38,7 +36,7 @@
                 <a href="{% url 'projects:project_detail' project.id %}"><h3>{{ project.name }}</h3></a>
                 
                 {% if project.status %}
-                    <span class="status-badge status-{{ project.status|lower|slugify }}">
+                    <span class="status-badge status-project-{{ project.status|lower|slugify }}">
                         {{ project.get_status_display }}
                     </span>
                 {% endif %}
@@ -64,7 +62,7 @@
                         {{ completion }} complete
                     </div>
                     <div>
-                        <a href="{% url 'projects:project_setup' project.id %}" class="">⚙️</a>
+                        <a href="{% url 'projects:project_edit' project.id %}" class="">⚙️</a>
         
                         <form action="{% url 'projects:project_delete' project.id %}" 
                               method="post" class="inline-form"

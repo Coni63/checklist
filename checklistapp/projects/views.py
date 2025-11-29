@@ -140,11 +140,22 @@ class AddProjectStepView(LoginRequiredMixin, View):
 
 class ProjectStepView(LoginRequiredMixin, DetailView):
     model = ProjectStep
-    template_name = "projects/partials/step.html"
+    template_name = "projects/partials/tasks_page.html"
     context_object_name = "step"
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related("tasks")
+
+    def get_object(self, queryset=None):
+        # Get projectid and stepid from URL kwargs
+        project_id = self.kwargs.get("project_id")
+        step_id = self.kwargs.get("step_id")
+
+        # Fetch the ProjectStep object based on both project_id and step_id
+        # You might need to adjust the filtering logic based on your model relationships
+        queryset = self.get_queryset().filter(project__id=project_id, id=step_id)
+        obj = get_object_or_404(queryset, id=step_id)
+        return obj
 
 
 class RemoveProjectStepView(LoginRequiredMixin, View):
@@ -209,3 +220,120 @@ class ProjectDeleteView(UserOwnedMixin, DeleteView):
     # Optional: allow "GET" request to delete (dangerous but sometimes needed for a simple link)
     def get(self, request, *args, **kwargs):
         return self.delete(request, *args, **kwargs)
+
+
+class AddProjectTaskView(LoginRequiredMixin, View):
+    """Handle adding a task to a project step via HTMX"""
+
+    # TODO: adjust & test when developped
+
+    def post(self, request, project_id, step_id):
+        project_step = get_object_or_404(
+            ProjectStep, id=step_id, project__id=project_id
+        )
+        title = request.POST.get("title", "").strip()
+        info_url = request.POST.get("info_url", "").strip()
+
+        if not title:
+            return HttpResponse(
+                '<div class="error-message">Error: Task title cannot be empty.</div>',
+                status=400,
+            )
+
+        try:
+            # Determine task order
+            current_max_order = (
+                ProjectTask.objects.filter(project_step=project_step).aggregate(
+                    models.Max("order")
+                )["order__max"]
+                or 0
+            )
+
+            # Create the project task
+            project_task = ProjectTask.objects.create(
+                project_step=project_step,
+                title=title,
+                info_url=info_url,
+                order=current_max_order + 1,
+            )
+
+            # Return HTML fragment for the new task row
+            return render(
+                request,
+                "projects/partials/task_row.html",
+                {"task": project_task},
+            )
+
+        except Exception as e:
+            return HttpResponse(
+                f'<div class="error-message">Error: {str(e)}</div>', status=400
+            )
+
+
+class UpdateProjectTaskView(LoginRequiredMixin, View):
+    """Handle updating a task's status via HTMX"""
+
+    def post(self, request, project_id, step_id, task_id):
+        project_task = ProjectTask.objects.get(
+            id=task_id,
+            project_step__id=step_id,
+            project_step__project__id=project_id,
+        )
+
+        if project_task is None:
+            messages.error(request, "Task not found.")
+            return render(
+                request,
+                "projects/partials/task_row.html",
+                {"task": project_task},
+            )
+
+        new_status = request.POST.get("status", "").strip()
+
+        if new_status not in ["unna", "undone", "done", "na"]:
+            messages.error(request, "Invalid status value.")
+            return render(
+                request,
+                "projects/partials/task_row.html",
+                {"task": project_task},
+            )
+
+        try:
+            if new_status.startswith("un"):
+                project_task.status = "pending"
+            else:
+                project_task.status = new_status
+
+            print(f"Updating task {project_task.id} to status {project_task.status}")
+            project_task.save()
+        except Exception as e:
+            messages.error(request, str(e))
+        return render(
+            request,
+            "projects/partials/task_row.html",
+            {"task": project_task},
+        )
+
+
+class DeleteProjectTaskView(LoginRequiredMixin, View):
+    """Handle deleting a task from a project step via HTMX"""
+
+    # TODO: adjust & test when developped
+
+    def delete(self, request, project_id, step_id, task_id):
+        project_task = get_object_or_404(
+            ProjectTask,
+            id=task_id,
+            project_step__id=step_id,
+            project_step__project__id=project_id,
+        )
+
+        try:
+            project_task.delete()
+            # Return empty response (row will be removed by HTMX)
+            return HttpResponse("")
+
+        except Exception as e:
+            return HttpResponse(
+                f'<div class="error-message">Error: {str(e)}</div>', status=400
+            )

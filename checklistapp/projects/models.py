@@ -29,7 +29,7 @@ class Project(models.Model):
         import random
 
         return f"{(random.random()):.0%}"
-
+        # TODO: fix above line and remove below line
         total_tasks = ProjectTask.objects.filter(project_step__project=self).count()
         if total_tasks == 0:
             return 0
@@ -63,29 +63,40 @@ class ProjectStep(models.Model):
     def __str__(self):
         return f"{self.project.name} - {self.title}"
 
+    def to_str(self):
+        if self.icon:
+            return f"{self.icon} {self.title}"
+        return self.title
+
     def get_status(self):
         """Returns: 'not-started', 'in-progress', or 'completed'"""
         total = self.tasks.count()
         if total == 0:
-            return "not-started"
+            return "Not started"
         completed = self.tasks.filter(status__in=["done", "na"]).count()
         if completed == 0:
-            return "not-started"
+            return "Not started"
         elif completed == total:
-            return "completed"
+            return "Completed"
         else:
-            return "in-progress"
+            return "In progress"
 
     def get_progress_text(self):
         total = self.tasks.count()
+        if total == 0:
+            return "No tasks"
+
         completed = self.tasks.filter(status__in=["done", "na"]).count()
-        return f"{completed} of {total} tasks"
+        if total > 1:
+            return f"{completed} of {total} tasks"
+        else:
+            return f"{completed} of {total} task"
 
     def get_percentage_complete(self):
         import random
 
         return f"{(random.random()):.2%}"
-
+        # TODO: fix above line and remove below line
         total = self.tasks.count()
         if total == 0:
             return 0

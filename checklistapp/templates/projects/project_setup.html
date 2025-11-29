@@ -25,7 +25,7 @@
                         </div>
                     </div>
                     <form 
-                        hx-post="{% url 'projects:add_step' pk=project.pk %}" 
+                        hx-post="{% url 'projects:add_step' project_id=project.pk %}" 
                         hx-target="#projectStepsList" 
                         hx-swap="beforeend"
                         class="template-actions"
