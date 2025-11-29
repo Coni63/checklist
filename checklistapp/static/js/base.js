@@ -1,14 +1,6 @@
 // static/js/base.js
 
 /**
- * Toggle mobile menu
- */
-function toggleMobileMenu() {
-    const menu = document.getElementById('navbarMenu');
-    menu.classList.toggle('show');
-}
-
-/**
  * Toggle user dropdown
  */
 function toggleUserDropdown() {
@@ -82,3 +74,8 @@ function getCookie(name) {
 
 // Make CSRF token available globally
 window.csrfToken = getCookie('csrftoken') || window.CSRF_TOKEN;
+
+// Include the token in HTMX calls
+document.body.addEventListener('htmx:configRequest', (event) => {
+    event.detail.headers['X-CSRFToken'] = window.csrfToken;
+});
