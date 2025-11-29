@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ project.name }} - Checklist Manager{% endblock %}
+{% block title %}Status Project: {{ project.name }} - Checklist Manager{% endblock %}
 
 {% block extra_css %}
     <!-- <link rel="stylesheet" href="{% static 'css/project_detail.css' %}"> -->
@@ -10,26 +10,26 @@
 
 {% block content %}
 <div class="main-content flex-row">
-        <!-- Sidebar with Steps -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h1>{{ project.name }}</h1>
-                <p>{{ project.description|truncatechars:100 }}</p>
-            </div>
-            <div class="step-list" id="stepList">
-                {% for step in steps %}
-                    {% include 'projects/partials/step_item.html' %}
-                {% endfor %}
-            </div>
+    <!-- Sidebar with Steps -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>{{ project.name }}</h1>
+            <p>{{ project.description|truncatechars:100 }}</p>
         </div>
+        <div class="step-list" id="stepList">
+            {% for step in steps %}
+                {% include 'projects/partials/step_item.html' %}
+            {% endfor %}
+        </div>
+    </div>
 
-        <!-- Main Content Area -->
-        <div class="tasks-area" id="tasks-area-list">
-            <div class="tasks-area-header">
-                <h1 id="contentTitle">Select a step</h1>
-                <p class="subtitle" id="contentSubtitle">Choose a checklist from the sidebar</p>
-            </div>
+    <!-- Main Content Area -->
+    <div class="tasks-area" id="tasks-area-list">
+        <div class="tasks-area-header">
+            <h1 id="contentTitle">Select a step</h1>
+            <p class="subtitle" id="contentSubtitle">Choose a checklist from the sidebar</p>
         </div>
+    </div>
 </div>
 {% endblock %}
 

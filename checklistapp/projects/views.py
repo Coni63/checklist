@@ -12,6 +12,7 @@ from django.views import View
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db import models
+from django.template.loader import render_to_string
 
 
 class ProjectListView(UserOwnedMixin, ListView):
@@ -283,6 +284,9 @@ class UpdateProjectTaskView(LoginRequiredMixin, View):
             project_step__id=step_id,
             project_step__project__id=project_id,
         )
+        step = ProjectStep.objects.get(
+            id=step_id, project__id=project_id
+        )
 
         if project_task is None:
             messages.error(request, "Task not found.")
@@ -312,11 +316,24 @@ class UpdateProjectTaskView(LoginRequiredMixin, View):
             project_task.save()
         except Exception as e:
             messages.error(request, str(e))
-        return render(
-            request,
-            "projects/partials/task_row.html",
-            {"task": project_task},
+        
+        row_html = render_to_string("projects/partials/task_row.html", {"task": project_task})
+
+        badge_html = render_to_string("projects/partials/step-status-badge.html", {
+            "oob": True,
+            "status": step.get_status(),
+            "id": step.id
+        })
+        progress_html = render_to_string(
+            "projects/partials/step-progress-bar.html",
+            {
+                "oob": True,
+                "completion": step.get_percentage_complete(),
+                "text": step.get_progress_text(),
+            }
         )
+
+        return HttpResponse(row_html + badge_html + progress_html)
 
 
 class DeleteProjectTaskView(LoginRequiredMixin, View):

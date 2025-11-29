@@ -4,23 +4,7 @@
     <!-- TODO, add maybe a description to a step -->
 </div>
 
-<div class="tasks-area-progress">
-    {% with completion=step.get_percentage_complete %}
-        <!-- Progress Bar -->
-         <div class="progress-info">
-            <span>Progress</span>
-            <span>{{ step.get_progress_text }}</span>
-        </div>
-        <div class="progress-bar">
-            <div class="progress-fill" 
-                style="width: {{ completion }}">
-            </div>
-        </div>
-        <div class="progress-text">
-            {{ completion }} complete
-        </div>
-    {% endwith %}
-</div>
+{% include 'projects/partials/step-progress-bar.html' with completion=step.get_percentage_complete text=step.get_progress_text %}
 
 
 <div class="task-list">

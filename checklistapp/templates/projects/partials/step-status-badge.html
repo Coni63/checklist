@@ -1,0 +1,7 @@
+{% if oob %}
+    <span class="status-badge status-step-{{ status|lower|slugify }}" id="status-badge-{{ id }}" hx-swap-oob="true">
+{% else %}
+    <span class="status-badge status-step-{{ status|lower|slugify }}" id="status-badge-{{ id }}">
+{% endif %}
+    {{ status }}
+</span>

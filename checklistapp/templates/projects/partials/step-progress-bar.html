@@ -1,0 +1,19 @@
+{% if oob %}
+    <div class="tasks-area-progress" id="tasks-area-progress" hx-swap-oob="true">
+{% else %}
+    <div class="tasks-area-progress" id="tasks-area-progress">
+{% endif %}
+    <!-- Progress Bar -->
+    <div class="progress-info">
+        <span>Progress</span>
+        <span>{{ text }}</span>
+    </div>
+    <div class="progress-bar">
+        <div class="progress-fill" 
+            style="width: {{ completion }}">
+        </div>
+    </div>
+    <div class="progress-text">
+        {{ completion }} complete
+    </div>
+</div>

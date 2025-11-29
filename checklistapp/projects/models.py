@@ -93,19 +93,17 @@ class ProjectStep(models.Model):
             return f"{completed} of {total} task"
 
     def get_percentage_complete(self):
-        import random
-
-        return f"{(random.random()):.2%}"
-        # TODO: fix above line and remove below line
         total = self.tasks.count()
         if total == 0:
             return 0
         completed = self.tasks.filter(status__in=["done", "na"]).count()
-        # return int((completed / total) * 100)
         return f"{(completed / total):.0%}"
 
     def get_badge_text(self):
         total = self.tasks.count()
+        if total == 0:
+            return "Completed"
+        
         completed = self.tasks.filter(status__in=["done", "na"]).count()
         if completed == 0:
             return "Not Started"

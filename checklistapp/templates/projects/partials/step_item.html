@@ -5,9 +5,7 @@
 <!-- <div class="step-item ${status} ${isActive ? 'active' : ''}" onclick="selectStep('${step.id}')"> -->
     <div class="step-header">
         <span class="step-title">{{step.to_str}}</span>
-         <span class="status-badge status-step-{{ step.get_status|lower|slugify }}">
-            {{ step.get_status }}
-        </span>
+        {% include 'projects/partials/step-status-badge.html' with status=step.get_status id=step.id %}
     </div>
     <div class="step-progress">{{step.get_progress_text}}</div>
      
