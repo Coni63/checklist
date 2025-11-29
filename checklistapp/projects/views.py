@@ -308,17 +308,17 @@ class UpdateProjectTaskView(LoginRequiredMixin, View):
 
         try:
             if new_status.startswith("un"):
-                project_task.status = "pending"
-            else:
-                project_task.status = new_status
-
-            print(f"Updating task {project_task.id} to status {project_task.status}")
-            project_task.save()
+                project_task.mark_pending()
+            elif new_status == "done":
+                project_task.mark_done()
+            elif new_status == "na":
+                project_task.mark_na()
         except Exception as e:
             messages.error(request, str(e))
         
         row_html = render_to_string("projects/partials/task_row.html", {"task": project_task})
 
+        # Handle OOB step update for other parts UI update
         badge_html = render_to_string("projects/partials/step-status-badge.html", {
             "oob": True,
             "status": step.get_status(),

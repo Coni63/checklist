@@ -26,17 +26,31 @@ class Project(models.Model):
         return self.name
 
     def get_completion_percentage(self):
-        import random
-
-        return f"{(random.random()):.0%}"
-        # TODO: fix above line and remove below line
+        completed_tasks, total_tasks = self._get_count_tasks()
+        if total_tasks == 0:
+            return "100%"
+        return f"{(completed_tasks / total_tasks):.0%}"
+    
+    def _get_count_tasks(self):
         total_tasks = ProjectTask.objects.filter(project_step__project=self).count()
         if total_tasks == 0:
-            return 0
+            return 0, 0
         completed_tasks = ProjectTask.objects.filter(
             project_step__project=self, status__in=["done", "na"]
         ).count()
-        return f"{(completed_tasks / total_tasks):.0%}"
+        return completed_tasks, total_tasks
+    
+    def update_status(self):
+        if self.status not in ["active", "completed"]:
+            return  # Do not update if archived
+
+        completed_tasks, total_tasks = self._get_count_tasks()
+
+        if completed_tasks == total_tasks:
+            self.status = "completed"
+        else:
+            self.status = "active"
+        self.save()
 
 
 class ProjectStep(models.Model):

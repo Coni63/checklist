@@ -1,0 +1,21 @@
+V0
+Setup project, reorder steps
+Limite delete/edit delete or update non admin role
+Setup admin role or not
+Login page
+Register with inactive account ?
+QUID about authorization ?
+Homepage
+Dockerfile
+Github actions
+Docker compose
+Postgres DB
+
+V1
+Update your own comment
+Add task in a step (custom)
+Delete custom task
+Remove empty project step when addind step (due to htmx)
+
+V2
+Add description to step
