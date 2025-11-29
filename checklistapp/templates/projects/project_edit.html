@@ -26,14 +26,14 @@
                             hx-post="{% url 'projects:add_step' project_id=project.pk %}" 
                             hx-target="#projectStepsList" 
                             hx-swap="beforeend"
-                            class="setup-template-actions"
+                            class="setup-template-actions flex"
                         >
                             {% csrf_token %}
                             <input type="hidden" name="step_template_id" value="{{ template.id }}">
                             <input 
                                 type="text" 
                                 name="override_name"
-                                class="setup-override-name-input" 
+                                class="setup-override-name-input flex" 
                                 placeholder="Custom name (optional)"
                                 value="{{ template.name }}"
                             >

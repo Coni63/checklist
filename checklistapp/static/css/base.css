@@ -898,7 +898,7 @@ a:hover {
 
 .step-icon {
     font-size: 1.5em;
-    margin-right: var(--spacing-xs)
+    margin-right: var(--spacing-sm)
 }
 
 .step-title {
@@ -1305,7 +1305,6 @@ a:hover {
     padding: 0.5rem;
     border: 1px solid #ddd;
     border-radius: 4px;
-    /* width: 100%;  TODO: Fix use full width */
 }
 
 .error-message {
