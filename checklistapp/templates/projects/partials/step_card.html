@@ -1,13 +1,13 @@
 <div class="step-card" id="step-{{ step.id }}">
     <div class="step-header">
         <span class="step-icon">{{ step.icon }}</span>
-        <div class="step-info">
-            <h3 class="step-title">{{ step.title }}</h3>
-            <span class="step-badge">{{ step.tasks.count }} tasks</span>
+        <div class="flex">
+            <h3 class="setup-step-title">{{ step.title }}</h3>
+            <span class="progress-text">{{ step.tasks.count }} tasks</span>
         </div>
     </div>
     <button 
-        class="btn btn-remove"
+        class="btn btn-md btn-danger"
         hx-delete="{% url 'projects:remove_step' project_id=project.pk step_id=step.id %}"
         hx-target="#step-{{ step.id }}"
         hx-swap="outerHTML"

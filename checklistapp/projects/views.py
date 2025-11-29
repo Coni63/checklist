@@ -1,4 +1,4 @@
-from django.views.generic import ListView, CreateView, DetailView, DeleteView
+from django.views.generic import ListView, CreateView, DetailView, DeleteView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.contrib import messages
@@ -41,7 +41,7 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
     template_name = "projects/project_create.html"
 
     def get_success_url(self):
-        return reverse_lazy("projects:project_setup", kwargs={"pk": self.object.pk})
+        return reverse_lazy("projects:project_edit", kwargs={"pk": self.object.pk})
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
@@ -55,9 +55,10 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
         return super().form_invalid(form)
 
 
-class ProjectSetupView(LoginRequiredMixin, DetailView):
+class ProjectEditView(LoginRequiredMixin, UpdateView):
     model = Project
-    template_name = "projects/project_setup.html"
+    form_class = ProjectCreationForm
+    template_name = "projects/project_edit.html"
     context_object_name = "project"
 
     def get_context_data(self, **kwargs):
@@ -77,13 +78,16 @@ class ProjectSetupView(LoginRequiredMixin, DetailView):
         )
 
         return context
+    
+    def get_success_url(self):
+        return reverse_lazy("projects:project_edit", kwargs={"pk": self.object.pk})
 
 
 class AddProjectStepView(LoginRequiredMixin, View):
     """Handle adding a step to a project via HTMX"""
 
-    def post(self, request, pk):
-        project = get_object_or_404(Project, pk=pk)
+    def post(self, request, project_id):
+        project = get_object_or_404(Project, pk=project_id)
         step_template_id = request.POST.get("step_template_id")
         override_name = request.POST.get("override_name", "").strip()
 
@@ -161,8 +165,8 @@ class ProjectStepView(LoginRequiredMixin, DetailView):
 class RemoveProjectStepView(LoginRequiredMixin, View):
     """Handle removing a step from a project via HTMX"""
 
-    def delete(self, request, pk, step_id):
-        project = get_object_or_404(Project, pk=pk)
+    def delete(self, request, project_id, step_id):
+        project = get_object_or_404(Project, pk=project_id)
         project_step = get_object_or_404(ProjectStep, id=step_id, project=project)
 
         try:

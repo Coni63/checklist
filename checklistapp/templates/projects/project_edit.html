@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Setup Project: {{ project.name }} - Checklist Manager{% endblock %}
+
+{% block content %}
+<div class="container container-flex">
+    <div class="page-header">
+        <h1 class="page-title">Setup Project: {{ project.name }}</h1>
+        <p class="page-subtitle">Configure your project by selecting step templates</p>
+    </div>
+
+    {% include "projects/partials/project_form.html" with submit_label="Save Changes" submit_icon="💾" %}
+    <div class="form-container">
+        <div class="setup-layout">
+            <!-- LEFT COLUMN: Available Templates -->
+            <div class="setup-column">
+                <h4>Available Step Templates</h4>
+                <div class="setup-list">
+                    {% for template in available_templates %}
+                    <div class="template-card">
+                        <div class="step-header">
+                            <span class="step-icon">{{ template.icon }}</span>
+                        </div>
+                        <form 
+                            hx-post="{% url 'projects:add_step' project_id=project.pk %}" 
+                            hx-target="#projectStepsList" 
+                            hx-swap="beforeend"
+                            class="setup-template-actions"
+                        >
+                            {% csrf_token %}
+                            <input type="hidden" name="step_template_id" value="{{ template.id }}">
+                            <input 
+                                type="text" 
+                                name="override_name"
+                                class="setup-override-name-input" 
+                                placeholder="Custom name (optional)"
+                                value="{{ template.name }}"
+                            >
+                            <button type="submit" class="btn btn-md btn-primary">
+                                +
+                            </button>
+                        </form>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <p>No step templates available.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Current Project Steps -->
+            <div class="setup-column">
+                <h4>Project Steps</h4>
+                <div class="setup-list" id="projectStepsList">
+                    {% if project_steps %}
+                        {% for step in project_steps %}
+                            {% include 'projects/partials/step_card.html' %}
+                        {% endfor %}
+                    {% else %}
+                    <div class="empty-state" id="emptyState">
+                        <p>No steps added yet. Select templates from the left to get started.</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+            </div>
+            <div class="form-actions">
+                <a href="{% url 'projects:project_list' %}" class="btn btn-primary">
+                    <span class="btn-icon">✔</span>Done
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

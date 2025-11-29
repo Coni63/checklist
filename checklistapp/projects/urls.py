@@ -8,7 +8,7 @@ urlpatterns = [
     # Project URLs
     path("", views.ProjectListView.as_view(), name="project_list"),
     path("create/", views.ProjectCreateView.as_view(), name="project_create"),
-    path("<int:pk>/edit/", views.ProjectSetupView.as_view(), name="project_edit"),
+    path("<int:pk>/edit/", views.ProjectEditView.as_view(), name="project_edit"),
     path("<int:pk>/", views.ProjectDetailView.as_view(), name="project_detail"),
     path("<int:pk>/delete/", views.ProjectDeleteView.as_view(), name="project_delete"),
     # Project Step URLs

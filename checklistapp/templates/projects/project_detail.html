@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Create New Project - Checklist Manager{% endblock %}
+{% block title %}{{ project.name }} - Checklist Manager{% endblock %}
 
 {% block extra_css %}
     <!-- <link rel="stylesheet" href="{% static 'css/project_detail.css' %}"> -->
@@ -18,7 +18,7 @@
             </div>
             <div class="step-list" id="stepList">
                 {% for step in steps %}
-                    {% include 'projects/partials/detail_step.html' %}
+                    {% include 'projects/partials/step_item.html' %}
                 {% endfor %}
             </div>
         </div>
