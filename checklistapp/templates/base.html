@@ -1,4 +1,4 @@
-{% load static %}
+{% load static tailwind_tags %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -17,6 +17,7 @@
     
     {# CSS #}
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% tailwind_css %}
     {% block extra_css %}{% endblock %}
     
     {# Meta tags for SEO #}
@@ -32,6 +33,8 @@
     {% include 'navbar.html' %}
     
     {# Main Content Area #}
+</div>
+
     <main class="main-content">
         {% include 'messages.html' %}
         

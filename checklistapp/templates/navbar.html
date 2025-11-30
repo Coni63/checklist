@@ -28,13 +28,17 @@
                             </a>
                         {% endif %}
                         <div class="dropdown-divider"></div>
-                        <a href="{% url 'logout' %}" class="dropdown-item">
-                            🚪 Logout
-                        </a>
+                        <form method="post" action="{% url 'accounts:logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item">
+                                🚪 Logout
+                            </button>
+                        </form>
+
                     </div>
                 </div>
             {% else %}
-                <a href="{% url 'login' %}" class="nav-link">
+                <a href="{% url 'accounts:login' %}" class="nav-link">
                     Login
                 </a>
             {% endif %}

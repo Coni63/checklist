@@ -5,10 +5,14 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "cookiecutter>=2.6.0",
+    "crispy-tailwind>=1.0.3",
     "django>=5.2.8",
+    "django-tailwind[cookiecutter,honcho,reload]>=4.2.0",
 ]
 
 [dependency-groups]
 dev = [
+    "django-debug-toolbar>=6.1.0",
     "ruff>=0.14.6",
 ]

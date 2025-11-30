@@ -15,11 +15,10 @@ from django.db import models
 from django.template.loader import render_to_string
 
 
-class ProjectListView(UserOwnedMixin, ListView):
+class ProjectListView(LoginRequiredMixin, ListView):
     model = Project
     template_name = "projects/project_list.html"
     context_object_name = "projects"
-    paginate_by = 20
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -193,7 +192,7 @@ class RemoveProjectStepView(LoginRequiredMixin, View):
             )
 
 
-class ProjectDetailView(UserOwnedMixin, DetailView):
+class ProjectDetailView(LoginRequiredMixin, DetailView):
     model = Project
     template_name = "projects/project_detail.html"
     context_object_name = "project"
@@ -205,7 +204,7 @@ class ProjectDetailView(UserOwnedMixin, DetailView):
         return context
 
 
-class ProjectDeleteView(UserOwnedMixin, DeleteView):
+class ProjectDeleteView(LoginRequiredMixin, DeleteView):
     model = Project
     success_url = reverse_lazy("projects:project_list")
 

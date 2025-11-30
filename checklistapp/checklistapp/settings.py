@@ -10,7 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,10 +39,17 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    "tailwind",
+    "theme",
+    "crispy_forms",
+    "crispy_tailwind",
+
     "accounts",
     "checklists",
     "projects",
     "templates_management",
+    "home",
 ]
 
 MIDDLEWARE = [
@@ -131,3 +140,27 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 AUTH_USER_MODEL = "accounts.User"
+TAILWIND_APP_NAME = "theme"
+NPM_BIN_PATH = r"C:\Users\Nicolas\AppData\Roaming\npm\npm.cmd"
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
+CRISPY_TEMPLATE_PACK = "tailwind"
+
+TESTING = "test" in sys.argv or "PYTEST_VERSION" in os.environ
+
+if DEBUG and not TESTING:
+    # Add django_browser_reload only in DEBUG mode
+    INSTALLED_APPS += [
+        "django_browser_reload", 
+        "debug_toolbar",
+    ]
+
+    MIDDLEWARE = [
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+        *MIDDLEWARE,
+        "django_browser_reload.middleware.BrowserReloadMiddleware",
+    ]
+
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
