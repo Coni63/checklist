@@ -4,71 +4,78 @@
 {% block title %}Setup Project: {{ project.name }} - Checklist Manager{% endblock %}
 
 {% block content %}
-<div class="container container-flex">
-    <div class="page-header">
-        <h1 class="page-title">Setup Project: {{ project.name }}</h1>
-        <p class="page-subtitle">Configure your project by selecting step templates</p>
+<div class="container mx-auto max-w-7xl p-6">
+    <div class="text-center mb-10 pb-8 border-b border-base-300">
+        <h1 class="text-4xl font-bold text-base-content mb-2">Setup Project: {{ project.name }}</h1>
+        <p class="text-lg text-base-content/70">Configure your project by selecting step templates</p>
     </div>
 
     {% include "projects/partials/project_form.html" with submit_label="Save Changes" submit_icon="💾" %}
-    <div class="form-container">
-        <div class="setup-layout">
-            <!-- LEFT COLUMN: Available Templates -->
-            <div class="setup-column">
-                <h4>Available Step Templates</h4>
-                <div class="setup-list">
-                    {% for template in available_templates %}
-                    <div class="template-card">
-                        <div class="step-header">
-                            <span class="step-icon">{{ template.icon }}</span>
+
+    <div class="card bg-base-100 shadow-xl mt-8">
+        <div class="card-body">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {# LEFT COLUMN: Available Templates #}
+                <div>
+                    <h2 class="text-2xl font-bold text-base-content mb-4">Available Step Templates</h2>
+                    <div class="space-y-3">
+                        {% for template in available_templates %}
+                        <div class="card card-compact bg-base-200 shadow">
+                            <div class="card-body">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-2xl">{{ template.icon }}</span>
+                                    <span class="font-semibold">{{ template.name }}</span>
+                                </div>
+                                <form
+                                    hx-post="{% url 'projects:add_step' project_id=project.pk %}"
+                                    hx-target="#projectStepsList"
+                                    hx-swap="beforeend"
+                                    class="flex gap-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="step_template_id" value="{{ template.id }}">
+                                    <input
+                                        type="text"
+                                        name="override_name"
+                                        class="input input-sm input-bordered flex-1"
+                                        placeholder="Custom name (optional)"
+                                        value="{{ template.name }}">
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        +
+                                    </button>
+                                </form>
+                            </div>
                         </div>
-                        <form 
-                            hx-post="{% url 'projects:add_step' project_id=project.pk %}" 
-                            hx-target="#projectStepsList" 
-                            hx-swap="beforeend"
-                            class="setup-template-actions flex"
-                        >
-                            {% csrf_token %}
-                            <input type="hidden" name="step_template_id" value="{{ template.id }}">
-                            <input 
-                                type="text" 
-                                name="override_name"
-                                class="setup-override-name-input flex" 
-                                placeholder="Custom name (optional)"
-                                value="{{ template.name }}"
-                            >
-                            <button type="submit" class="btn btn-md btn-primary">
-                                +
-                            </button>
-                        </form>
+                        {% empty %}
+                        <div class="alert alert-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>No step templates available.</span>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% empty %}
-                    <div class="empty-state">
-                        <p>No step templates available.</p>
+                </div>
+
+                {# RIGHT COLUMN: Current Project Steps #}
+                <div>
+                    <h2 class="text-2xl font-bold text-base-content mb-4">Project Steps</h2>
+                    <div class="space-y-3" id="projectStepsList">
+                        {% if project_steps %}
+                            {% for step in project_steps %}
+                                {% include 'projects/partials/step_card.html' %}
+                            {% endfor %}
+                        {% else %}
+                        <div class="alert" id="emptyState">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>No steps added yet. Select templates from the left to get started.</span>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
 
-            <!-- RIGHT COLUMN: Current Project Steps -->
-            <div class="setup-column">
-                <h4>Project Steps</h4>
-                <div class="setup-list" id="projectStepsList">
-                    {% if project_steps %}
-                        {% for step in project_steps %}
-                            {% include 'projects/partials/step_card.html' %}
-                        {% endfor %}
-                    {% else %}
-                    <div class="empty-state" id="emptyState">
-                        <p>No steps added yet. Select templates from the left to get started.</p>
-                    </div>
-                    {% endif %}
-                </div>
-                
-            </div>
-            <div class="form-actions">
-                <a href="{% url 'projects:project_list' %}" class="btn btn-primary">
-                    <span class="btn-icon">✔</span>Done
+            <div class="card-actions justify-end mt-8 pt-6 border-t border-base-300">
+                <a href="{% url 'projects:project_list' %}" class="btn btn-primary btn-lg gap-2">
+                    <span>✔</span>
+                    <span>Done</span>
                 </a>
             </div>
         </div>

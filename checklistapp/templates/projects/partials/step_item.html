@@ -1,12 +1,16 @@
-<div class="step-item"  
+<div class="card card-compact bg-base-100 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4
+    {% if step.get_status == 'Not Started' %}border-error
+    {% elif step.get_status == 'In Progress' %}border-warning
+    {% elif step.get_status == 'Completed' %}border-success
+    {% else %}border-base-300{% endif %}"
     hx-get="{% url 'projects:step_tasks' project_id=project.id step_id=step.id %}"
     hx-target="#tasks-area-list"
     hx-swap="innerHTML">
-<!-- <div class="step-item ${status} ${isActive ? 'active' : ''}" onclick="selectStep('${step.id}')"> -->
-    <div class="step-header">
-        <span class="step-title">{{step.to_str}}</span>
-        {% include 'projects/partials/step-status-badge.html' with status=step.get_status id=step.id %}
+    <div class="card-body">
+        <div class="flex items-start justify-between gap-2">
+            <h3 class="font-semibold text-base-content">{{step.to_str}}</h3>
+            {% include 'projects/partials/step-status-badge.html' with status=step.get_status id=step.id %}
+        </div>
+        <p class="text-sm text-base-content/70">{{step.get_progress_text}}</p>
     </div>
-    <div class="step-progress">{{step.get_progress_text}}</div>
-     
 </div>

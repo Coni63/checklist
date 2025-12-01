@@ -5,23 +5,35 @@
 {% block title %}Create New Project - Checklist Manager{% endblock %}
 
 {% block content %}
-<div class="container container-flex">
-    <div class="page-header">
-        <h1 class="page-title">Create New Project</h1>
-        <p class="page-subtitle">Start organizing your workflow with a new project</p>
+<div class="container mx-auto max-w-4xl p-6">
+    <div class="text-center mb-10 pb-8 border-b border-base-300">
+        <h1 class="text-4xl font-bold text-base-content mb-2">Create New Project</h1>
+        <p class="text-lg text-base-content/70">Start organizing your workflow with a new project</p>
     </div>
 
     {% include "projects/partials/project_form.html" with submit_label="Create Project" submit_icon="+" cancel_url=cancel_url %}
 
     {# Project Creation Tips #}
-    <div class="info-card">
-        <h3 class="info-card-title">💡 Project Creation Tips</h3>
-        <div class="info-card-content">
-            <ul class="tips-list">
-                <li><strong>Clear Names:</strong> Use descriptive names like "Dinner Party" or "Software Deployment"</li>
-                <li><strong>Status Matters:</strong> Start with "Active" for ongoing projects</li>
-                <li><strong>Description is Optional:</strong> Add context if needed, but you can skip it</li>
-                <li><strong>Next Step:</strong> After creation, you'll configure steps and tasks</li>
+    <div class="card bg-gradient-to-br from-primary to-secondary text-primary-content shadow-xl mt-8">
+        <div class="card-body">
+            <h3 class="card-title text-xl mb-4">💡 Project Creation Tips</h3>
+            <ul class="space-y-3">
+                <li class="flex gap-2">
+                    <span class="font-semibold min-w-fit">Clear Names:</span>
+                    <span>Use descriptive names like "Dinner Party" or "Software Deployment"</span>
+                </li>
+                <li class="flex gap-2">
+                    <span class="font-semibold min-w-fit">Status Matters:</span>
+                    <span>Start with "Active" for ongoing projects</span>
+                </li>
+                <li class="flex gap-2">
+                    <span class="font-semibold min-w-fit">Description is Optional:</span>
+                    <span>Add context if needed, but you can skip it</span>
+                </li>
+                <li class="flex gap-2">
+                    <span class="font-semibold min-w-fit">Next Step:</span>
+                    <span>After creation, you'll configure steps and tasks</span>
+                </li>
             </ul>
         </div>
     </div>

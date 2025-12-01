@@ -3,93 +3,104 @@
 {% block title %}My Projects - Checklist Manager{% endblock %}
 
 {% block content %}
-<div class="container container-xl">
-    <div class="header flex-line">
-        <div>
-            <h1>My Projects</h1>
-        </div>
-        <div>
-            <a href="{% url 'projects:project_create' %}" class="task-number">+</a>
-        </div>
+<div class="container mx-auto max-w-7xl p-6">
+    {# Header with title and create button #}
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-4xl font-bold text-base-content">My Projects</h1>
+        <a href="{% url 'projects:project_create' %}" class="btn btn-primary btn-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+        </a>
     </div>
-    
-    <div class="filters">
-        <a href="?status=all" class="filter {% if status == 'all' %}active{% endif %}">
+
+    {# Filters using tabs #}
+    <div role="tablist" class="tabs tabs-boxed mb-8 bg-base-100 shadow-md">
+        <a href="?status=all" role="tab" class="tab {% if status == 'all' %}tab-active{% endif %}">
             All
         </a>
-        <a href="?status=active" class="filter {% if status == 'active' %}active{% endif %}">
+        <a href="?status=active" role="tab" class="tab {% if status == 'active' %}tab-active{% endif %}">
             Active
         </a>
-        <a href="?status=completed" class="filter {% if status == 'completed' %}active{% endif %}">
+        <a href="?status=completed" role="tab" class="tab {% if status == 'completed' %}tab-active{% endif %}">
             Completed
         </a>
-        <a href="?status=archived" class="filter {% if status == 'archived' %}active{% endif %}">
+        <a href="?status=archived" role="tab" class="tab {% if status == 'archived' %}tab-active{% endif %}">
             Archived
         </a>
     </div>
-    
-    <!-- Project Grid -->
-    <div class="project-grid">
+
+    {# Project Grid #}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for project in projects %}
-        <div class="project-card">
-
-            <!-- Title + Status -->
-            <div class="card-header">
-                <a href="{% url 'projects:project_detail' project.id %}"><h3>{{ project.name }}</h3></a>
-                
-                {% if project.status %}
-                    <span class="status-badge status-project-{{ project.status|lower|slugify }}">
-                        {{ project.get_status_display }}
-                    </span>
-                {% endif %}
-            </div>
-
-            <!-- Description -->
-            {% if project.description %}
-            <p class="description">{{ project.description|truncatechars:100 }}</p>
-            {% endif %}
-
-            <div class="spacer"></div>
-
-            {% with completion=project.get_completion_percentage %}
-                <!-- Progress Bar -->
-                <div class="progress-bar">
-                    <div class="progress-fill" 
-                        style="width: {{ completion }}">
-                    </div>
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-200 border border-base-300">
+            <div class="card-body">
+                {# Title + Status #}
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <a href="{% url 'projects:project_detail' project.id %}" class="card-title hover:text-primary transition-colors">
+                        {{ project.name }}
+                    </a>
+                    {% if project.status %}
+                        <div class="badge badge-lg
+                            {% if project.status == 'active' or project.status == 'in_progress' %}badge-info
+                            {% elif project.status == 'completed' %}badge-success
+                            {% else %}badge-ghost{% endif %}">
+                            {{ project.get_status_display }}
+                        </div>
+                    {% endif %}
                 </div>
-                <!-- Actions -->
-                <div class="actions">
-                    <div class="progress-text">
-                        {{ completion }} complete
+
+                {# Description #}
+                {% if project.description %}
+                <p class="text-base-content/70 text-sm flex-grow">
+                    {{ project.description|truncatechars:100 }}
+                </p>
+                {% else %}
+                <div class="flex-grow"></div>
+                {% endif %}
+
+                {% with completion=project.get_completion_percentage %}
+                    {# Progress Bar #}
+                    <div class="mt-4">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-base-content/70">Progress</span>
+                            <span class="font-semibold">{{ completion }}</span>
+                        </div>
+                        <progress class="progress progress-primary w-full" value="{{ completion|cut:'%' }}" max="100"></progress>
                     </div>
-                    <div>
-                        <a href="{% url 'projects:project_edit' project.id %}" class="">⚙️</a>
-        
-                        <form action="{% url 'projects:project_delete' project.id %}" 
-                              method="post" class="inline-form"
+
+                    {# Actions #}
+                    <div class="card-actions justify-end mt-4 pt-4 border-t border-base-300">
+                        <a href="{% url 'projects:project_edit' project.id %}" class="btn btn-ghost btn-sm" title="Edit">
+                            ⚙️
+                        </a>
+                        <form action="{% url 'projects:project_delete' project.id %}"
+                              method="post"
+                              class="inline"
                               onsubmit="return confirm('Delete this project?');">
                             {% csrf_token %}
-                            <button type="submit" class="">
+                            <button type="submit" class="btn btn-ghost btn-sm text-error" title="Delete">
                                 🗑️
                             </button>
                         </form>
                     </div>
-                </div>
-            {% endwith %}
-
-            
-
+                {% endwith %}
+            </div>
         </div>
 
         {% empty %}
-        <div class="empty-state">
-            <p>No projects yet. Create your first one!</p>
+        <div class="col-span-full">
+            <div class="alert shadow-lg">
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>No projects yet. Create your first one!</span>
+                </div>
+                <div>
+                    <a href="{% url 'projects:project_create' %}" class="btn btn-sm btn-primary">Create Project</a>
+                </div>
+            </div>
         </div>
         {% endfor %}
     </div>
-
 </div>
-
-
 {% endblock %}

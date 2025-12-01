@@ -1,88 +1,119 @@
-<div class="form-container">
-    <form method="post" class="project-form" novalidate>
-        {% csrf_token %}
-        
-        {% if form.non_field_errors %}
-        <div class="form-errors">
-            <div class="error-icon">⚠</div>
-            <div class="error-content">
-                <strong>Please correct the following errors:</strong>
-                <ul>
-                    {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-        {% endif %}
+<div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
 
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="{{ form.name.id_for_label }}" class="form-label">
-                    {{ form.name.label }}
-                    {% if form.name.field.required %}<span class="required">*</span>{% endif %}
-                </label>
-                {{ form.name }}
-                {% if form.name.help_text %}
-                <div class="form-help">{{ form.name.help_text }}</div>
-                {% endif %}
-                {% if form.name.errors %}
-                <div class="field-errors">
-                    {% for error in form.name.errors %}
-                    <span class="error">{{ error }}</span>
-                    {% endfor %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-error mb-6">
+                <div>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <div>
+                        <h3 class="font-bold">Please correct the following errors:</h3>
+                        <ul class="list-disc list-inside mt-2">
+                            {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
-                {% endif %}
             </div>
+            {% endif %}
 
-            <div class="form-group">
-                <label for="{{ form.status.id_for_label }}" class="form-label">
-                    {{ form.status.label }}
-                    {% if form.status.field.required %}<span class="required">*</span>{% endif %}
-                </label>
-                {{ form.status }}
-                {% if form.status.help_text %}
-                <div class="form-help">{{ form.status.help_text }}</div>
-                {% endif %}
-                {% if form.status.errors %}
-                <div class="field-errors">
-                    {% for error in form.status.errors %}
-                    <span class="error">{{ error }}</span>
-                    {% endfor %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                {# Name Field #}
+                <div class="form-control w-full">
+                    <label for="{{ form.name.id_for_label }}" class="label">
+                        <span class="label-text font-semibold">
+                            {{ form.name.label }}
+                            {% if form.name.field.required %}<span class="text-error ml-1">*</span>{% endif %}
+                        </span>
+                    </label>
+                    <input type="text" name="{{ form.name.name }}" id="{{ form.name.id_for_label }}"
+                           value="{{ form.name.value|default:'' }}"
+                           class="input input-bordered w-full {% if form.name.errors %}input-error{% endif %}"
+                           {% if form.name.field.required %}required{% endif %}>
+                    {% if form.name.help_text %}
+                    <label class="label">
+                        <span class="label-text-alt text-base-content/70">{{ form.name.help_text }}</span>
+                    </label>
+                    {% endif %}
+                    {% if form.name.errors %}
+                    <label class="label">
+                        {% for error in form.name.errors %}
+                        <span class="label-text-alt text-error">{{ error }}</span>
+                        {% endfor %}
+                    </label>
+                    {% endif %}
                 </div>
+
+                {# Status Field #}
+                <div class="form-control w-full">
+                    <label for="{{ form.status.id_for_label }}" class="label">
+                        <span class="label-text font-semibold">
+                            {{ form.status.label }}
+                            {% if form.status.field.required %}<span class="text-error ml-1">*</span>{% endif %}
+                        </span>
+                    </label>
+                    <select name="{{ form.status.name }}" id="{{ form.status.id_for_label }}"
+                            class="select select-bordered w-full {% if form.status.errors %}select-error{% endif %}"
+                            {% if form.status.field.required %}required{% endif %}>
+                        {% for value, label in form.status.field.choices %}
+                        <option value="{{ value }}" {% if form.status.value == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if form.status.help_text %}
+                    <label class="label">
+                        <span class="label-text-alt text-base-content/70">{{ form.status.help_text }}</span>
+                    </label>
+                    {% endif %}
+                    {% if form.status.errors %}
+                    <label class="label">
+                        {% for error in form.status.errors %}
+                        <span class="label-text-alt text-error">{{ error }}</span>
+                        {% endfor %}
+                    </label>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Description Field #}
+            <div class="form-control w-full mb-6">
+                <label for="{{ form.description.id_for_label }}" class="label">
+                    <span class="label-text font-semibold">
+                        {{ form.description.label }}
+                        {% if form.description.field.required %}<span class="text-error ml-1">*</span>{% endif %}
+                    </span>
+                </label>
+                <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}"
+                          class="textarea textarea-bordered h-24 {% if form.description.errors %}textarea-error{% endif %}"
+                          {% if form.description.field.required %}required{% endif %}>{{ form.description.value|default:'' }}</textarea>
+                {% if form.description.help_text %}
+                <label class="label">
+                    <span class="label-text-alt text-base-content/70">{{ form.description.help_text }}</span>
+                </label>
+                {% endif %}
+                {% if form.description.errors %}
+                <label class="label">
+                    {% for error in form.description.errors %}
+                    <span class="label-text-alt text-error">{{ error }}</span>
+                    {% endfor %}
+                </label>
                 {% endif %}
             </div>
-        </div>
 
-        <div class="form-group">
-            <label for="{{ form.description.id_for_label }}" class="form-label">
-                {{ form.description.label }}
-                {% if form.description.field.required %}<span class="required">*</span>{% endif %}
-            </label>
-            {{ form.description }}
-            {% if form.description.help_text %}
-            <div class="form-help">{{ form.description.help_text }}</div>
-            {% endif %}
-            {% if form.description.errors %}
-            <div class="field-errors">
-                {% for error in form.description.errors %}
-                <span class="error">{{ error }}</span>
-                {% endfor %}
+            {# Form Actions #}
+            <div class="card-actions justify-start pt-4 border-t border-base-300">
+                <button type="submit" class="btn btn-primary gap-2">
+                    <span>{{ submit_icon|default:"+" }}</span>
+                    <span>{{ submit_label }}</span>
+                </button>
+
+                {% if cancel_url %}
+                <a href="{{ cancel_url }}" class="btn btn-ghost">
+                    Cancel
+                </a>
+                {% endif %}
             </div>
-            {% endif %}
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">
-                <span class="btn-icon">{{ submit_icon|default:"+" }}</span>
-                {{ submit_label }}
-            </button>
-
-            {% if cancel_url %}
-            <a href="{{ cancel_url }}" class="btn btn-secondary">
-                Cancel
-            </a>
-            {% endif %}
-        </div>
-    </form>
+        </form>
+    </div>
 </div>

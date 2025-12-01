@@ -1,13 +1,12 @@
-<div class="tasks-area-header">
-    <h1 id="contentTitle">{{ step.to_str }}</h1>
-    <p class="subtitle" id="contentSubtitle"></p>
-    <!-- TODO, add maybe a description to a step -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-base-content mb-2" id="contentTitle">{{ step.to_str }}</h1>
+    <p class="text-base-content/70" id="contentSubtitle"></p>
+    {# TODO: add maybe a description to a step #}
 </div>
 
 {% include 'projects/partials/step-progress-bar.html' with completion=step.get_percentage_complete text=step.get_progress_text %}
 
-
-<div class="task-list">
+<div class="space-y-2 mt-6">
     {% for task in step.tasks.all %}
         {% include 'projects/partials/task_row.html' with task=task index=forloop.counter %}
     {% endfor %}

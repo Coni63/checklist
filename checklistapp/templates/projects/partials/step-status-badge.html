@@ -1,7 +1,18 @@
 {% if oob %}
-    <span class="status-badge status-step-{{ status|lower|slugify }}" id="status-badge-{{ id }}" hx-swap-oob="true">
+    <div class="badge badge-sm
+        {% if status == 'Not Started' %}badge-error
+        {% elif status == 'In Progress' %}badge-warning
+        {% elif status == 'Completed' %}badge-success
+        {% else %}badge-ghost{% endif %}"
+        id="status-badge-{{ id }}"
+        hx-swap-oob="true">
 {% else %}
-    <span class="status-badge status-step-{{ status|lower|slugify }}" id="status-badge-{{ id }}">
+    <div class="badge badge-sm
+        {% if status == 'Not Started' %}badge-error
+        {% elif status == 'In Progress' %}badge-warning
+        {% elif status == 'Completed' %}badge-success
+        {% else %}badge-ghost{% endif %}"
+        id="status-badge-{{ id }}">
 {% endif %}
     {{ status }}
-</span>
+</div>

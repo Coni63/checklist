@@ -1,17 +1,17 @@
-<div class="comment-form-container">
-    <form 
+<div>
+    <form
         hx-post="{% url 'checklists:task_comment_create' task_id=task.id %}"
         hx-target="#comments-container"
         hx-swap="beforeend"
-        class="comment-form">
+        class="space-y-2">
         {% csrf_token %}
-        <textarea 
-            name="comment_text" 
-            placeholder="Add your comment..." 
+        <textarea
+            name="comment_text"
+            placeholder="Add your comment..."
             rows="3"
             required
-            class="comment-textarea"></textarea>
-        <div class="comment-form-actions">
+            class="textarea textarea-bordered w-full text-sm"></textarea>
+        <div class="flex justify-end">
             <button type="submit" class="btn btn-sm btn-primary">Post Comment</button>
         </div>
     </form>

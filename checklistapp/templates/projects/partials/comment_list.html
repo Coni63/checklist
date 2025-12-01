@@ -1,9 +1,8 @@
-<div id="comments-container">
+<div id="comments-container" class="space-y-3 mb-4">
     {% for comment in comments %}
         {% include 'projects/partials/comment_item.html' %}
     {% endfor %}
-
 </div>
-<div class="comment-form-container">
+<div class="mt-4">
     {% include 'projects/partials/comment_form.html' %}
 </div>
