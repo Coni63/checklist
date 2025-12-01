@@ -7,32 +7,39 @@
 
 {% block content %}
 
-<div class="min-h-screen flex items-center justify-center bg-base-200 px-4">
-    <div class="card w-full max-w-md shadow-xl bg-base-100">
-        <div class="card-body">
-            <h1 class="text-3xl font-bold text-center mb-6">Login</h1>
-
-            <form method="POST" action="{% url 'accounts:login' %}" class="space-y-4">
-                {% csrf_token %}
+<!-- <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-base-200 to-base-300 px-4"> -->
+<div class="w-full flex items-center justify-center py-12">
+    <div class="w-full max-w-md mx-auto">
+        <div class="card shadow-2xl bg-base-100 border border-base-300/50 rounded-2xl">
+            <div class="card-body p-8">
                 
-                <!-- Crispy form rendering (Django Auth form) -->
-                {{ form|crispy }}
+                <h1 class="text-4xl font-extrabold text-center mb-2">Welcome Back</h1>
+                <p class="text-center text-base-content/70 mb-8">Sign in to your account</p>
 
-                <div class="form-control mt-6">
-                    <button type="submit" class="btn btn-primary w-full">
+                <form method="POST" action="{% url 'accounts:login' %}" class="space-y-4">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+
+                    <button 
+                        type="submit" 
+                        class="btn btn-primary w-full h-12 text-lg font-semibold rounded-xl"
+                    >
                         Log in
                     </button>
-                </div>
-            </form>
+                </form>
 
-            <div class="text-center mt-4">
-                <a class="link link-primary text-sm" href="{% url 'accounts:password_reset' %}">
-                    Forgot password?
-                </a>
+                <div class="text-center mt-6">
+                    <a href="{% url 'accounts:password_reset' %}" class="text-sm link link-primary">
+                        Forgot password?
+                    </a>
+                </div>
+
             </div>
         </div>
     </div>
 </div>
+
+
 
 {% endblock %}
 

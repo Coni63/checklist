@@ -1,8 +1,8 @@
 {% load static %}
 
-<div class="navbar bg-base-100 shadow-lg sticky top-0 z-50 border-b border-base-300">
+<div class="navbar bg-base-100 shadow-lg sticky top-0 z-50 border-b border-base-300 pr-8 pl-8">
     <div class="flex-1">
-        <a href="{% url 'projects:project_list' %}" class="btn btn-ghost text-xl">
+        <a href="{% url 'projects:project_list' %}" class="text-xl">
             <span class="text-2xl">📋</span>
             <span class="font-bold">Checklist Manager</span>
         </a>
@@ -12,9 +12,9 @@
         {% if user.is_authenticated %}
             {# User Dropdown Menu #}
             <div class="dropdown dropdown-end">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar placeholder">
-                    <div class="bg-primary text-primary-content rounded-full w-10">
-                        <span class="text-sm font-semibold">{{ user.username|first|upper }}</span>
+                <div tabindex="0" role="button" class="avatar avatar-placeholder">
+                    <div class="bg-primary text-primary-content w-8 rounded-full">
+                        <span class="text-md font-semibold">{{ user.username|first|upper }}</span>
                     </div>
                 </div>
                 <ul tabindex="0" class="mt-3 z-[1] p-2 shadow-lg menu menu-sm dropdown-content bg-base-100 rounded-box w-52 border border-base-300">
@@ -48,7 +48,7 @@
                 </ul>
             </div>
         {% else %}
-            <a href="{% url 'accounts:login' %}" class="btn btn-primary">
+            <a href="{% url 'home:homepage' %}" class="btn btn-primary">
                 Login
             </a>
         {% endif %}
