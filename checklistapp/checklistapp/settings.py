@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "theme",
     "crispy_forms",
     "crispy_tailwind",
+    "widget_tweaks",
 
     "accounts",
     "checklists",

@@ -86,14 +86,14 @@ class ProjectStep(models.Model):
         """Returns: 'not-started', 'in-progress', or 'completed'"""
         total = self.tasks.count()
         if total == 0:
-            return "Not started"
+            return "Not Started"
         completed = self.tasks.filter(status__in=["done", "na"]).count()
         if completed == 0:
-            return "Not started"
+            return "Not Started"
         elif completed == total:
             return "Completed"
         else:
-            return "In progress"
+            return "In Progress"
 
     def get_progress_text(self):
         total = self.tasks.count()

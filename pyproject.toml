@@ -9,6 +9,7 @@ dependencies = [
     "crispy-tailwind>=1.0.3",
     "django>=5.2.8",
     "django-tailwind[cookiecutter,honcho,reload]>=4.2.0",
+    "django-widget-tweaks>=1.5.0",
 ]
 
 [dependency-groups]

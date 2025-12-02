@@ -1,0 +1,68 @@
+    <div class="card bg-base-100 shadow-xl mt-8">
+        <div class="card-body">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {# LEFT COLUMN: Available Templates #}
+                <div>
+                    <h2 class="text-2xl font-bold text-base-content mb-4">Available Step Templates</h2>
+                    <div class="space-y-3">
+                        {% for template in available_templates %}
+                        <div class="card card-compact bg-base-200 shadow">
+                            <div class="card-body">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-2xl">{{ template.icon }}</span>
+                                    <span class="font-semibold">{{ template.name }}</span>
+                                </div>
+                                <form
+                                    hx-post="{% url 'projects:add_step' project_id=project.pk %}"
+                                    hx-target="#projectStepsList"
+                                    hx-swap="beforeend"
+                                    class="flex gap-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="step_template_id" value="{{ template.id }}">
+                                    <input
+                                        type="text"
+                                        name="override_name"
+                                        class="input input-sm input-bordered flex-1"
+                                        placeholder="Custom name (optional)"
+                                        value="{{ template.name }}">
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        +
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="alert alert-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>No step templates available.</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {# RIGHT COLUMN: Current Project Steps #}
+                <div>
+                    <h2 class="text-2xl font-bold text-base-content mb-4">Project Steps</h2>
+                    <div class="space-y-3" id="projectStepsList">
+                        {% if project_steps %}
+                            {% for step in project_steps %}
+                                {% include 'projects/partials/step_card.html' %}
+                            {% endfor %}
+                        {% else %}
+                        <div class="alert" id="emptyState">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>No steps added yet. Select templates from the left to get started.</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-actions justify-end mt-8 pt-6 border-t border-base-300">
+                <a href="{% url 'projects:project_list' %}" class="btn btn-primary btn-lg gap-2">
+                    <span>✔</span>
+                    <span>Done</span>
+                </a>
+            </div>
+        </div>
+    </div>

@@ -6,31 +6,22 @@ from django.db import models
 from .models import Project, ProjectStep, ProjectTask
 from templates_management.models import StepTemplate
 
-
 class ProjectCreationForm(forms.ModelForm):
     """Form for creating and editing projects"""
-
     class Meta:
         model = Project
-        fields = ["name", "description", "status"]
+        fields = ["name", "status", "description"]
         widgets = {
             "name": forms.TextInput(
                 attrs={
-                    "class": "form-input",
                     "placeholder": "Enter project name (e.g., Dinner Party)",
                     "autofocus": True,
                 }
             ),
             "description": forms.Textarea(
                 attrs={
-                    "class": "form-textarea",
                     "placeholder": "Optional: Describe your project...",
                     "rows": 4,
-                }
-            ),
-            "status": forms.Select(
-                attrs={
-                    "class": "form-select",
                 }
             ),
         }
@@ -44,23 +35,18 @@ class ProjectCreationForm(forms.ModelForm):
             "description": "Add any notes or context about this project",
             "status": "Set the current status of your project",
         }
-
+    
     def clean_name(self):
         """Validate project name"""
         name = self.cleaned_data.get("name").strip()
-
         if not name:
             raise ValidationError("Project name is required")
-
         if len(name) < 3:
             raise ValidationError("Project name must be at least 3 characters")
-
-        # Check for duplicate names (case-insensitive)
         if not self.instance.pk:
             duplicated_name = Project.objects.filter(name__iexact=name)
             if duplicated_name.exists():
                 raise ValidationError("Project name already used")
-
         return name
 
 

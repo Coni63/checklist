@@ -318,10 +318,10 @@ class UpdateProjectTaskView(LoginRequiredMixin, View):
         row_html = render_to_string("projects/partials/task_row.html", {"task": project_task})
 
         # Handle OOB step update for other parts UI update
-        badge_html = render_to_string("projects/partials/step-status-badge.html", {
+        step_html = render_to_string("projects/partials/step_item.html", {
             "oob": True,
-            "status": step.get_status(),
-            "id": step.id
+            "project": step.project,
+            "step": step
         })
         progress_html = render_to_string(
             "projects/partials/step-progress-bar.html",
@@ -332,7 +332,7 @@ class UpdateProjectTaskView(LoginRequiredMixin, View):
             }
         )
 
-        return HttpResponse(row_html + badge_html + progress_html)
+        return HttpResponse(row_html + step_html + progress_html)
 
 
 class DeleteProjectTaskView(LoginRequiredMixin, View):
