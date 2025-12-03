@@ -2,7 +2,22 @@
 
 {% partialdef step_item %}
     {% with status=step.get_status %}
-        <div class="card card-compact bg-base-100 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4
+        {% if oob %} 
+            <div class="card card-compact bg-base-100 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4
+            {% if status == 'Not Started' %}border-error
+            {% elif status == 'In Progress' %}border-warning
+            {% elif status == 'Completed' %}border-success
+            {% else %}border-base-300{% endif %}
+            {% if step.id == active_step_id %}active-step{% endif %}"
+            hx-get="{% url 'projects:step_tasks' project_id=project.id step_id=step.id %}"
+            hx-target="#tasks-area-list"
+            hx-swap="innerHTML"
+            hx-push-url="true"
+            hx-swap-oob="true"
+            hx-on::before-request="document.querySelectorAll('#stepList .card').forEach(el => el.classList.remove('active-step')); this.classList.add('active-step')"
+            id="step-card-{{step.id}}">
+        {% else %}
+            <div class="card card-compact bg-base-100 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4
             {% if status == 'Not Started' %}border-error
             {% elif status == 'In Progress' %}border-warning
             {% elif status == 'Completed' %}border-success
@@ -14,6 +29,7 @@
             hx-push-url="true"
             hx-on::before-request="document.querySelectorAll('#stepList .card').forEach(el => el.classList.remove('active-step')); this.classList.add('active-step')"
             id="step-card-{{step.id}}">
+        {% endif %}
             <div class="card-body">
                 <div class="flex items-start justify-between gap-2">
                     <h3 class="font-semibold text-base-content">{{step.to_str}}</h3>
@@ -22,7 +38,7 @@
                         {% elif status == 'In Progress' %}badge-warning
                         {% elif status == 'Completed' %}badge-success
                         {% else %}badge-ghost{% endif %}"
-                        id="status-badge-{{ step.id }}">
+                        id="status-badge-{{ step.id }}" style="white-space: nowrap;">
                         {{ status }}
                     </div>
                 </div>

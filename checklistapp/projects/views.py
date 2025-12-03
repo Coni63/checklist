@@ -390,8 +390,10 @@ class UpdateProjectTaskView(LoginRequiredMixin, View):
         row_html = render_to_string("projects/partials/task_row.html", {"task": project_task})
 
         step_html = render_to_string("projects/partials/project_content.html#step_item", {
+            "oob": True,
             "project": step.project,
-            "step": step
+            "step": step,
+            "active_step_id": step.id,
         })
         progress_html = render_to_string(
             "projects/partials/tasks_page.html#progress_bar",
