@@ -1,9 +1,10 @@
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from .models import TaskComment, ProjectTask
 from django.template.loader import render_to_string
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+
+from .models import ProjectTask, TaskComment
 
 
 class TaskCommentListView(LoginRequiredMixin, ListView):
@@ -56,9 +57,7 @@ class TaskCommentUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         # Only allow editing own comments
-        return TaskComment.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
-        )
+        return TaskComment.objects.filter(user=self.request.user, deleted_at__isnull=True)
 
     def form_valid(self, form):
         self.object = form.save()
@@ -79,9 +78,7 @@ class TaskCommentDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_queryset(self):
         # Only allow deleting own comments
-        return TaskComment.objects.filter(
-            user=self.request.user, deleted_at__isnull=True
-        )
+        return TaskComment.objects.filter(user=self.request.user, deleted_at__isnull=True)
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()

@@ -8,12 +8,16 @@ urlpatterns = [
     # Project URLs
     path("", views.ProjectListView.as_view(), name="project_list"),
     path("create/", views.ProjectCreateView.as_view(), name="project_create"),
-    path("<int:pk>/edit/", views.ProjectEditView.as_view(), name="project_edit"),
+    path("<int:project_id>/edit/", views.ProjectEditView.as_view(), name="project_edit"),
     path("<int:project_id>/", views.ProjectDetailView.as_view(), name="project_detail"),
-    path("<int:pk>/delete/", views.ProjectDeleteView.as_view(), name="project_delete"),
+    path(
+        "<int:project_id>/delete/",
+        views.ProjectDeleteView.as_view(),
+        name="project_delete",
+    ),
     # Project Step URLs
     path(
-        "<int:project_id>/steps/create/",
+        "<int:project_id>/steps/add_step/",
         views.AddProjectStepView.as_view(),
         name="add_step",
     ),
@@ -29,19 +33,14 @@ urlpatterns = [
     ),
     # Project Task URLs
     path(
-        "<int:project_id>/steps/<int:step_id>/tasks/create/",
+        "<int:project_id>/steps/<int:step_id>/tasks/add_task/",
         views.AddProjectTaskView.as_view(),
         name="add_task",
     ),
     path(
-        "<int:project_id>/steps/<int:step_id>/tasks-form/",
-        views.NewTaskFormView.as_view(),
-        name="new_task_form",
-    ),
-    path(
-        "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/edit/",
+        "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/set_status/",
         views.UpdateProjectTaskView.as_view(),
-        name="update_task",
+        name="set_status",
     ),
     path(
         "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/delete/",
@@ -53,5 +52,10 @@ urlpatterns = [
         views.ReorderProjectStepsView.as_view(),
         name="reorder_steps",
     ),
-    path("<int:project_id>/steps/<int:step_id>/tasks-btn/", views.toggle_task_form, name="toggle_task_form")
+    # Helpers
+    path(
+        "<int:project_id>/steps/<int:step_id>/tasks-btn/",
+        views.toggle_task_form,
+        name="toggle_task_form",
+    ),
 ]

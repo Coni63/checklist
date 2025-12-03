@@ -35,21 +35,3 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 });
-
-/**
- * Add slideOut animation
- */
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);

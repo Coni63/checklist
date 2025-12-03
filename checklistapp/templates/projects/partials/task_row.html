@@ -1,3 +1,6 @@
+
+{# This page render the card of a single task on the project detail page #}
+
 <div class="card bg-base-100 shadow-md border-l-4
     {% if task.status == 'done' %}border-success
     {% elif task.status == 'na' %}border-warning
@@ -33,7 +36,7 @@
 
                 {% if task.status == 'done' %}
                     <button
-                        hx-post="{% url 'projects:update_task' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
+                        hx-post="{% url 'projects:set_status' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
                         hx-vals='{"status": "undone"}'
                         hx-target="closest .card"
                         hx-swap="outerHTML"
@@ -42,7 +45,7 @@
                     </button>
                 {% else %}
                     <button
-                        hx-post="{% url 'projects:update_task' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
+                        hx-post="{% url 'projects:set_status' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
                         hx-vals='{"status": "done"}'
                         hx-target="closest .card"
                         hx-swap="outerHTML"
@@ -53,7 +56,7 @@
 
                 {% if task.status == 'na' %}
                     <button
-                        hx-post="{% url 'projects:update_task' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
+                        hx-post="{% url 'projects:set_status' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
                         hx-vals='{"status": "unna"}'
                         hx-target="closest .card"
                         hx-swap="outerHTML"
@@ -62,7 +65,7 @@
                     </button>
                 {% else %}
                     <button
-                        hx-post="{% url 'projects:update_task' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
+                        hx-post="{% url 'projects:set_status' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
                         hx-vals='{"status": "na"}'
                         hx-target="closest .card"
                         hx-swap="outerHTML"

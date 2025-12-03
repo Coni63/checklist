@@ -11,6 +11,7 @@ Postgres DB
 V1
 Update your own comment
 Delete custom task
+Use ProjectService when possible
 
 V2
 Add description to step

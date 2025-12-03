@@ -15,7 +15,39 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
-    "django-debug-toolbar>=6.1.0",
-    "ruff>=0.14.6",
+dev = ["django-debug-toolbar>=6.1.0", "ruff>=0.14.6"]
+
+[tool.ruff]
+# Liste des codes d'erreur à activer (checkers)
+# E: pycodestyle (erreurs)
+# W: pycodestyle (avertissements)
+# F: Pyflakes (erreurs générales de code)
+# I: isort (reordering des imports)
+# N: pep8-naming (conventions de nommage)
+# UP: pyupgrade (améliorations suggérées)
+lint.select = ["E", "W", "F", "I", "N", "UP"]
+
+# Liste des codes d'erreur à ignorer (pour ne pas être trop strict au début)
+lint.ignore = [
+    "E501", # Ligne trop longue (souvent géré par les formateurs comme Black)
+    "N801", # Nom de classe ne respectant pas PascalCase
+    "N802", # Nom de fonction/méthode ne respectant pas snake_case
+    "N806", # Nom de variable non constant pour un attribut de classe
+    "N807", # Nom de variable non snake_case pour une déclaration with
 ]
+
+# Exclure des fichiers ou dossiers
+exclude = [".git", "__pycache__", "build", "dist", "venv"]
+
+# Définir la longueur de ligne (doit correspondre à celle de votre formateur, ex: Black)
+line-length = 128
+
+# Activer la correction automatique par défaut
+fix = true
+
+### Paramètres spécifiques pour isort (I) ###
+[tool.ruff.lint.isort]
+# Réordonner les imports pour qu'ils respectent le style 'pyproject' (équivalent à Black)
+# Par défaut, isort est déjà très bien intégré avec Ruff
+# Si vous utilisez Black, il n'y a généralement pas besoin d'options supplémentaires ici.
+known-first-party = ["mon_projet"] # Remplacez par le nom de votre package

@@ -116,9 +116,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "title",
-                    models.CharField(
-                        help_text="Custom title, overrides template", max_length=500
-                    ),
+                    models.CharField(help_text="Custom title, overrides template", max_length=500),
                 ),
                 ("info_url", models.URLField(blank=True, null=True)),
                 ("order", models.IntegerField()),
@@ -136,9 +134,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "comment",
-                    models.TextField(
-                        blank=True, help_text="Simple comment field (Phase 1)"
-                    ),
+                    models.TextField(blank=True, help_text="Simple comment field (Phase 1)"),
                 ),
                 ("completed_at", models.DateTimeField(blank=True, null=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),

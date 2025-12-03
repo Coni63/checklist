@@ -19,39 +19,23 @@ main {
    Custom utility classes (if needed)
    ============================================ */
 
-/* Add any custom utility classes that are specific to your app
-   and not available in Tailwind/DaisyUI */
+.active-step {
+    margin-left: 0.5rem;
+}
 
 /* ============================================
    Animation overrides or custom animations
    ============================================ */
 
-/* Example: Custom fade-in animation if needed */
-@keyframes fadeIn {
+/* Animation used to remove alerts */
+@keyframes slideOut {
     from {
-        opacity: 0;
-        transform: translateY(-10px);
+        transform: translateX(0);
+        opacity: 1;
     }
     to {
-        opacity: 1;
-        transform: translateY(0);
+        transform: translateX(100%);
+        opacity: 0;
     }
 }
 
-.fade-in {
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-/* ============================================
-   Print styles (optional)
-   ============================================ */
-@media print {
-    .no-print {
-        display: none !important;
-    }
-}
-
-
-.active-step {
-    margin-left: 0.5rem;
-}

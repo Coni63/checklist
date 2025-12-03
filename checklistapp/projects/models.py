@@ -1,8 +1,18 @@
-from django.utils import timezone
-from django.db import models
-
 from accounts.models import User
+from django.db import models
+from django.utils import timezone
 from templates_management.models import StepTemplate, TaskTemplate
+
+"""
+Entity relation model:
+
+Project 1---* ProjectStep 1---* ProjectTask
+
+A project contains multiple steps, and each step contains multiple tasks.
+A step is derived from a StepTemplate.
+Every StepTemplate contains multiple TaskTemplates.
+Every ProjectTask is derived from a TaskTemplate by cloning its data.
+"""
 
 
 class Project(models.Model):
@@ -25,31 +35,36 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
-    def get_completion_percentage(self):
+    def __repr__(self):
+        return f"Project(id={self.id}, name={self.name})"
+
+    def get_completion_percentage(self) -> str:
+        """Returns percentage of completed tasks as a string (e.g., '75%')"""
         completed_tasks, total_tasks = self._get_count_tasks()
         if total_tasks == 0:
             return "100%"
         return f"{(completed_tasks / total_tasks):.0%}"
-    
-    def _get_count_tasks(self):
+
+    def _get_count_tasks(self) -> tuple[int, int]:
+        """Returns a tuple (completed_tasks, total_tasks)"""
         total_tasks = ProjectTask.objects.filter(project_step__project=self).count()
         if total_tasks == 0:
             return 0, 0
-        completed_tasks = ProjectTask.objects.filter(
-            project_step__project=self, status__in=["done", "na"]
-        ).count()
+        completed_tasks = ProjectTask.objects.filter(project_step__project=self, status__in=["done", "na"]).count()
         return completed_tasks, total_tasks
-    
+
     def update_status(self):
+        """
+        Update project status based on task completion
+
+        This is used by signal handlers to automatically update
+        the project status when tasks are marked done or pending.
+        """
         if self.status not in ["active", "completed"]:
             return  # Do not update if archived
 
         completed_tasks, total_tasks = self._get_count_tasks()
-
-        if completed_tasks == total_tasks:
-            self.status = "completed"
-        else:
-            self.status = "active"
+        self.status = "completed" if completed_tasks == total_tasks else "active"
         self.save()
 
 
@@ -62,9 +77,7 @@ class ProjectStep(models.Model):
         blank=True,
         help_text="Template this step was created from",
     )
-    title = models.CharField(
-        max_length=200, help_text="Custom title, overrides template name"
-    )
+    title = models.CharField(max_length=200, help_text="Custom title, overrides template name")
     icon = models.CharField(max_length=10)
     order = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -75,15 +88,21 @@ class ProjectStep(models.Model):
         unique_together = ["project", "order"]
 
     def __str__(self):
-        return f"{self.project.name} - {self.title}"
+        return self.title
+
+    def __repr__(self):
+        return f"ProjectStep(id={self.id}, title={self.title})"
 
     def to_str(self):
         if self.icon:
             return f"{self.icon} {self.title}"
         return self.title
 
-    def get_status(self):
-        """Returns: 'not-started', 'in-progress', or 'completed'"""
+    def get_status(self) -> str:
+        """
+        Determine step status based on task completion
+        Returns one of: "Not Started", "In Progress", "Completed"
+        """
         total = self.tasks.count()
         if total == 0:
             return "Not Started"
@@ -95,7 +114,10 @@ class ProjectStep(models.Model):
         else:
             return "In Progress"
 
-    def get_progress_text(self):
+    def get_progress_text(self) -> str:
+        """
+        Returns progress text like "3 of 5 tasks" or "No tasks"
+        """
         total = self.tasks.count()
         if total == 0:
             return "No tasks"
@@ -106,25 +128,13 @@ class ProjectStep(models.Model):
         else:
             return f"{completed} of {total} task"
 
-    def get_percentage_complete(self):
+    def get_completion_percentage(self) -> str:
+        """Returns percentage of completed tasks as a string (e.g., '75%')"""
         total = self.tasks.count()
         if total == 0:
             return 0
         completed = self.tasks.filter(status__in=["done", "na"]).count()
         return f"{(completed / total):.0%}"
-
-    def get_badge_text(self):
-        total = self.tasks.count()
-        if total == 0:
-            return "Completed"
-        
-        completed = self.tasks.filter(status__in=["done", "na"]).count()
-        if completed == 0:
-            return "Not Started"
-        elif completed == total:
-            return "Completed"
-        else:
-            return "In progress"
 
 
 class ProjectTask(models.Model):
@@ -134,9 +144,7 @@ class ProjectTask(models.Model):
         ("na", "N/A"),
     ]
 
-    project_step = models.ForeignKey(
-        ProjectStep, on_delete=models.CASCADE, related_name="tasks"
-    )
+    project_step = models.ForeignKey(ProjectStep, on_delete=models.CASCADE, related_name="tasks")
     task_template = models.ForeignKey(
         TaskTemplate,
         on_delete=models.SET_NULL,
@@ -144,9 +152,7 @@ class ProjectTask(models.Model):
         blank=True,
         help_text="Template this task was created from",
     )
-    title = models.CharField(
-        max_length=500, help_text="Custom title, overrides template"
-    )
+    title = models.CharField(max_length=500, help_text="Custom title, overrides template")
     info_url = models.URLField(blank=True, null=True)
     order = models.IntegerField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
@@ -155,7 +161,8 @@ class ProjectTask(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     manually_created = models.BooleanField(
-        default=False, help_text="Indicates if the task was created manually or from a template"
+        default=False,
+        help_text="Indicates if the task was created manually or from a template",
     )
 
     class Meta:
@@ -179,14 +186,3 @@ class ProjectTask(models.Model):
         self.status = "pending"
         self.completed_at = None
         self.save()
-
-    def get_classname(self):
-        if self.status == "done":
-            return "completed"
-        elif self.status == "na":
-            return "na-status"
-        else:
-            return "pending"
-
-    def has_comment(self):
-        return bool(self.comment.strip())

@@ -1,5 +1,7 @@
 {% load partials %}
 
+{# This page render the project edit page in which you can either edit the project or the attached steps #}
+
 {% partialdef counter_step %}
     <div class="badge badge-primary badge-lg" id="counter-step" hx-swap-oob="true">{{ count }} step{{ count|pluralize }}</div>
 {% endpartialdef %}

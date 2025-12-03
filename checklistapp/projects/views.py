@@ -1,22 +1,32 @@
-from django.views.generic import ListView, CreateView, DetailView, DeleteView, UpdateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
 from django.contrib import messages
-
-from templates_management.models import StepTemplate
-from .models import Project, ProjectStep, ProjectTask
-from .forms import ProjectCreationForm
-from core.mixins import UserOwnedMixin
-from django.shortcuts import get_object_or_404
-from django.views import View
-from django.shortcuts import render, redirect
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import models, transaction
+from django.db.models import Count, Max
 from django.http import HttpResponse
-from django.db import models
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-from django.db import transaction
-from django.db.models import Max, Count
+from django.urls import reverse_lazy
+from django.views import View
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
+from django_htmx.http import reswap
+from templates_management.models import StepTemplate
+
+from .forms import ProjectCreationForm
+from .models import Project, ProjectStep, ProjectTask
+
 
 class ProjectListView(LoginRequiredMixin, ListView):
+    """
+    View to list all projects for the logged-in user,
+    with optional filtering by status.
+    """
+
     model = Project
     template_name = "projects/project_list.html"
     context_object_name = "projects"
@@ -30,25 +40,26 @@ class ProjectListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["status"] = self.request.GET.get(
-            "status", "active"
-        )  # Valeur par défaut si non précisé
+        context["status"] = self.request.GET.get("status", "active")  # Valeur par défaut si non précisé
         return context
 
 
 class ProjectCreateView(LoginRequiredMixin, CreateView):
+    """
+    View to create a new project. Returns a page and a form.
+    ️On success, redirects to the project edit page.
+    """
+
     model = Project
     form_class = ProjectCreationForm
     template_name = "projects/project_create.html"
 
     def get_success_url(self):
-        return reverse_lazy("projects:project_edit", kwargs={"pk": self.object.pk})
+        return reverse_lazy("projects:project_edit", kwargs={"project_id": self.object.pk})
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
-        messages.success(
-            self.request, f'Project "{form.instance.name}" created successfully!'
-        )
+        messages.success(self.request, f'Project "{form.instance.name}" created successfully!')
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -57,18 +68,23 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
 
 
 class ProjectEditView(LoginRequiredMixin, UpdateView):
+    """
+    View to edit an existing project, including its steps and tasks.
+    It reuses the ProjectCreationForm for project info.
+    Returns a page with the project form and step/task management.
+    """
+
     model = Project
     form_class = ProjectCreationForm
     template_name = "projects/project_edit.html"
     context_object_name = "project"
+    pk_url_kwarg = "project_id"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         # Get all available step templates
-        context["available_templates"] = StepTemplate.objects.filter(
-            is_active=True
-        ).order_by("default_order")
+        context["available_templates"] = StepTemplate.objects.filter(is_active=True).order_by("default_order")
 
         # Get current project steps
         context["project_steps"] = (
@@ -79,13 +95,19 @@ class ProjectEditView(LoginRequiredMixin, UpdateView):
         )
 
         return context
-    
+
     def get_success_url(self):
-        return reverse_lazy("projects:project_edit", kwargs={"pk": self.object.pk})
+        messages.success(self.request, f'Project "{self.object.name}" updated successfully!')
+        return reverse_lazy("projects:project_edit", kwargs={"project_id": self.object.pk})
 
 
 class AddProjectStepView(LoginRequiredMixin, View):
-    """Handle adding a step to a project via HTMX"""
+    """
+    View to handle adding a new step to a project via HTMX.
+    Expects POST data with 'step_template_id' and optional 'override_name'.
+    Returns HTML fragment for the new step card that will be inserted via HTMX.
+    If it's the first step, also returns the empty state replacement.
+    """
 
     def post(self, request, project_id):
         project = get_object_or_404(Project, pk=project_id)
@@ -93,15 +115,10 @@ class AddProjectStepView(LoginRequiredMixin, View):
         override_name = request.POST.get("override_name", "").strip()
 
         try:
-            step_template = get_object_or_404(
-                StepTemplate, id=step_template_id, is_active=True
-            )
+            step_template = get_object_or_404(StepTemplate, id=step_template_id, is_active=True)
 
-            # Determine step order
-            result = ProjectStep.objects.filter(project=project).aggregate(
-                max_order=Max("order"),
-                total=Count("id")
-            )
+            # Determine step order and count
+            result = ProjectStep.objects.filter(project=project).aggregate(max_order=Max("order"), total=Count("id"))
 
             current_max_order = result["max_order"] or 0
             count_step = result["total"]
@@ -119,9 +136,7 @@ class AddProjectStepView(LoginRequiredMixin, View):
             )
 
             # Create tasks from template
-            task_templates = step_template.tasks.filter(is_active=True).order_by(
-                "order"
-            )
+            task_templates = step_template.tasks.filter(is_active=True).order_by("order")
             for j, task_template in enumerate(task_templates, start=1):
                 ProjectTask.objects.create(
                     project_step=project_step,
@@ -130,14 +145,23 @@ class AddProjectStepView(LoginRequiredMixin, View):
                     info_url=getattr(task_template, "info_url", ""),
                     order=j,
                 )
+            messages.success(request, "Step added successfully.")
 
-            step_counter = render_to_string("projects/partials/project_step_form.html#counter_step", {
-                "count": count_step + 1,
-            })
+            # Compute new step counter HTML that will be updated OOB
+            step_counter = render_to_string(
+                "projects/partials/project_step_form.html#counter_step",
+                {
+                    "count": count_step + 1,
+                },
+            )
 
+            # If it's the first step, change the hx-swap to replace the empty state div
             if current_max_order == 0:
-                from django_htmx.http import reswap
-                step_content = render_to_string("projects/partials/project_step_form.html#step_row", {"step": project_step, "project": project}, request=request)
+                step_content = render_to_string(
+                    "projects/partials/project_step_form.html#step_row",
+                    {"step": project_step, "project": project},
+                    request=request,
+                )
                 response = HttpResponse(step_counter + step_content)
                 return reswap(response, "innerHTML")
 
@@ -150,14 +174,16 @@ class AddProjectStepView(LoginRequiredMixin, View):
             return HttpResponse(step_counter + step_content)
 
         except Exception as e:
-            return HttpResponse(
-                f'<div class="error-message">Error: {str(e)}</div>', status=400
-            )
+            messages.error(request, "Something went wrong when adding the step to the project.")
+            # TODO: return proper HTMX error response
+            return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
 
 
 class ReorderProjectStepsView(LoginRequiredMixin, View):
-    """Handle reordering steps within a project via HTMX"""
-
+    """
+    Handle reordering of project steps via HTMX.
+    Expects POST data with 'step_order' as a list of step IDs in the new order.
+    """
 
     def post(self, request, project_id):
         project = get_object_or_404(Project, pk=project_id)
@@ -167,9 +193,7 @@ class ReorderProjectStepsView(LoginRequiredMixin, View):
 
         with transaction.atomic():
             # Fetch all steps in one query
-            steps = ProjectStep.objects.filter(
-                project=project, pk__in=step_order
-            ).in_bulk(field_name="pk")
+            steps = ProjectStep.objects.filter(project=project, pk__in=step_order).in_bulk(field_name="pk")
 
             # Phase 1 : temporary order to avoid unique collision
             for tmp_idx, step in enumerate(steps.values(), start=10000):
@@ -184,7 +208,7 @@ class ReorderProjectStepsView(LoginRequiredMixin, View):
             ProjectStep.objects.bulk_update(steps.values(), ["order"])
 
         return HttpResponse("")
-    
+
 
 class RemoveProjectStepView(LoginRequiredMixin, View):
     """Handle removing a step from a project via HTMX"""
@@ -199,10 +223,15 @@ class RemoveProjectStepView(LoginRequiredMixin, View):
             # Check if there are any steps left
             remaining_steps = ProjectStep.objects.filter(project=project).count()
 
-            step_counter = render_to_string("projects/partials/project_step_form.html#counter_step", {
-                "count": remaining_steps,
-            })
+            # Compute new step counter HTML that will be updated OOB
+            step_counter = render_to_string(
+                "projects/partials/project_step_form.html#counter_step",
+                {
+                    "count": remaining_steps,
+                },
+            )
 
+            messages.success(request, "Step deleted successfully.")
             if not remaining_steps:
                 # Return empty state HTML
                 empty_html = render_to_string("projects/partials/project_step_form.html#step_empty")
@@ -212,18 +241,22 @@ class RemoveProjectStepView(LoginRequiredMixin, View):
                 return HttpResponse(step_counter)
 
         except Exception as e:
-            return HttpResponse(
-                f'<div class="error-message">Error: {str(e)}</div>', status=400
-            )
+            messages.error(request, "Something went wrong when deleting the step from the project.")
+            # TODO: return proper HTMX error response
+            return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
 
 
 class ProjectDetailView(LoginRequiredMixin, DetailView):
+    """
+    View to display project details, including steps and tasks.
+    Supports HTMX requests to load tasks for a specific step.
+    """
+
     model = Project
     template_name = "projects/project_detail.html"
     context_object_name = "project"
     pk_url_kwarg = "project_id"
 
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["steps"] = self.object.steps.prefetch_related("tasks")
@@ -231,38 +264,35 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         context["project_id"] = self.kwargs.get("project_id")
         context["step_id"] = self.kwargs.get("step_id")
 
-        print(self.kwargs)
-        
         # Si un step_id est dans l'URL, on charge ce step
-        step_id = self.kwargs.get('step_id')
+        step_id = self.kwargs.get("step_id")
         if step_id:
             step = get_object_or_404(
                 ProjectStep.objects.prefetch_related("tasks"),
                 id=step_id,
-                project=self.object
+                project=self.object,
             )
-            context['active_step'] = step
-            context['active_step_id'] = step_id
-            context['tasks'] = step.tasks.all()
-        
+            context["active_step"] = step
+            context["active_step_id"] = step_id
+            context["tasks"] = step.tasks.all()
+
         return context
-    
+
     def render_to_response(self, context, **response_kwargs):
         # Si c'est une requête HTMX, retourne seulement le partial des tâches
-        if self.request.headers.get('HX-Request'):
-            return render(
-                self.request, 
-                'projects/partials/tasks_page.html', 
-                context
-            )
-        
+        if self.request.headers.get("HX-Request"):
+            return render(self.request, "projects/partials/tasks_page.html", context)
+
         # Sinon retourne la page complète
         return super().render_to_response(context, **response_kwargs)
 
 
 class ProjectDeleteView(LoginRequiredMixin, DeleteView):
+    """View to delete a project."""
+
     model = Project
     success_url = reverse_lazy("projects:project_list")
+    pk_url_kwarg = "project_id"
 
     def delete(self, request, *args, **kwargs):
         """Override delete to add success/error messages."""
@@ -288,30 +318,18 @@ class AddProjectTaskView(LoginRequiredMixin, View):
     # TODO: adjust & test when developped
 
     def post(self, request, project_id, step_id):
-        print("AddProjectTaskView POST called")
-        print("POST data:", request.POST)
-        print("project_id:", project_id, "step_id:", step_id)
-
-        print(ProjectStep.objects.filter(id=step_id).exists())
-
-        project_step = get_object_or_404(
-            ProjectStep, id=step_id
-        )
+        project_step = get_object_or_404(ProjectStep, id=step_id)
         title = request.POST.get("title", "").strip()
-        print("Task title:", title)
+
         if not title:
-            return HttpResponse(
-                '<div class="error-message">Error: Task title cannot be empty.</div>',
-                status=400,
-            )
+            messages.error(request, "Task title cannot be empty.")
+            # TODO: return proper HTMX error response
+            return HttpResponse("", status=400)
 
         try:
             # Determine task order
             current_max_order = (
-                ProjectTask.objects.filter(project_step=project_step).aggregate(
-                    models.Max("order")
-                )["order__max"]
-                or 0
+                ProjectTask.objects.filter(project_step=project_step).aggregate(models.Max("order"))["order__max"] or 0
             )
 
             # Create the project task
@@ -322,6 +340,7 @@ class AddProjectTaskView(LoginRequiredMixin, View):
                 order=current_max_order + 1,
                 manually_created=True,
             )
+            messages.success(request, "Task added successfully.")
 
             # Return HTML fragment for the new task row
             return render(
@@ -331,20 +350,10 @@ class AddProjectTaskView(LoginRequiredMixin, View):
             )
 
         except Exception as e:
-            return HttpResponse(
-                f'<div class="error-message">Error: {str(e)}</div>', status=400
-            )
+            messages.error(request, "Something went wrong when adding the task to the step.")
+            # TODO: return proper HTMX error response
+            return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
 
-
-class NewTaskFormView(LoginRequiredMixin, View):
-    """Render a blank form for adding a new task via HTMX"""
-
-    def get(self, request, project_id, step_id):
-        return render(
-            request,
-            "projects/partials/new_task_form.html",
-            {"project_id": project_id, "step_id": step_id},
-        )
 
 class UpdateProjectTaskView(LoginRequiredMixin, View):
     """Handle updating a task's status via HTMX"""
@@ -355,9 +364,7 @@ class UpdateProjectTaskView(LoginRequiredMixin, View):
             project_step__id=step_id,
             project_step__project__id=project_id,
         )
-        step = ProjectStep.objects.get(
-            id=step_id, project__id=project_id
-        )
+        step = ProjectStep.objects.get(id=step_id, project__id=project_id)
 
         if project_task is None:
             messages.error(request, "Task not found.")
@@ -389,19 +396,22 @@ class UpdateProjectTaskView(LoginRequiredMixin, View):
 
         row_html = render_to_string("projects/partials/task_row.html", {"task": project_task})
 
-        step_html = render_to_string("projects/partials/project_content.html#step_item", {
-            "oob": True,
-            "project": step.project,
-            "step": step,
-            "active_step_id": step.id,
-        })
+        step_html = render_to_string(
+            "projects/partials/project_content.html#step_item",
+            {
+                "oob": True,
+                "project": step.project,
+                "step": step,
+                "active_step_id": step.id,
+            },
+        )
         progress_html = render_to_string(
             "projects/partials/tasks_page.html#progress_bar",
             {
                 "oob": True,
-                "completion": step.get_percentage_complete(),
+                "completion": step.get_completion_percentage(),
                 "text": step.get_progress_text(),
-            }
+            },
         )
 
         return HttpResponse(row_html + step_html + progress_html)
@@ -426,20 +436,20 @@ class DeleteProjectTaskView(LoginRequiredMixin, View):
             return HttpResponse("")
 
         except Exception as e:
-            return HttpResponse(
-                f'<div class="error-message">Error: {str(e)}</div>', status=400
-            )
+            messages.error(request, "Something went wrong when deleting the task from the step.")
+            # TODO: return proper HTMX error response
+            return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
 
 
 def toggle_task_form(request, project_id, step_id):
-    show_form = request.GET.get('show_form', '') == '1'
-    
+    """
+    Toggle visibility of the new task form via HTMX.
+    Used in the project detail view.
+    """
+    show_form = request.GET.get("show_form", "") == "1"
+
     return render(
         request,
-        'projects/partials/tasks_page.html#new_task_toggle',
-        {
-            'project_id': project_id,
-            'step_id': step_id,
-            'show_form': show_form
-        }
+        "projects/partials/tasks_page.html#new_task_toggle",
+        {"project_id": project_id, "step_id": step_id, "show_form": show_form},
     )

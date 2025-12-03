@@ -1,18 +1,14 @@
+from accounts.models import User
 from django.db import models
 from django.utils import timezone
-from accounts.models import User
 from projects.models import ProjectTask
 
 
 class TaskComment(models.Model):
-    project_task = models.ForeignKey(
-        ProjectTask, on_delete=models.CASCADE, related_name="comments"
-    )
+    project_task = models.ForeignKey(ProjectTask, on_delete=models.CASCADE, related_name="comments")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     comment_text = models.TextField()
-    parent_comment = models.ForeignKey(
-        "self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies"
-    )
+    parent_comment = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True)

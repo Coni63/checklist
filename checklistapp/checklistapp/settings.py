@@ -11,8 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     "tailwind",
     "theme",
     "crispy_forms",
@@ -47,7 +46,6 @@ INSTALLED_APPS = [
     "widget_tweaks",
     "django_htmx",
     "template_partials",
-
     "accounts",
     "checklists",
     "projects",
@@ -155,7 +153,7 @@ TESTING = "test" in sys.argv or "PYTEST_VERSION" in os.environ
 if DEBUG and not TESTING:
     # Add django_browser_reload only in DEBUG mode
     INSTALLED_APPS += [
-        "django_browser_reload", 
+        "django_browser_reload",
         "debug_toolbar",
     ]
 
@@ -169,4 +167,4 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-LOGIN_URL = '/'
+LOGIN_URL = "/"

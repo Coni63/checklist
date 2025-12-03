@@ -1,5 +1,7 @@
 {% load partials %}
 
+{# This page render the project details with steps and the tasks if a step is selected #}
+
 {% partialdef step_item %}
     {% with status=step.get_status %}
         {% if oob %} 

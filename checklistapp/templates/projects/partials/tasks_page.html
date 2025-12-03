@@ -1,5 +1,7 @@
 {% load partials %}
 
+{# This page render the list of tasks as well as the progress-bar of the current step #}
+
 {% partialdef new_task_toggle %}
     {% if show_form %}
         <form 
@@ -66,7 +68,7 @@
     {# TODO: add maybe a description to a step #}
 </div>
 
-{% with completion=active_step.get_percentage_complete text=active_step.get_progress_text oob=false %}
+{% with completion=active_step.get_completion_percentage text=active_step.get_progress_text oob=false %}
     {% partial progress_bar %}
 {% endwith %}
 

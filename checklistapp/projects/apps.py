@@ -6,4 +6,5 @@ class ProjectsConfig(AppConfig):
     name = "projects"
 
     def ready(self):
-        import projects.signals
+        # Import signal handlers to trigger update of project status
+        import projects.signals  # noqa

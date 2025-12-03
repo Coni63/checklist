@@ -20,9 +20,7 @@ class StepTemplate(models.Model):
 
 
 class TaskTemplate(models.Model):
-    step_template = models.ForeignKey(
-        StepTemplate, on_delete=models.CASCADE, related_name="tasks"
-    )
+    step_template = models.ForeignKey(StepTemplate, on_delete=models.CASCADE, related_name="tasks")
     title = models.CharField(max_length=500)
     info_url = models.URLField(blank=True, null=True)
     order = models.IntegerField(default=0)
