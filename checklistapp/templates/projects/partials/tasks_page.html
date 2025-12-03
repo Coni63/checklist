@@ -1,9 +1,75 @@
+{% load partials %}
+
+{% partialdef new_task_toggle %}
+    {% if show_form %}
+        <form 
+            hx-post="{% url 'projects:add_task' project_id=project_id step_id=step_id %}" 
+            hx-target="#task-list"
+            hx-swap="beforeend"
+            class="space-y-2 p-4 border rounded-lg bg-base-200"
+        >
+            {% csrf_token %}
+            <div>
+                <label class="label">Title</label>
+                <input 
+                    type="text" 
+                    name="title" 
+                    class="input input-bordered w-full" 
+                    required
+                    autofocus
+                />
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-primary" type="submit">Create</button>
+                <button 
+                    class="btn" 
+                    type="button"
+                    hx-get="{% url 'projects:toggle_task_form' step_id=step_id project_id=project_id %}"
+                    hx-target="#new-task-form-container"
+                    hx-swap="innerHTML"
+                >
+                    Cancel
+                </button>
+            </div>
+        </form>
+    {% else %}
+        <button 
+            class="btn btn-primary"
+            hx-get="{% url 'projects:toggle_task_form' step_id=step_id project_id=project_id %}?show_form=1"
+            hx-target="#new-task-form-container"
+            hx-swap="innerHTML"
+        >
+            + Add Task
+        </button>
+    {% endif %}
+{% endpartialdef %}
+
+{% partialdef progress_bar %}
+    {% if oob %}
+        <div class="mb-6" id="tasks-area-progress" hx-swap-oob="true" hx-swap="outerHTML">
+    {% else %}
+        <div class="mb-6" id="tasks-area-progress">
+    {% endif %}
+        <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-medium text-base-content">Progress</span>
+            <span class="text-sm font-semibold text-base-content">{{ text }}</span>
+        </div>
+        <progress class="progress progress-primary w-full" value="{{ completion|cut:'%' }}" max="100"></progress>
+        <div class="text-xs text-base-content/70 mt-1">{{ completion }} complete</div>
+    </div>
+{% endpartialdef %}
+
+
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-base-content mb-2" id="contentTitle">{{ step.to_str }}</h1>
     <p class="text-base-content/70" id="contentSubtitle"></p>
     {# TODO: add maybe a description to a step #}
 </div>
-{% include 'projects/partials/step-progress-bar.html' with completion=step.get_percentage_complete text=step.get_progress_text %}
+
+{% with completion=step.get_percentage_complete text=step.get_progress_text oob=false %}
+    {% partial progress_bar %}
+{% endwith %}
+
 <div class="space-y-2 mt-6" id="task-list">
     {% for task in step.tasks.all %}
         {% include 'projects/partials/task_row.html' with task=task index=forloop.counter %}
@@ -12,12 +78,7 @@
 
 <!-- BUTTON TO SHOW FORM -->
 <div class="mt-4"  id="new-task-form-container">
-    <button 
-        class="btn btn-primary"
-        hx-get="{% url 'projects:new_task_form' step.project.id step.id %}" 
-        hx-target="#new-task-form-container"
-        hx-swap="innerHTML"
-    >
-        + Add Task
-    </button>
+    {% with project_id=step.project.id step_id=step.id %}
+        {% partial new_task_toggle %}
+    {% endwith %}
 </div>

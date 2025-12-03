@@ -131,19 +131,19 @@ class AddProjectStepView(LoginRequiredMixin, View):
                     order=j,
                 )
 
-            step_counter = render_to_string("projects/partials/step_counter.html", {
+            step_counter = render_to_string("projects/partials/project_step_form.html#counter_step", {
                 "count": count_step + 1,
             })
 
             if current_max_order == 0:
                 from django_htmx.http import reswap
-                step_content = render_to_string("projects/partials/project_step_row.html", {"step": project_step, "project": project}, request=request)
+                step_content = render_to_string("projects/partials/project_step_form.html#step_row", {"step": project_step, "project": project}, request=request)
                 response = HttpResponse(step_counter + step_content)
                 return reswap(response, "innerHTML")
 
             # Return HTML fragment for the new step card
             step_content = render_to_string(
-                "projects/partials/project_step_row.html",
+                "projects/partials/project_step_form.html#step_row",
                 {"step": project_step, "project": project},
                 request=request,
             )
@@ -219,21 +219,14 @@ class RemoveProjectStepView(LoginRequiredMixin, View):
             # Check if there are any steps left
             remaining_steps = ProjectStep.objects.filter(project=project).count()
 
-            step_counter = render_to_string("projects/partials/step_counter.html", {
+            step_counter = render_to_string("projects/partials/project_step_form.html#counter_step", {
                 "count": remaining_steps,
             })
 
             if not remaining_steps:
                 # Return empty state HTML
-                return HttpResponse(step_counter + """
-                    <div class="flex flex-col items-center justify-center py-16 text-center" id="emptyState">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-base-content/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <p class="text-base-content/60 text-lg font-medium">No steps added yet</p>
-                        <p class="text-base-content/40 text-sm mt-2">Select templates from the left panel to build your project</p>
-                    </div>
-                """)
+                empty_html = render_to_string("projects/partials/project_step_form.html#step_empty")
+                return HttpResponse(step_counter + empty_html)
             else:
                 # Return empty response (card will be removed by HTMX)
                 return HttpResponse(step_counter)
@@ -382,17 +375,15 @@ class UpdateProjectTaskView(LoginRequiredMixin, View):
                 project_task.mark_na()
         except Exception as e:
             messages.error(request, str(e))
-        
+
         row_html = render_to_string("projects/partials/task_row.html", {"task": project_task})
 
-        # Handle OOB step update for other parts UI update
-        step_html = render_to_string("projects/partials/step_item.html", {
-            "oob": True,
+        step_html = render_to_string("projects/partials/project_content.html#step_item", {
             "project": step.project,
             "step": step
         })
         progress_html = render_to_string(
-            "projects/partials/step-progress-bar.html",
+            "projects/partials/tasks_page.html#progress_bar",
             {
                 "oob": True,
                 "completion": step.get_percentage_complete(),
@@ -427,18 +418,15 @@ class DeleteProjectTaskView(LoginRequiredMixin, View):
             )
 
 
-from django.http import HttpResponse
-from django.urls import reverse
-
-def new_task_button(request, project_id, step_id):
-    url = reverse('projects:new_task_form', args=[project_id, step_id])
-    return HttpResponse(f'''
-        <button 
-            class="btn btn-primary"
-            hx-get="{url}"
-            hx-target="#new-task-form-container"
-            hx-swap="innerHTML"
-        >
-            + Add Task
-        </button>
-    ''')
+def toggle_task_form(request, project_id, step_id):
+    show_form = request.GET.get('show_form', '') == '1'
+    
+    return render(
+        request,
+        'projects/partials/tasks_page.html#new_task_toggle',
+        {
+            'project_id': project_id,
+            'step_id': step_id,
+            'show_form': show_form
+        }
+    )

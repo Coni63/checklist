@@ -161,6 +161,7 @@ dependencies = [
     { name = "django-htmx" },
     { name = "django-tailwind", version = "4.2.0", source = { registry = "https://pypi.org/simple" }, extra = ["reload"], marker = "python_full_version < '3.11'" },
     { name = "django-tailwind", version = "4.4.1", source = { registry = "https://pypi.org/simple" }, extra = ["cookiecutter", "honcho", "reload"], marker = "python_full_version >= '3.11'" },
+    { name = "django-template-partials" },
     { name = "django-widget-tweaks" },
 ]
 
@@ -177,6 +178,7 @@ requires-dist = [
     { name = "django", specifier = ">=5.2.8" },
     { name = "django-htmx", specifier = ">=1.27.0" },
     { name = "django-tailwind", extras = ["cookiecutter", "honcho", "reload"], specifier = ">=4.2.0" },
+    { name = "django-template-partials", specifier = ">=25.3" },
     { name = "django-widget-tweaks", specifier = ">=1.5.0" },
 ]
 
@@ -349,6 +351,18 @@ honcho = [
 ]
 reload = [
     { name = "django-browser-reload", marker = "python_full_version >= '3.11'" },
+]
+
+[[package]]
+name = "django-template-partials"
+version = "25.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b0/2e/957ee4a6ee0a7d46a18676ba8b01d762ef89d00b7769cc532853f9f989e1/django_template_partials-25.3.tar.gz", hash = "sha256:6d11f7bb049ce3032e6fe3331137b771e34239ce1af18c55ef6a9b667cf2ef36", size = 18052, upload-time = "2025-11-14T08:27:21.917Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9b/9d/48f8721e48b938ca2e2dde577986624543be6ff9bdccac20ccb747be4287/django_template_partials-25.3-py2.py3-none-any.whl", hash = "sha256:a19334934cf40e4e1218802a4ddfdf22b8f78cc5a0b8c75a18b97e6ea4f3c108", size = 9702, upload-time = "2025-11-14T08:27:20.243Z" },
 ]
 
 [[package]]

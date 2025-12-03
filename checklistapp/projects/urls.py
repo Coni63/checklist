@@ -53,5 +53,5 @@ urlpatterns = [
         views.ReorderProjectStepsView.as_view(),
         name="reorder_steps",
     ),
-    path("<int:project_id>/steps/<int:step_id>/tasks-btn/", views.new_task_button, name="new_task_button")
+    path("<int:project_id>/steps/<int:step_id>/tasks-btn/", views.toggle_task_form, name="toggle_task_form")
 ]
