@@ -154,6 +154,9 @@ class ProjectTask(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    manually_created = models.BooleanField(
+        default=False, help_text="Indicates if the task was created manually or from a template"
+    )
 
     class Meta:
         ordering = ["order"]

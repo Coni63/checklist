@@ -264,12 +264,17 @@ class AddProjectTaskView(LoginRequiredMixin, View):
     # TODO: adjust & test when developped
 
     def post(self, request, project_id, step_id):
+        print("AddProjectTaskView POST called")
+        print("POST data:", request.POST)
+        print("project_id:", project_id, "step_id:", step_id)
+
+        print(ProjectStep.objects.filter(id=step_id).exists())
+
         project_step = get_object_or_404(
-            ProjectStep, id=step_id, project__id=project_id
+            ProjectStep, id=step_id
         )
         title = request.POST.get("title", "").strip()
-        info_url = request.POST.get("info_url", "").strip()
-
+        print("Task title:", title)
         if not title:
             return HttpResponse(
                 '<div class="error-message">Error: Task title cannot be empty.</div>',
@@ -289,8 +294,9 @@ class AddProjectTaskView(LoginRequiredMixin, View):
             project_task = ProjectTask.objects.create(
                 project_step=project_step,
                 title=title,
-                info_url=info_url,
+                info_url=None,
                 order=current_max_order + 1,
+                manually_created=True,
             )
 
             # Return HTML fragment for the new task row
@@ -305,6 +311,16 @@ class AddProjectTaskView(LoginRequiredMixin, View):
                 f'<div class="error-message">Error: {str(e)}</div>', status=400
             )
 
+
+class NewTaskFormView(LoginRequiredMixin, View):
+    """Render a blank form for adding a new task via HTMX"""
+
+    def get(self, request, project_id, step_id):
+        return render(
+            request,
+            "projects/partials/new_task_form.html",
+            {"project_id": project_id, "step_id": step_id},
+        )
 
 class UpdateProjectTaskView(LoginRequiredMixin, View):
     """Handle updating a task's status via HTMX"""
@@ -389,3 +405,20 @@ class DeleteProjectTaskView(LoginRequiredMixin, View):
             return HttpResponse(
                 f'<div class="error-message">Error: {str(e)}</div>', status=400
             )
+
+
+from django.http import HttpResponse
+from django.urls import reverse
+
+def new_task_button(request, project_id, step_id):
+    url = reverse('projects:new_task_form', args=[project_id, step_id])
+    return HttpResponse(f'''
+        <button 
+            class="btn btn-primary"
+            hx-get="{url}"
+            hx-target="#new-task-form-container"
+            hx-swap="innerHTML"
+        >
+            + Add Task
+        </button>
+    ''')

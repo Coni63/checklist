@@ -34,6 +34,11 @@ urlpatterns = [
         name="add_task",
     ),
     path(
+        "<int:project_id>/steps/<int:step_id>/tasks-form/",
+        views.NewTaskFormView.as_view(),
+        name="new_task_form",
+    ),
+    path(
         "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/edit/",
         views.UpdateProjectTaskView.as_view(),
         name="update_task",
@@ -48,4 +53,5 @@ urlpatterns = [
         views.ReorderProjectStepsView.as_view(),
         name="reorder_steps",
     ),
+    path("<int:project_id>/steps/<int:step_id>/tasks-btn/", views.new_task_button, name="new_task_button")
 ]

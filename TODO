@@ -11,7 +11,6 @@ Postgres DB
 
 V1
 Update your own comment
-Add task in a step (custom)
 Delete custom task
 Remove empty project step when addind step (due to htmx)
 

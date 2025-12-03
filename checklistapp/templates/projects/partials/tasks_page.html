@@ -3,11 +3,21 @@
     <p class="text-base-content/70" id="contentSubtitle"></p>
     {# TODO: add maybe a description to a step #}
 </div>
-
 {% include 'projects/partials/step-progress-bar.html' with completion=step.get_percentage_complete text=step.get_progress_text %}
-
-<div class="space-y-2 mt-6">
+<div class="space-y-2 mt-6" id="task-list">
     {% for task in step.tasks.all %}
         {% include 'projects/partials/task_row.html' with task=task index=forloop.counter %}
     {% endfor %}
+</div>
+
+<!-- BUTTON TO SHOW FORM -->
+<div class="mt-4"  id="new-task-form-container">
+    <button 
+        class="btn btn-primary"
+        hx-get="{% url 'projects:new_task_form' step.project.id step.id %}" 
+        hx-target="#new-task-form-container"
+        hx-swap="innerHTML"
+    >
+        + Add Task
+    </button>
 </div>
