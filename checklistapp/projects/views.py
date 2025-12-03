@@ -14,7 +14,7 @@ from django.http import HttpResponse
 from django.db import models
 from django.template.loader import render_to_string
 from django.db import transaction
-
+from django.db.models import Max, Count
 
 class ProjectListView(LoginRequiredMixin, ListView):
     model = Project
@@ -98,12 +98,13 @@ class AddProjectStepView(LoginRequiredMixin, View):
             )
 
             # Determine step order
-            current_max_order = (
-                ProjectStep.objects.filter(project=project).aggregate(
-                    models.Max("order")
-                )["order__max"]
-                or 0
+            result = ProjectStep.objects.filter(project=project).aggregate(
+                max_order=Max("order"),
+                total=Count("id")
             )
+
+            current_max_order = result["max_order"] or 0
+            count_step = result["total"]
 
             # Use override name or default template name
             step_title = override_name if override_name else step_template.title
@@ -130,17 +131,23 @@ class AddProjectStepView(LoginRequiredMixin, View):
                     order=j,
                 )
 
+            step_counter = render_to_string("projects/partials/step_counter.html", {
+                "count": count_step + 1,
+            })
+
             if current_max_order == 0:
                 from django_htmx.http import reswap
-                response = render(request, "projects/partials/project_step_row.html", {"step": project_step, "project": project})
+                step_content = render_to_string("projects/partials/project_step_row.html", {"step": project_step, "project": project}, request=request)
+                response = HttpResponse(step_counter + step_content)
                 return reswap(response, "innerHTML")
 
             # Return HTML fragment for the new step card
-            return render(
-                request,
+            step_content = render_to_string(
                 "projects/partials/project_step_row.html",
                 {"step": project_step, "project": project},
+                request=request,
             )
+            return HttpResponse(step_counter + step_content)
 
         except Exception as e:
             return HttpResponse(
@@ -210,11 +217,15 @@ class RemoveProjectStepView(LoginRequiredMixin, View):
             project_step.delete()
 
             # Check if there are any steps left
-            remaining_steps = ProjectStep.objects.filter(project=project).exists()
+            remaining_steps = ProjectStep.objects.filter(project=project).count()
+
+            step_counter = render_to_string("projects/partials/step_counter.html", {
+                "count": remaining_steps,
+            })
 
             if not remaining_steps:
                 # Return empty state HTML
-                return HttpResponse("""
+                return HttpResponse(step_counter + """
                     <div class="flex flex-col items-center justify-center py-16 text-center" id="emptyState">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-base-content/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -225,7 +236,7 @@ class RemoveProjectStepView(LoginRequiredMixin, View):
                 """)
             else:
                 # Return empty response (card will be removed by HTMX)
-                return HttpResponse("")
+                return HttpResponse(step_counter)
 
         except Exception as e:
             return HttpResponse(

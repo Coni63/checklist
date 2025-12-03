@@ -75,9 +75,7 @@
                         </svg>
                         Project Steps
                     </h2>
-                    {% if project_steps %}
-                    <div class="badge badge-primary badge-lg">{{ project_steps|length }} step{{ project_steps|length|pluralize }}</div>
-                    {% endif %}
+                    {% include 'projects/partials/step_counter.html' with count=project_steps|length %}
                 </div>
 
                 <div class="space-y-3" id="projectStepsList">
