@@ -1,11 +1,9 @@
 V0
-Setup project, reorder steps
 Limite delete/edit delete or update non admin role
-Setup admin role or not
+Setup admin role
 Login page
 Register with inactive account ?
 QUID about authorization ?
-Homepage
 Dockerfile
 Github actions
 Docker compose

@@ -13,6 +13,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db import models
 from django.template.loader import render_to_string
+from django.db import transaction
 
 
 class ProjectListView(LoginRequiredMixin, ListView):
@@ -132,7 +133,7 @@ class AddProjectStepView(LoginRequiredMixin, View):
             # Return HTML fragment for the new step card
             return render(
                 request,
-                "projects/partials/step_card.html",
+                "projects/partials/project_step_row.html",
                 {"step": project_step, "project": project},
             )
 
@@ -140,6 +141,37 @@ class AddProjectStepView(LoginRequiredMixin, View):
             return HttpResponse(
                 f'<div class="error-message">Error: {str(e)}</div>', status=400
             )
+
+
+class ReorderProjectStepsView(LoginRequiredMixin, View):
+    """Handle reordering steps within a project via HTMX"""
+
+
+    def post(self, request, project_id):
+        project = get_object_or_404(Project, pk=project_id)
+
+        step_order = request.POST.getlist("step_order", [])
+        step_order = [int(s) for s in step_order]  # Ensure int
+
+        with transaction.atomic():
+            # Fetch all steps in one query
+            steps = ProjectStep.objects.filter(
+                project=project, pk__in=step_order
+            ).in_bulk(field_name="pk")
+
+            # Phase 1 : temporary order to avoid unique collision
+            for tmp_idx, step in enumerate(steps.values(), start=10000):
+                step.order = tmp_idx
+
+            ProjectStep.objects.bulk_update(steps.values(), ["order"])
+
+            # Phase 2 : assign final order
+            for index, step_id in enumerate(step_order, start=1):
+                steps[step_id].order = index
+
+            ProjectStep.objects.bulk_update(steps.values(), ["order"])
+
+        return HttpResponse("")
 
 
 class ProjectStepView(LoginRequiredMixin, DetailView):

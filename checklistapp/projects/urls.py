@@ -13,34 +13,39 @@ urlpatterns = [
     path("<int:pk>/delete/", views.ProjectDeleteView.as_view(), name="project_delete"),
     # Project Step URLs
     path(
-        "project/<int:project_id>/steps/create/",
+        "<int:project_id>/steps/create/",
         views.AddProjectStepView.as_view(),
         name="add_step",
     ),
     path(
-        "project/<int:project_id>/steps/<int:step_id>/",
+        "<int:project_id>/steps/<int:step_id>/",
         views.ProjectStepView.as_view(),
         name="step_tasks",
     ),
     path(
-        "project/<int:project_id>/steps/<int:step_id>/delete/",
+        "<int:project_id>/steps/<int:step_id>/delete/",
         views.RemoveProjectStepView.as_view(),
         name="remove_step",
     ),
     # Project Task URLs
     path(
-        "project/<int:project_id>/steps/<int:step_id>/tasks/create/",
+        "<int:project_id>/steps/<int:step_id>/tasks/create/",
         views.AddProjectTaskView.as_view(),
         name="add_task",
     ),
     path(
-        "project/<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/edit/",
+        "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/edit/",
         views.UpdateProjectTaskView.as_view(),
         name="update_task",
     ),
     path(
-        "project/<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/delete/",
+        "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/delete/",
         views.DeleteProjectTaskView.as_view(),
         name="delete_task",
+    ),
+    path(
+        "<int:project_id>/reorder-steps/",
+        views.ReorderProjectStepsView.as_view(),
+        name="reorder_steps",
     ),
 ]
