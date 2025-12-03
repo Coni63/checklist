@@ -1,4 +1,5 @@
 {% load static tailwind_tags %}
+{% load django_htmx %}
 
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
@@ -10,7 +11,8 @@
     <title>{% block title %}Checklist Manager{% endblock %}</title>
 
     {# HTMX #}
-    <script src="{% static 'js/htmx.2.0.2.min.js' %}"></script>
+
+    {% htmx_script %}
 
     {# Favicon #}
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
@@ -28,7 +30,7 @@
         window.CSRF_TOKEN = '{{ csrf_token }}';
     </script>
 </head>
-<body class="min-h-screen bg-base-200 flex flex-col">
+<body class="min-h-screen bg-base-200 flex flex-col" hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
     {# Navigation Bar #}
     {% include 'navbar.html' %}
 
