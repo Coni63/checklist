@@ -81,19 +81,17 @@
                 </div>
 
                 <div class="space-y-3" id="projectStepsList">
-                    {% if project_steps %}
-                        {% for step in project_steps %}
-                            {% include 'projects/partials/project_step_row.html' %}
-                        {% endfor %}
-                    {% else %}
-                    <div class="flex flex-col items-center justify-center py-16 text-center" id="emptyState">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-base-content/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <p class="text-base-content/60 text-lg font-medium">No steps added yet</p>
-                        <p class="text-base-content/40 text-sm mt-2">Select templates from the left panel to build your project</p>
-                    </div>
-                    {% endif %}
+                    {% for step in project_steps %}
+                        {% include 'projects/partials/project_step_row.html' %}
+                    {% empty %}
+                        <div class="flex flex-col items-center justify-center py-16 text-center" id="emptyState">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-base-content/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <p class="text-base-content/60 text-lg font-medium">No steps added yet</p>
+                            <p class="text-base-content/40 text-sm mt-2">Select templates from the left panel to build your project</p>
+                        </div>
+                    {% endfor %}
                 </div>
 
                 <!-- {# Action Buttons #}

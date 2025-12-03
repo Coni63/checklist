@@ -130,6 +130,11 @@ class AddProjectStepView(LoginRequiredMixin, View):
                     order=j,
                 )
 
+            if current_max_order == 0:
+                from django_htmx.http import reswap
+                response = render(request, "projects/partials/project_step_row.html", {"step": project_step, "project": project})
+                return reswap(response, "innerHTML")
+
             # Return HTML fragment for the new step card
             return render(
                 request,
@@ -210,8 +215,12 @@ class RemoveProjectStepView(LoginRequiredMixin, View):
             if not remaining_steps:
                 # Return empty state HTML
                 return HttpResponse("""
-                    <div class="empty-state" id="emptyState">
-                        <p>No steps added yet. Select templates from the left to get started.</p>
+                    <div class="flex flex-col items-center justify-center py-16 text-center" id="emptyState">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-base-content/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <p class="text-base-content/60 text-lg font-medium">No steps added yet</p>
+                        <p class="text-base-content/40 text-sm mt-2">Select templates from the left panel to build your project</p>
                     </div>
                 """)
             else:
