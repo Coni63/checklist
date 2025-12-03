@@ -184,27 +184,7 @@ class ReorderProjectStepsView(LoginRequiredMixin, View):
             ProjectStep.objects.bulk_update(steps.values(), ["order"])
 
         return HttpResponse("")
-
-
-class ProjectStepView(LoginRequiredMixin, DetailView):
-    model = ProjectStep
-    template_name = "projects/partials/tasks_page.html"
-    context_object_name = "step"
-
-    def get_queryset(self):
-        return super().get_queryset().prefetch_related("tasks")
-
-    def get_object(self, queryset=None):
-        # Get projectid and stepid from URL kwargs
-        project_id = self.kwargs.get("project_id")
-        step_id = self.kwargs.get("step_id")
-
-        # Fetch the ProjectStep object based on both project_id and step_id
-        # You might need to adjust the filtering logic based on your model relationships
-        queryset = self.get_queryset().filter(project__id=project_id, id=step_id)
-        obj = get_object_or_404(queryset, id=step_id)
-        return obj
-
+    
 
 class RemoveProjectStepView(LoginRequiredMixin, View):
     """Handle removing a step from a project via HTMX"""
@@ -241,12 +221,43 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
     model = Project
     template_name = "projects/project_detail.html"
     context_object_name = "project"
+    pk_url_kwarg = "project_id"
 
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["steps"] = self.object.steps.prefetch_related("tasks")
         context["completion"] = self.object.get_completion_percentage()
+        context["project_id"] = self.kwargs.get("project_id")
+        context["step_id"] = self.kwargs.get("step_id")
+
+        print(self.kwargs)
+        
+        # Si un step_id est dans l'URL, on charge ce step
+        step_id = self.kwargs.get('step_id')
+        if step_id:
+            step = get_object_or_404(
+                ProjectStep.objects.prefetch_related("tasks"),
+                id=step_id,
+                project=self.object
+            )
+            context['active_step'] = step
+            context['active_step_id'] = step_id
+            context['tasks'] = step.tasks.all()
+        
         return context
+    
+    def render_to_response(self, context, **response_kwargs):
+        # Si c'est une requête HTMX, retourne seulement le partial des tâches
+        if self.request.headers.get('HX-Request'):
+            return render(
+                self.request, 
+                'projects/partials/tasks_page.html', 
+                context
+            )
+        
+        # Sinon retourne la page complète
+        return super().render_to_response(context, **response_kwargs)
 
 
 class ProjectDeleteView(LoginRequiredMixin, DeleteView):

@@ -9,7 +9,7 @@ urlpatterns = [
     path("", views.ProjectListView.as_view(), name="project_list"),
     path("create/", views.ProjectCreateView.as_view(), name="project_create"),
     path("<int:pk>/edit/", views.ProjectEditView.as_view(), name="project_edit"),
-    path("<int:pk>/", views.ProjectDetailView.as_view(), name="project_detail"),
+    path("<int:project_id>/", views.ProjectDetailView.as_view(), name="project_detail"),
     path("<int:pk>/delete/", views.ProjectDeleteView.as_view(), name="project_delete"),
     # Project Step URLs
     path(
@@ -19,7 +19,7 @@ urlpatterns = [
     ),
     path(
         "<int:project_id>/steps/<int:step_id>/",
-        views.ProjectStepView.as_view(),
+        views.ProjectDetailView.as_view(),
         name="step_tasks",
     ),
     path(

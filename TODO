@@ -1,7 +1,6 @@
 V0
 Limite delete/edit delete or update non admin role
 Setup admin role
-Login page
 Register with inactive account ?
 QUID about authorization ?
 Dockerfile
@@ -12,7 +11,9 @@ Postgres DB
 V1
 Update your own comment
 Delete custom task
-Remove empty project step when addind step (due to htmx)
 
 V2
 Add description to step
+
+BUG:
+css tag qui casse avec long nom de step
