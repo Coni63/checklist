@@ -22,7 +22,7 @@
                         <span class="font-semibold text-base-content">{{ user.username }}</span>
                     </li>
                     <li>
-                        <a href="#" class="flex items-center gap-2">
+                        <a href="{% url 'accounts:profile' %}" class="flex items-center gap-2">
                             <span>👤</span>
                             <span>Profile</span>
                         </a>
@@ -48,7 +48,7 @@
                 </ul>
             </div>
         {% else %}
-            <a href="{% url 'home:homepage' %}" class="btn btn-primary">
+            <a href="{% url 'accounts:login' %}" class="btn btn-primary">
                 Login
             </a>
         {% endif %}

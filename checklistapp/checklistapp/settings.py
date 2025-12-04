@@ -167,4 +167,6 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-LOGIN_URL = "/"
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = '/projets/' # Redirection après connexion réussie
+LOGOUT_REDIRECT_URL = '/' # Redirection après déconnexion réussie

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load tailwind_filters %}
+{% block title %}Home - Checklist Manager{% endblock %}
+
+
+
+
+
+{% block content %}
+
+<div class="w-full flex items-center justify-center py-12">
+    <div class="w-full max-w-md mx-auto">
+        <div class="card shadow-2xl bg-base-100 border border-base-300/50 rounded-2xl">
+            <div class="card-body p-8">
+                
+                <h1 class="text-4xl font-extrabold text-center mb-2">Welcome !</h1>
+                <p class="text-center text-base-content/70 mb-8">Sign in to your account</p>
+
+                <form method="POST" action="{% url 'accounts:register' %}" class="space-y-4">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+
+                    <button 
+                        type="submit" 
+                        class="btn btn-primary w-full h-12 text-lg font-semibold rounded-xl"
+                    >
+                        Log in
+                    </button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
