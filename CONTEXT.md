@@ -165,10 +165,7 @@ Purpose: Reusable components across all apps
 Purpose: Admin-managed library of reusable step and task templates
 
 `projects/` - Project Management
-Purpose: CRUD operations for projects and configuration
-
-`checklists/` - Project Tasks
-Purpose: CRUD operations for comments and more later
+Purpose: CRUD operations for projects, steps and comments
 
 `accounts/` - User Management
 Purpose: Override default User model and add custom permissions if needed

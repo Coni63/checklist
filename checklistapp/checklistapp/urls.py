@@ -25,7 +25,6 @@ urlpatterns = [
     path("", include("home.urls")),
     path("projects/", include("projects.urls")),
     path("accounts/", include("accounts.urls")),  # include("django.contrib.auth.urls")
-    path("checklists/", include("checklists.urls")),
 ]
 
 if settings.DEBUG:

@@ -47,7 +47,6 @@ INSTALLED_APPS = [
     "django_htmx",
     "template_partials",
     "accounts",
-    "checklists",
     "projects",
     "templates_management",
     "home",
@@ -168,5 +167,5 @@ INTERNAL_IPS = [
 ]
 
 LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = '/projets/' # Redirection après connexion réussie
-LOGOUT_REDIRECT_URL = '/' # Redirection après déconnexion réussie
+LOGIN_REDIRECT_URL = "/projets/"  # Redirection après connexion réussie
+LOGOUT_REDIRECT_URL = "/"  # Redirection après déconnexion réussie

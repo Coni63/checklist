@@ -18,7 +18,7 @@ from django_htmx.http import reswap
 from templates_management.models import StepTemplate
 
 from .forms import ProjectCreationForm
-from .models import Project, ProjectStep, ProjectTask
+from .models import Project, ProjectStep, ProjectTask, TaskComment
 
 
 class ProjectListView(LoginRequiredMixin, ListView):
@@ -453,3 +453,82 @@ def toggle_task_form(request, project_id, step_id):
         "projects/partials/tasks_page.html#new_task_toggle",
         {"project_id": project_id, "step_id": step_id, "show_form": show_form},
     )
+
+
+class TaskCommentListView(LoginRequiredMixin, ListView):
+    model = TaskComment
+    template_name = "projects/partials/comment_list.html"
+    context_object_name = "comments"
+
+    def get_queryset(self):
+        task_id = self.kwargs.get("task_id")
+        result = TaskComment.objects.filter(
+            project_task_id=task_id,
+            deleted_at__isnull=True,
+        ).select_related("user", "project_task")
+
+        return result
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["task_id"] = self.kwargs.get("task_id")
+        context["task"] = get_object_or_404(ProjectTask, id=self.kwargs.get("task_id"))
+        return context
+
+
+class TaskCommentCreateView(LoginRequiredMixin, CreateView):
+    model = TaskComment
+    fields = ["comment_text"]
+    template_name = "projects/partials/comment_form.html"
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        form.instance.project_task_id = self.kwargs.get("task_id")
+        self.object = form.save()
+
+        html = render_to_string(
+            "projects/partials/comment_item.html",
+            {
+                "comment": self.object,
+                "user": self.request.user,
+            },
+        )
+        return HttpResponse(html)
+
+
+class TaskCommentUpdateView(LoginRequiredMixin, UpdateView):
+    # TODO: adjust & test when developped
+    model = TaskComment
+    fields = ["comment_text"]
+    pk_url_kwarg = "comment_id"
+    template_name = "projects/partials/comment_form.html"
+
+    def get_queryset(self):
+        # Only allow editing own comments
+        return TaskComment.objects.filter(user=self.request.user, deleted_at__isnull=True)
+
+    def form_valid(self, form):
+        self.object = form.save()
+
+        html = render_to_string(
+            "projects/partials/comment_item.html",
+            {
+                "comment": self.object,
+                "user": self.request.user,
+            },
+        )
+        return HttpResponse(html)
+
+
+class TaskCommentDeleteView(LoginRequiredMixin, DeleteView):
+    model = TaskComment
+    pk_url_kwarg = "comment_id"
+
+    def get_queryset(self):
+        # Only allow deleting own comments
+        return TaskComment.objects.filter(user=self.request.user, deleted_at__isnull=True)
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.soft_delete()
+        return HttpResponse("")  # Return empty response to remove the element

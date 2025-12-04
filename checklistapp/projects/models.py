@@ -186,3 +186,30 @@ class ProjectTask(models.Model):
         self.status = "pending"
         self.completed_at = None
         self.save()
+
+
+class TaskComment(models.Model):
+    project_task = models.ForeignKey(ProjectTask, on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    comment_text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.project_task}"
+
+    def soft_delete(self):
+        self.deleted_at = timezone.now()
+        self.save()
+
+    @property
+    def is_deleted(self):
+        return self.deleted_at is not None
+
+    @property
+    def active_comments_count(self):
+        return self.comments.filter(deleted_at__isnull=True).count()
