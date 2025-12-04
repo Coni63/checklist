@@ -1,8 +1,10 @@
 V0
-Limite delete/edit delete or update non admin role
-Setup admin role
-Register with inactive account ?
-QUID about authorization ?
+Render only project allowed for the user
+Only allow user with edit_project to set task status or comment
+Only allow is_admin to modify the project configuration or delete (hide button)
+Delete custom task
+Create section in project to manage roles
+Create user profile page
 Dockerfile
 Github actions
 Docker compose
@@ -10,11 +12,10 @@ Postgres DB
 
 V1
 Update your own comment
-Delete custom task
 Use ProjectService when possible
 
 V2
 Add description to step
+Better UI
 
 BUG:
-css tag qui casse avec long nom de step
