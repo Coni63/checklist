@@ -315,8 +315,6 @@ class ProjectDeleteView(LoginRequiredMixin, DeleteView):
 class AddProjectTaskView(LoginRequiredMixin, View):
     """Handle adding a task to a project step via HTMX"""
 
-    # TODO: adjust & test when developped
-
     def post(self, request, project_id, step_id):
         project_step = get_object_or_404(ProjectStep, id=step_id)
         title = request.POST.get("title", "").strip()
@@ -472,6 +470,8 @@ class TaskCommentListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["task_id"] = self.kwargs.get("task_id")
+        context["step_id"] = self.kwargs.get("step_id")
+        context["project_id"] = self.kwargs.get("project_id")
         context["task"] = get_object_or_404(ProjectTask, id=self.kwargs.get("task_id"))
         return context
 
@@ -480,6 +480,13 @@ class TaskCommentCreateView(LoginRequiredMixin, CreateView):
     model = TaskComment
     fields = ["comment_text"]
     template_name = "projects/partials/comment_form.html"
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        data["task_id"] = self.kwargs.get("task_id")
+        data["step_id"] = self.kwargs.get("step_id")
+        data["project_id"] = self.kwargs.get("project_id")
+        return data
 
     def form_valid(self, form):
         form.instance.user = self.request.user
@@ -491,6 +498,9 @@ class TaskCommentCreateView(LoginRequiredMixin, CreateView):
             {
                 "comment": self.object,
                 "user": self.request.user,
+                "task_id": self.kwargs.get("task_id"),
+                "step_id": self.kwargs.get("step_id"),
+                "project_id": self.kwargs.get("project_id"),
             },
         )
         return HttpResponse(html)
@@ -506,6 +516,13 @@ class TaskCommentUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         # Only allow editing own comments
         return TaskComment.objects.filter(user=self.request.user, deleted_at__isnull=True)
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        data["task_id"] = self.kwargs.get("task_id")
+        data["step_id"] = self.kwargs.get("step_id")
+        data["project_id"] = self.kwargs.get("project_id")
+        return data
 
     def form_valid(self, form):
         self.object = form.save()

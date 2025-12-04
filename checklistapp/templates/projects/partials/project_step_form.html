@@ -38,7 +38,7 @@
             <div class="flex gap-2">
                 <button
                     class="btn btn-sm btn-ghost btn-square text-error hover:bg-error hover:text-error-content"
-                    hx-delete="{% url 'projects:remove_step' project_id=project.pk step_id=step.id %}"
+                    hx-delete="{% url 'projects:step_delete' project_id=project.pk step_id=step.id %}"
                     hx-target="#step-{{ step.id }}"
                     hx-swap="outerHTML"
                     hx-confirm="Remove this step from the project?"
@@ -82,7 +82,7 @@
                         <div class="card bg-base-200 shadow-md hover:shadow-lg transition-shadow">
                             <div class="card-body p-4">
                                 <form
-                                    hx-post="{% url 'projects:add_step' project_id=project.pk %}"
+                                    hx-post="{% url 'projects:step_add' project_id=project.pk %}"
                                     hx-target="#projectStepsList"
                                     hx-swap="beforeend"
                                     class="flex items-center gap-4">
@@ -218,7 +218,7 @@
             console.log('New step order:', stepIds);
 
             // Example using htmx.ajax:
-            htmx.ajax('POST', "{% url 'projects:reorder_steps' project_id=project.pk %}", {
+            htmx.ajax('POST', "{% url 'projects:step_reorder' project_id=project.pk %}", {
                 values: { step_order: stepIds },
                 swap: 'none'
             });

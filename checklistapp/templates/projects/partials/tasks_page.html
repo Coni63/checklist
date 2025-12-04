@@ -5,7 +5,7 @@
 {% partialdef new_task_toggle %}
     {% if show_form %}
         <form 
-            hx-post="{% url 'projects:add_task' project_id=project_id step_id=step_id %}" 
+            hx-post="{% url 'projects:task_create' project_id=project_id step_id=step_id %}" 
             hx-target="#task-list"
             hx-swap="beforeend"
             class="space-y-2 p-4 border rounded-lg bg-base-200"

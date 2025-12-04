@@ -1,6 +1,6 @@
 <div>
     <form
-        hx-post="{% url 'projects:task_comment_create' task_id=task.id %}"
+        hx-post="{% url 'projects:comment_create' project_id=project_id step_id=step_id task_id=task_id %}"
         hx-target="#comments-container"
         hx-swap="beforeend"
         class="space-y-2">

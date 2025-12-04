@@ -17,60 +17,60 @@ urlpatterns = [
     ),
     # Project Step URLs
     path(
-        "<int:project_id>/steps/add_step/",
+        "<int:project_id>/steps/step_add/",
         views.AddProjectStepView.as_view(),
-        name="add_step",
+        name="step_add",
     ),
     path(
         "<int:project_id>/steps/<int:step_id>/",
         views.ProjectDetailView.as_view(),
-        name="step_tasks",
+        name="step_detail",
     ),
     path(
         "<int:project_id>/steps/<int:step_id>/delete/",
         views.RemoveProjectStepView.as_view(),
-        name="remove_step",
-    ),
-    # Project Task URLs
-    path(
-        "<int:project_id>/steps/<int:step_id>/tasks/add_task/",
-        views.AddProjectTaskView.as_view(),
-        name="add_task",
-    ),
-    path(
-        "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/set_status/",
-        views.UpdateProjectTaskView.as_view(),
-        name="set_status",
-    ),
-    path(
-        "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/delete/",
-        views.DeleteProjectTaskView.as_view(),
-        name="delete_task",
+        name="step_delete",
     ),
     path(
         "<int:project_id>/reorder-steps/",
         views.ReorderProjectStepsView.as_view(),
-        name="reorder_steps",
+        name="step_reorder",
+    ),
+    # Project Task URLs
+    path(
+        "<int:project_id>/steps/<int:step_id>/tasks/task_create/",
+        views.AddProjectTaskView.as_view(),
+        name="task_create",
     ),
     path(
-        "tasks/<int:task_id>/comments/",
+        "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/task_status_update/",
+        views.UpdateProjectTaskView.as_view(),
+        name="task_status_update",
+    ),
+    path(
+        "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/delete/",
+        views.DeleteProjectTaskView.as_view(),
+        name="task_delete",
+    ),
+    path(
+        "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/comments/",
         views.TaskCommentListView.as_view(),
-        name="task_comment_list",
+        name="comment_list",
     ),
     path(
-        "tasks/<int:task_id>/comments/create/",
+        "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/comments/create/",
         views.TaskCommentCreateView.as_view(),
-        name="task_comment_create",
+        name="comment_create",
     ),
     path(
-        "comments/<int:comment_id>/edit/",
+        "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/comments/<int:comment_id>/edit/",
         views.TaskCommentUpdateView.as_view(),
-        name="task_comment_edit",
+        name="comment_edit",
     ),
     path(
-        "comments/<int:comment_id>/delete/",
+        "<int:project_id>/steps/<int:step_id>/tasks/<int:task_id>/comments/<int:comment_id>/delete/",
         views.TaskCommentDeleteView.as_view(),
-        name="task_comment_delete",
+        name="comment_delete",
     ),
     # Helpers
     path(
