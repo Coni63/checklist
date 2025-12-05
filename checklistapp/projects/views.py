@@ -369,7 +369,7 @@ class ProjectDeleteView(ProjectAdminRequiredMixin, DeleteView):
         return self.delete(request, *args, **kwargs)
 
 
-class AddProjectTaskView(ProjectEditRequiredMixin, View):
+class AddProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
     """Handle adding a task to a project step via HTMX"""
 
     def post(self, request, project_id, step_id):
@@ -382,6 +382,8 @@ class AddProjectTaskView(ProjectEditRequiredMixin, View):
             return HttpResponse("", status=400)
 
         try:
+            context = self.get_context_data()
+
             # Determine task order
             current_max_order = (
                 ProjectTask.objects.filter(project_step=project_step).aggregate(models.Max("order"))["order__max"] or 0
@@ -395,13 +397,17 @@ class AddProjectTaskView(ProjectEditRequiredMixin, View):
                 order=current_max_order + 1,
                 manually_created=True,
             )
+            context["task"] = project_task
+
+            print(context)
+
             messages.success(request, "Task added successfully.")
 
             # Return HTML fragment for the new task row
             return render(
                 request,
                 "projects/partials/task_row.html",
-                {"task": project_task},
+                context,
             )
 
         except Exception as e:
@@ -422,7 +428,6 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
         step = ProjectStep.objects.get(id=step_id, project__id=project_id)
 
         context = self.get_context_data()
-        print(context)
         context["task"] = project_task
 
         if project_task is None:
@@ -478,18 +483,22 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
         return HttpResponse(row_html + step_html + progress_html)
 
 
-class DeleteProjectTaskView(ProjectEditRequiredMixin, View):
+class DeleteProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
     """Handle deleting a task from a project step via HTMX"""
-
-    # TODO: adjust & test when developped
-
     def delete(self, request, project_id, step_id, task_id):
+        context = self.get_context_data()
+    
         project_task = get_object_or_404(
             ProjectTask,
             id=task_id,
             project_step__id=step_id,
             project_step__project__id=project_id,
         )
+        context["task"] = project_task
+
+        if not project_task.manually_created:
+            messages.error(request, "Only manually created tasks can be deleted.")
+            return render(request, "projects/partials/task_row.html", context)
 
         try:
             project_task.delete()
