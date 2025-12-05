@@ -15,6 +15,13 @@
 
     {% include "projects/partials/project_step_form.html" %}
 
+    <!-- {% include "projects/partials/permission_table.html" %} -->
 
+    <div id="permission-table-container" 
+         hx-get="{% url 'accounts:user_permissions_list' project_id=project.id %}"
+         hx-trigger="load" 
+         hx-swap="outerHTML">
+        <p>Loading user permissions...</p>
+    </div>
 </div>
 {% endblock %}

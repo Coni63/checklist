@@ -1,0 +1,105 @@
+{% load partials %}
+
+{# This page render the project edit page in which you can set user permission #}
+
+{% partialdef user_row %}
+    <tr id="permission-{{permission.id}}">
+        <th>{{ index }}</th>
+        <td>{{ permission.user.username }}</td>
+        <td>
+            <form hx-post="{% url 'accounts:user_permissions_update' project_id=permission.project_id permission_id=permission.id %}"
+                  hx-target="#permission-{{ permission.id }}" 
+                  hx-swap="outerHTML" 
+                  hx-trigger="change" 
+                  class="inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="index" value="{{ index }}">
+                <input type="hidden" name="field_name" value="can_view"> <input type="checkbox" 
+                       name="can_view" 
+                       {% if permission.can_view %}checked{% endif %} 
+                       class="checkbox checkbox-xs" />
+            </form>
+        </td>
+        <td>
+            <form hx-post="{% url 'accounts:user_permissions_update' project_id=permission.project_id permission_id=permission.id %}"
+                  hx-target="#permission-{{ permission.id }}" 
+                  hx-swap="outerHTML" 
+                  hx-trigger="change" 
+                  class="inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="index" value="{{ index }}">
+                <input type="hidden" name="field_name" value="can_edit"> <input type="checkbox" 
+                       name="can_edit" 
+                       {% if permission.can_view %}checked{% endif %} 
+                       class="checkbox checkbox-xs" />
+            </form>
+        </td>
+        <td>
+            <form hx-post="{% url 'accounts:user_permissions_update' project_id=permission.project_id permission_id=permission.id %}"
+                  hx-target="#permission-{{ permission.id }}" 
+                  hx-swap="outerHTML" 
+                  hx-trigger="change" 
+                  class="inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="index" value="{{ index }}">
+                <input type="hidden" name="field_name" value="is_admin"> <input type="checkbox" 
+                       name="is_admin" 
+                       {% if permission.can_view %}checked{% endif %} 
+                       class="checkbox checkbox-xs" />
+            </form>
+        </td>
+        <td>{{ permission.user.last_login }}</td>
+        <td>
+            <form hx-delete="{% url 'accounts:user_permissions_update' project_id=permission.project_id permission_id=permission.id %}"
+                hx-confirm="Êtes-vous sûr de vouloir supprimer {{ permission.user.username }} ?"
+                hx-target="#permission-{{ permission.id }}"
+                hx-swap="outerHTML"
+                hx-trigger="submit">
+                
+                {% csrf_token %}
+                
+                <button type="submit" class="btn btn-ghost btn-sm text-error" title="Delete">
+                    🗑️
+                </button>
+            </form>
+        </td>
+    </tr>
+{% endpartialdef %}
+
+<div class="card bg-base-100 shadow-xl mt-6">
+    <div class="card-body">
+        <div class="overflow-x-auto">
+            <table class="table table-xs">
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>Username</th>
+                    <th>Read</th>
+                    <th>Edit</th>
+                    <th>Admin</th>
+                    <th>Last Login</th>
+                    <th>Delete</th>
+                </tr>
+                </thead>
+                <tbody>
+                    {% for permission in current_permissions %}
+                        {% with index=forloop.counter %}
+                            {% partial user_row %}
+                        {% endwith %}
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th></th>
+                    <th>Username</th>
+                    <th>Read</th>
+                    <th>Edit</th>
+                    <th>Admin</th>
+                    <th>Last Login</th>
+                    <th>Delete</th>
+                </tr>
+                </tfoot>
+            </table>
+            </div>
+    </div>
+</div>

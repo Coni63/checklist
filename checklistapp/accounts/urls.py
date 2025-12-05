@@ -19,4 +19,10 @@ urlpatterns = [
     ),
     path("register/", views.register_view, name="register"),
     path("", views.my_profile, name="profile"),
+    path("user_permissions/<int:project_id>/permissions/", views.ListUserForm.as_view(), name="user_permissions_list"),
+    path(
+        "user_permissions/<int:project_id>/permissions/<int:permission_id>/edit/",
+        views.UpdateUserPermissionForm.as_view(),
+        name="user_permissions_update",
+    ),
 ]
