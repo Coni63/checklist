@@ -1,4 +1,4 @@
-from accounts.models import User
+from accounts.models import UserProjectPermissions
 from django.db import models
 from django.utils import timezone
 from templates_management.models import StepTemplate, TaskTemplate
@@ -15,6 +15,28 @@ Every ProjectTask is derived from a TaskTemplate by cloning its data.
 """
 
 
+class ProjectQuerySet(models.QuerySet):
+    def with_status(self, status: str):
+        if status != "all":
+            return self.filter(status=status)
+        return self
+
+    def for_user(self, user, read=True, write=False, admin=False):
+        # La logique de permission reste la même
+        project_ids = UserProjectPermissions.objects.get_projects_for_user(user, read, write, admin)
+
+        # Le QuerySet actuel (self) est filtré par les IDs autorisés
+        return self.filter(id__in=project_ids)
+
+    def sorted(self):
+        return self.order_by("-created_at")
+
+
+class ProjectManager(models.Manager):
+    def get_queryset(self):
+        return ProjectQuerySet(self.model, using=self._db)
+
+
 class Project(models.Model):
     STATUS_CHOICES = [
         ("active", "Active"),
@@ -24,10 +46,11 @@ class Project(models.Model):
 
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="projects")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = ProjectManager()
 
     class Meta:
         ordering = ["-created_at"]
@@ -190,7 +213,7 @@ class ProjectTask(models.Model):
 
 class TaskComment(models.Model):
     project_task = models.ForeignKey(ProjectTask, on_delete=models.CASCADE, related_name="comments")
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE)
     comment_text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

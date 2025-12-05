@@ -1,3 +1,4 @@
+from accounts.models import UserProjectPermissions
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models, transaction
@@ -19,7 +20,7 @@ from templates_management.models import StepTemplate
 
 from .forms import ProjectCreationForm
 from .models import Project, ProjectStep, ProjectTask, TaskComment
-
+from core.mixins import ProjectAdminRequiredMixin, ProjectEditRequiredMixin, ProjectReadRequiredMixin
 
 class ProjectListView(LoginRequiredMixin, ListView):
     """
@@ -32,8 +33,14 @@ class ProjectListView(LoginRequiredMixin, ListView):
     context_object_name = "projects"
 
     def get_queryset(self):
-        qs = super().get_queryset()
         status = self.request.GET.get("status", "active")
+
+        qs = (
+            Project.objects.get_queryset()
+            .for_user(user=self.request.user, read=True, write=False, admin=False)
+            .with_status(status)
+        )
+
         if status and status != "all":
             qs = qs.filter(status=status)
         return qs
@@ -58,16 +65,28 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
         return reverse_lazy("projects:project_edit", kwargs={"project_id": self.object.pk})
 
     def form_valid(self, form):
-        form.instance.owner = self.request.user
-        messages.success(self.request, f'Project "{form.instance.name}" created successfully!')
-        return super().form_valid(form)
+        # 1. Create the project instance
+        response = super().form_valid(form)  # C'est ici que self.object est défini
+
+        # 2. Create UserProjectPermissions for the creator
+        UserProjectPermissions.objects.create(
+            user=self.request.user,
+            project=self.object,  # Le projet qui vient d'être créé
+            is_admin=True,  # Lui donne les droits d'administration
+            can_edit=True,  # Un admin peut éditer
+            can_view=True,  # Un admin peut voir
+        )
+
+        # 3. Response with success message
+        messages.success(self.request, f'Project "{self.object.name}" created successfully!')
+        return response
 
     def form_invalid(self, form):
         messages.error(self.request, "Please correct the errors below.")
         return super().form_invalid(form)
 
 
-class ProjectEditView(LoginRequiredMixin, UpdateView):
+class ProjectEditView(ProjectAdminRequiredMixin, UpdateView):
     """
     View to edit an existing project, including its steps and tasks.
     It reuses the ProjectCreationForm for project info.
@@ -101,7 +120,7 @@ class ProjectEditView(LoginRequiredMixin, UpdateView):
         return reverse_lazy("projects:project_edit", kwargs={"project_id": self.object.pk})
 
 
-class AddProjectStepView(LoginRequiredMixin, View):
+class AddProjectStepView(ProjectAdminRequiredMixin, View):
     """
     View to handle adding a new step to a project via HTMX.
     Expects POST data with 'step_template_id' and optional 'override_name'.
@@ -179,7 +198,7 @@ class AddProjectStepView(LoginRequiredMixin, View):
             return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
 
 
-class ReorderProjectStepsView(LoginRequiredMixin, View):
+class ReorderProjectStepsView(ProjectAdminRequiredMixin, View):
     """
     Handle reordering of project steps via HTMX.
     Expects POST data with 'step_order' as a list of step IDs in the new order.
@@ -210,7 +229,7 @@ class ReorderProjectStepsView(LoginRequiredMixin, View):
         return HttpResponse("")
 
 
-class RemoveProjectStepView(LoginRequiredMixin, View):
+class RemoveProjectStepView(ProjectAdminRequiredMixin, View):
     """Handle removing a step from a project via HTMX"""
 
     def delete(self, request, project_id, step_id):
@@ -246,7 +265,7 @@ class RemoveProjectStepView(LoginRequiredMixin, View):
             return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
 
 
-class ProjectDetailView(LoginRequiredMixin, DetailView):
+class ProjectDetailView(ProjectReadRequiredMixin, DetailView):
     """
     View to display project details, including steps and tasks.
     Supports HTMX requests to load tasks for a specific step.
@@ -287,7 +306,7 @@ class ProjectDetailView(LoginRequiredMixin, DetailView):
         return super().render_to_response(context, **response_kwargs)
 
 
-class ProjectDeleteView(LoginRequiredMixin, DeleteView):
+class ProjectDeleteView(ProjectAdminRequiredMixin, DeleteView):
     """View to delete a project."""
 
     model = Project
@@ -312,7 +331,7 @@ class ProjectDeleteView(LoginRequiredMixin, DeleteView):
         return self.delete(request, *args, **kwargs)
 
 
-class AddProjectTaskView(LoginRequiredMixin, View):
+class AddProjectTaskView(ProjectEditRequiredMixin, View):
     """Handle adding a task to a project step via HTMX"""
 
     def post(self, request, project_id, step_id):
@@ -353,7 +372,7 @@ class AddProjectTaskView(LoginRequiredMixin, View):
             return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
 
 
-class UpdateProjectTaskView(LoginRequiredMixin, View):
+class UpdateProjectTaskView(ProjectEditRequiredMixin, View):
     """Handle updating a task's status via HTMX"""
 
     def post(self, request, project_id, step_id, task_id):
@@ -415,7 +434,7 @@ class UpdateProjectTaskView(LoginRequiredMixin, View):
         return HttpResponse(row_html + step_html + progress_html)
 
 
-class DeleteProjectTaskView(LoginRequiredMixin, View):
+class DeleteProjectTaskView(ProjectEditRequiredMixin, View):
     """Handle deleting a task from a project step via HTMX"""
 
     # TODO: adjust & test when developped
@@ -453,7 +472,7 @@ def toggle_task_form(request, project_id, step_id):
     )
 
 
-class TaskCommentListView(LoginRequiredMixin, ListView):
+class TaskCommentListView(ProjectEditRequiredMixin, ListView):
     model = TaskComment
     template_name = "projects/partials/comment_list.html"
     context_object_name = "comments"
@@ -476,7 +495,7 @@ class TaskCommentListView(LoginRequiredMixin, ListView):
         return context
 
 
-class TaskCommentCreateView(LoginRequiredMixin, CreateView):
+class TaskCommentCreateView(ProjectEditRequiredMixin, CreateView):
     model = TaskComment
     fields = ["comment_text"]
     template_name = "projects/partials/comment_form.html"
@@ -506,7 +525,7 @@ class TaskCommentCreateView(LoginRequiredMixin, CreateView):
         return HttpResponse(html)
 
 
-class TaskCommentUpdateView(LoginRequiredMixin, UpdateView):
+class TaskCommentUpdateView(ProjectEditRequiredMixin, UpdateView):
     # TODO: adjust & test when developped
     model = TaskComment
     fields = ["comment_text"]
@@ -537,7 +556,7 @@ class TaskCommentUpdateView(LoginRequiredMixin, UpdateView):
         return HttpResponse(html)
 
 
-class TaskCommentDeleteView(LoginRequiredMixin, DeleteView):
+class TaskCommentDeleteView(ProjectEditRequiredMixin, DeleteView):
     model = TaskComment
     pk_url_kwarg = "comment_id"
 

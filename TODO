@@ -1,7 +1,5 @@
 V0
-Render only project allowed for the user
-Only allow user with edit_project to set task status or comment
-Only allow is_admin to modify the project configuration or delete (hide button)
+Update UI to render only elements based on rights
 Delete custom task
 Create section in project to manage roles
 Create user profile page
@@ -17,5 +15,6 @@ Use ProjectService when possible
 V2
 Add description to step
 Better UI
+Loading component
 
 BUG:
