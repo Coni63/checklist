@@ -4,23 +4,23 @@ Github actions
 Docker compose
 Postgres DB
 
-V1
-Update your own comment
-Use ProjectService when possible
-Add Info, help and info_text (rename if possible)
-Write unittest
-use reswap none when possible instead of returning the same object
+BUG:
+messages only show on refresh
 
-V2
+V1 (must have features)
+Update your own comment
 Add description to step
-Better UI
-Loading component
+Add Info, help and info_text (rename if possible)
+use reswap none when possible instead of returning the same object
 Set completed date and user on task
 
-V3:
+V2 (refacto UI with all features presents)
+Better UI
+Loading component
+
+V3 (optimisation - industrialisation)
+Write unittest
+Use ProjectService when possible
 Allow to manage templates on the UI -- Need to align with roles :/
 Review SQL, Cachcing, optimisations
 Migrate to v6
-
-BUG:
-messages only show on refresh
