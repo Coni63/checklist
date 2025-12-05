@@ -1,4 +1,5 @@
 from accounts.models import UserProjectPermissions
+from core.mixins import CommonContextMixin, ProjectAdminRequiredMixin, ProjectEditRequiredMixin, ProjectReadRequiredMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models, transaction
@@ -15,13 +16,12 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+from django.views.generic.base import ContextMixin
 from django_htmx.http import reswap
 from templates_management.models import StepTemplate
 
 from .forms import ProjectCreationForm
 from .models import Project, ProjectStep, ProjectTask, TaskComment
-from core.mixins import ProjectAdminRequiredMixin, ProjectEditRequiredMixin, ProjectReadRequiredMixin, CommonContextMixin
-from django.views.generic.base import ContextMixin
 
 
 class ProjectListView(LoginRequiredMixin, ListView):
@@ -50,9 +50,9 @@ class ProjectListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["status"] = self.request.GET.get("status", "active")  # Valeur par défaut si non précisé
-        context['roles'] = self._compute_user_roles(self.request.user)
+        context["roles"] = self._compute_user_roles(self.request.user)
         return context
-    
+
     def _compute_user_roles(self, user):
         # 3. Initialiser les rôles
         project_roles = {}
@@ -60,29 +60,26 @@ class ProjectListView(LoginRequiredMixin, ListView):
         # 4. Vérifier l'utilisateur et le project_id
         if not user.is_authenticated:
             return project_roles
-        
 
         project_ids = [str(project.id) for project in self.object_list]
 
         # Tenter de récupérer les permissions spécifiques à ce projet pour cet utilisateur
-        permissions = UserProjectPermissions.objects.get_user_permissions(
-            user=user, project_id=project_ids
-        )
+        permissions = UserProjectPermissions.objects.get_user_permissions(user=user, project_id=project_ids)
         for permission in permissions:
             roles = set()
-            
+
             # Priorité : admin > edit > read (méthode cumulative recommandée)
             if permission.is_admin:
-                roles.add('admin')
-                roles.add('edit')
-                roles.add('read')
-            
+                roles.add("admin")
+                roles.add("edit")
+                roles.add("read")
+
             if permission.can_edit:
-                roles.add('edit')
-                roles.add('read')
-            
+                roles.add("edit")
+                roles.add("read")
+
             if permission.can_view:
-                roles.add('read')
+                roles.add("read")
 
             project_roles[permission.project_id] = list(roles)
 
@@ -485,9 +482,10 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
 
 class DeleteProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
     """Handle deleting a task from a project step via HTMX"""
+
     def delete(self, request, project_id, step_id, task_id):
         context = self.get_context_data()
-    
+
         project_task = get_object_or_404(
             ProjectTask,
             id=task_id,

@@ -49,16 +49,15 @@ class ProjectAdminRequiredMixin(AbstractProjectAccessMixin):
 
 class CommonContextMixin:
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs) 
+        context = super().get_context_data(**kwargs)
 
         context["task_id"] = self.kwargs.get("task_id")
         context["step_id"] = self.kwargs.get("step_id")
         context["project_id"] = self.kwargs.get("project_id")
 
-        context['roles'] = self._compute_user_roles(self.request.user, context["project_id"])
+        context["roles"] = self._compute_user_roles(self.request.user, context["project_id"])
 
         return context
-    
 
     def _compute_user_roles(self, user, project_id):
         # 3. Initialiser les rôles
@@ -67,27 +66,24 @@ class CommonContextMixin:
         # 4. Vérifier l'utilisateur et le project_id
         if not user.is_authenticated or not project_id:
             return []
-        
 
         # Tenter de récupérer les permissions spécifiques à ce projet pour cet utilisateur
-        permissions = UserProjectPermissions.objects.get_user_permissions(
-            user=user, project_id=project_id
-        )
-        
+        permissions = UserProjectPermissions.objects.get_user_permissions(user=user, project_id=project_id)
+
         if permissions:
             # Les permissions sont hiérarchiques ou cumulatives
             if permissions.is_admin:
-                roles.add('admin')
-                roles.add('edit')
-                roles.add('read')
-            
+                roles.add("admin")
+                roles.add("edit")
+                roles.add("read")
+
             # Si non-admin, on vérifie edit
             if permissions.can_edit:
-                roles.add('edit')
-                roles.add('read')
-            
+                roles.add("edit")
+                roles.add("read")
+
             # Si non-edit, on vérifie view
             if permissions.can_view:
-                roles.add('read')
-                    
+                roles.add("read")
+
         return list(roles)

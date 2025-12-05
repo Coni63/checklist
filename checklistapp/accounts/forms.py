@@ -26,3 +26,49 @@ class BasicRegisterForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+
+class UserEditForm(forms.ModelForm):
+    """
+    Form used to update an existing Django User instance's profile information.
+    Defines the fields, widgets, labels, and help_texts for the form,
+    focusing on basic user details like name and email.
+    """
+
+    class Meta:
+        # Use the imported User model
+        model = User
+        # Select relevant User fields
+        fields = ["first_name", "last_name", "email"]
+
+        widgets = {
+            "first_name": forms.TextInput(
+                attrs={
+                    "placeholder": "Enter your first name",
+                    "autofocus": True,
+                }
+            ),
+            "last_name": forms.TextInput(
+                attrs={
+                    "placeholder": "Enter your last name",
+                }
+            ),
+            "email": forms.EmailInput(
+                attrs={
+                    "placeholder": "Enter your email address",
+                    "readonly": "readonly",  # Make email read-only
+                }
+            ),
+        }
+
+        labels = {
+            "first_name": "First Name",
+            "last_name": "Last Name",
+            "email": "Email Address",
+        }
+
+        help_texts = {
+            "first_name": "Your given name.",
+            "last_name": "Your family name.",
+            "email": "Your primary contact email. Cannot be modified.",
+        }
