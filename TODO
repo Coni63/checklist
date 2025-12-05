@@ -8,10 +8,16 @@ Postgres DB
 V1
 Update your own comment
 Use ProjectService when possible
+Add Info, help and info_text (rename if possible)
+Write unittest
 
 V2
 Add description to step
 Better UI
 Loading component
+
+V3:
+Allow to manage templates on the UI -- Need to align with roles :/
+Review SQL, Cachcing, optimisations
 
 BUG:
