@@ -20,7 +20,9 @@ from templates_management.models import StepTemplate
 
 from .forms import ProjectCreationForm
 from .models import Project, ProjectStep, ProjectTask, TaskComment
-from core.mixins import ProjectAdminRequiredMixin, ProjectEditRequiredMixin, ProjectReadRequiredMixin
+from core.mixins import ProjectAdminRequiredMixin, ProjectEditRequiredMixin, ProjectReadRequiredMixin, CommonContextMixin
+from django.views.generic.base import ContextMixin
+
 
 class ProjectListView(LoginRequiredMixin, ListView):
     """
@@ -48,7 +50,45 @@ class ProjectListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["status"] = self.request.GET.get("status", "active")  # Valeur par défaut si non précisé
+        context['roles'] = self._compute_user_roles(self.request.user)
         return context
+    
+    def _compute_user_roles(self, user):
+        # 3. Initialiser les rôles
+        project_roles = {}
+
+        # 4. Vérifier l'utilisateur et le project_id
+        if not user.is_authenticated:
+            return project_roles
+        
+
+        project_ids = [str(project.id) for project in self.object_list]
+
+        # Tenter de récupérer les permissions spécifiques à ce projet pour cet utilisateur
+        permissions = UserProjectPermissions.objects.get_user_permissions(
+            user=user, project_id=project_ids
+        )
+        for permission in permissions:
+            roles = set()
+            
+            # Priorité : admin > edit > read (méthode cumulative recommandée)
+            if permission.is_admin:
+                roles.add('admin')
+                roles.add('edit')
+                roles.add('read')
+            
+            if permission.can_edit:
+                roles.add('edit')
+                roles.add('read')
+            
+            if permission.can_view:
+                roles.add('read')
+
+            project_roles[permission.project_id] = list(roles)
+
+        print(project_roles)
+
+        return project_roles
 
 
 class ProjectCreateView(LoginRequiredMixin, CreateView):
@@ -265,7 +305,7 @@ class RemoveProjectStepView(ProjectAdminRequiredMixin, View):
             return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
 
 
-class ProjectDetailView(ProjectReadRequiredMixin, DetailView):
+class ProjectDetailView(ProjectReadRequiredMixin, CommonContextMixin, DetailView):
     """
     View to display project details, including steps and tasks.
     Supports HTMX requests to load tasks for a specific step.
@@ -280,11 +320,9 @@ class ProjectDetailView(ProjectReadRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context["steps"] = self.object.steps.prefetch_related("tasks")
         context["completion"] = self.object.get_completion_percentage()
-        context["project_id"] = self.kwargs.get("project_id")
-        context["step_id"] = self.kwargs.get("step_id")
 
         # Si un step_id est dans l'URL, on charge ce step
-        step_id = self.kwargs.get("step_id")
+        step_id = context.get("step_id")
         if step_id:
             step = get_object_or_404(
                 ProjectStep.objects.prefetch_related("tasks"),
@@ -372,7 +410,7 @@ class AddProjectTaskView(ProjectEditRequiredMixin, View):
             return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
 
 
-class UpdateProjectTaskView(ProjectEditRequiredMixin, View):
+class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
     """Handle updating a task's status via HTMX"""
 
     def post(self, request, project_id, step_id, task_id):
@@ -383,12 +421,16 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, View):
         )
         step = ProjectStep.objects.get(id=step_id, project__id=project_id)
 
+        context = self.get_context_data()
+        print(context)
+        context["task"] = project_task
+
         if project_task is None:
             messages.error(request, "Task not found.")
             return render(
                 request,
                 "projects/partials/task_row.html",
-                {"task": project_task},
+                context,
             )
 
         new_status = request.POST.get("status", "").strip()
@@ -398,7 +440,7 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, View):
             return render(
                 request,
                 "projects/partials/task_row.html",
-                {"task": project_task},
+                context,
             )
 
         try:
@@ -411,11 +453,12 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, View):
         except Exception as e:
             messages.error(request, str(e))
 
-        row_html = render_to_string("projects/partials/task_row.html", {"task": project_task})
+        row_html = render_to_string("projects/partials/task_row.html", context)
 
         step_html = render_to_string(
             "projects/partials/project_content.html#step_item",
             {
+                **context,
                 "oob": True,
                 "project": step.project,
                 "step": step,
@@ -425,6 +468,7 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, View):
         progress_html = render_to_string(
             "projects/partials/tasks_page.html#progress_bar",
             {
+                **context,
                 "oob": True,
                 "completion": step.get_completion_percentage(),
                 "text": step.get_progress_text(),
@@ -472,7 +516,7 @@ def toggle_task_form(request, project_id, step_id):
     )
 
 
-class TaskCommentListView(ProjectEditRequiredMixin, ListView):
+class TaskCommentListView(ProjectReadRequiredMixin, CommonContextMixin, ListView):
     model = TaskComment
     template_name = "projects/partials/comment_list.html"
     context_object_name = "comments"
@@ -488,44 +532,34 @@ class TaskCommentListView(ProjectEditRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["task_id"] = self.kwargs.get("task_id")
-        context["step_id"] = self.kwargs.get("step_id")
-        context["project_id"] = self.kwargs.get("project_id")
-        context["task"] = get_object_or_404(ProjectTask, id=self.kwargs.get("task_id"))
+        context["task"] = get_object_or_404(ProjectTask, id=context.get("task_id"))
         return context
 
 
-class TaskCommentCreateView(ProjectEditRequiredMixin, CreateView):
+class TaskCommentCreateView(ProjectEditRequiredMixin, CommonContextMixin, CreateView):
     model = TaskComment
     fields = ["comment_text"]
     template_name = "projects/partials/comment_form.html"
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
-        data["task_id"] = self.kwargs.get("task_id")
-        data["step_id"] = self.kwargs.get("step_id")
-        data["project_id"] = self.kwargs.get("project_id")
         return data
 
     def form_valid(self, form):
+        context = self.get_context_data()
+
         form.instance.user = self.request.user
-        form.instance.project_task_id = self.kwargs.get("task_id")
+        form.instance.project_task_id = context.get("task_id")
         self.object = form.save()
 
-        html = render_to_string(
-            "projects/partials/comment_item.html",
-            {
-                "comment": self.object,
-                "user": self.request.user,
-                "task_id": self.kwargs.get("task_id"),
-                "step_id": self.kwargs.get("step_id"),
-                "project_id": self.kwargs.get("project_id"),
-            },
-        )
+        context["comment"] = self.object
+        context["user"] = self.request.user
+
+        html = render_to_string("projects/partials/comment_item.html", context)
         return HttpResponse(html)
 
 
-class TaskCommentUpdateView(ProjectEditRequiredMixin, UpdateView):
+class TaskCommentUpdateView(ProjectEditRequiredMixin, CommonContextMixin, UpdateView):
     # TODO: adjust & test when developped
     model = TaskComment
     fields = ["comment_text"]
@@ -538,9 +572,6 @@ class TaskCommentUpdateView(ProjectEditRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
-        data["task_id"] = self.kwargs.get("task_id")
-        data["step_id"] = self.kwargs.get("step_id")
-        data["project_id"] = self.kwargs.get("project_id")
         return data
 
     def form_valid(self, form):
@@ -561,6 +592,14 @@ class TaskCommentDeleteView(ProjectEditRequiredMixin, DeleteView):
     pk_url_kwarg = "comment_id"
 
     def get_queryset(self):
+        requestor = self.request.user
+        project_id = self.kwargs.get("project_id")
+
+        user_permission = UserProjectPermissions.objects.get_user_permissions(requestor, project_id)
+
+        if user_permission.is_admin:
+            return TaskComment.objects.filter(deleted_at__isnull=True)
+
         # Only allow deleting own comments
         return TaskComment.objects.filter(user=self.request.user, deleted_at__isnull=True)
 

@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "projects",
     "templates_management",
     "home",
+    "core",
 ]
 
 MIDDLEWARE = [

@@ -79,8 +79,10 @@
 </div>
 
 <!-- BUTTON TO SHOW FORM -->
-<div class="mt-4"  id="new-task-form-container">
-    {% with project_id=active_step.project.id step_id=active_step.id %}
-        {% partial new_task_toggle %}
-    {% endwith %}
-</div>
+{% if 'edit' in roles %}
+    <div class="mt-4"  id="new-task-form-container">
+        {% with project_id=active_step.project.id step_id=active_step.id %}
+            {% partial new_task_toggle %}
+        {% endwith %}
+    </div>
+{% endif %}

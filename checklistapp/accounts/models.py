@@ -7,9 +7,12 @@ class User(AbstractUser):
 
 
 class UserProjectPermissionsManager(models.Manager):
-    def get_user_permissions(self, user, project_id: str):
+    def get_user_permissions(self, user, project_id: str | list[str]):
         try:
-            return self.get(user=user, project_id=project_id)
+            if isinstance(project_id, list):
+                return self.filter(user=user, project_id__in=project_id)
+            else:
+                return self.get(user=user, project_id=project_id)
         except UserProjectPermissions.DoesNotExist:
             return None
 

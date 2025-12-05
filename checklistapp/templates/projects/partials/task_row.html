@@ -34,44 +34,67 @@
                     </a>
                 {% endif %}
 
-                {% if task.status == 'done' %}
-                    <button
-                        hx-post="{% url 'projects:task_status_update' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
-                        hx-vals='{"status": "undone"}'
-                        hx-target="closest .card"
-                        hx-swap="outerHTML"
-                        class="btn btn-sm btn-success">
-                        ✓ Done
-                    </button>
-                {% else %}
-                    <button
-                        hx-post="{% url 'projects:task_status_update' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
-                        hx-vals='{"status": "done"}'
-                        hx-target="closest .card"
-                        hx-swap="outerHTML"
-                        class="btn btn-sm btn-primary">
-                        Done
-                    </button>
-                {% endif %}
+                {% if 'edit' in roles %}
+                    {% if task.status == 'done' %}
+                        <button
+                            hx-post="{% url 'projects:task_status_update' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
+                            hx-vals='{"status": "undone"}'
+                            hx-target="closest .card"
+                            hx-swap="outerHTML"
+                            class="btn btn-sm btn-success">
+                            ✓ Done
+                        </button>
+                    {% else %}
+                        <button
+                            hx-post="{% url 'projects:task_status_update' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
+                            hx-vals='{"status": "done"}'
+                            hx-target="closest .card"
+                            hx-swap="outerHTML"
+                            class="btn btn-sm btn-primary">
+                            Done
+                        </button>
+                    {% endif %}
 
-                {% if task.status == 'na' %}
-                    <button
-                        hx-post="{% url 'projects:task_status_update' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
-                        hx-vals='{"status": "unna"}'
-                        hx-target="closest .card"
-                        hx-swap="outerHTML"
-                        class="btn btn-sm btn-warning">
-                        ○ N/A
-                    </button>
+                    {% if task.status == 'na' %}
+                        <button
+                            hx-post="{% url 'projects:task_status_update' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
+                            hx-vals='{"status": "unna"}'
+                            hx-target="closest .card"
+                            hx-swap="outerHTML"
+                            class="btn btn-sm btn-warning">
+                            ○ N/A
+                        </button>
+                    {% else %}
+                        <button
+                            hx-post="{% url 'projects:task_status_update' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
+                            hx-vals='{"status": "na"}'
+                            hx-target="closest .card"
+                            hx-swap="outerHTML"
+                            class="btn btn-sm btn-outline">
+                            N/A
+                        </button>
+                    {% endif %}
                 {% else %}
-                    <button
-                        hx-post="{% url 'projects:task_status_update' project_id=task.project_step.project.id step_id=task.project_step.id task_id=task.id %}"
-                        hx-vals='{"status": "na"}'
-                        hx-target="closest .card"
-                        hx-swap="outerHTML"
-                        class="btn btn-sm btn-outline">
-                        N/A
-                    </button>
+                    <div class="tooltip tooltip-bottom" data-tip="You are not allowed to edit the project">
+                        <span class="pointer-events-none opacity-50">
+                            {% if task.status == 'done' %}
+                                <button class="btn btn-sm btn-success">
+                                    ✓ Done
+                                </button>
+                            {% elif task.status == 'na' %}
+                                <button class="btn btn-sm btn-warning">
+                                    ○ N/A
+                                </button>
+                            {% else %}
+                                <button class="btn btn-sm btn-primary">
+                                    Done
+                                </button>
+                                <button class="btn btn-sm btn-outline">
+                                    N/A
+                                </button>
+                            {% endif %}
+                        </span>
+                    </div>
                 {% endif %}
             </div>
         </div>

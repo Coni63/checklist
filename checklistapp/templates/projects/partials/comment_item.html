@@ -8,7 +8,7 @@
                     <span class="badge badge-xs badge-ghost">edited</span>
                 {% endif %}
             </div>
-            {% if comment.user == user %}
+            {% if comment.user == user or 'admin' in roles %}
                 <button
                     class="btn btn-ghost btn-xs text-error"
                     hx-delete="{% url 'projects:comment_delete' project_id=project_id step_id=step_id task_id=task_id comment_id=comment.id %}"
