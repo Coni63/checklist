@@ -7,49 +7,68 @@
         <th>{{ index }}</th>
         <td>{{ permission.user.username }}</td>
         <td>
-            <form hx-post="{% url 'accounts:user_permissions_update' project_id=permission.project_id permission_id=permission.id %}"
-                  hx-target="#permission-{{ permission.id }}" 
-                  hx-swap="outerHTML" 
-                  hx-trigger="change" 
-                  class="inline-block">
-                {% csrf_token %}
-                <input type="hidden" name="index" value="{{ index }}">
-                <input type="hidden" name="field_name" value="can_view"> <input type="checkbox" 
-                       name="can_view" 
-                       {% if permission.can_view %}checked{% endif %} 
-                       class="checkbox checkbox-xs" />
-            </form>
+            {% if permission.user != user %}
+                <form hx-post="{% url 'accounts:user_permissions_update' project_id=permission.project_id permission_id=permission.id %}"
+                    hx-target="#permission-{{ permission.id }}" 
+                    hx-swap="outerHTML" 
+                    hx-trigger="change" 
+                    class="inline-block">
+                    {% csrf_token %}
+                    <input type="hidden" name="index" value="{{ index }}">
+                    <input type="hidden" name="field_name" value="can_view"> <input type="checkbox" 
+                        name="can_view" 
+                        {% if permission.can_view %}checked{% endif %} 
+                        class="checkbox checkbox-xs" />
+                </form>
+            {% else %}
+                <input type="checkbox" 
+                        {% if permission.can_view %}checked{% endif %} 
+                        class="checkbox checkbox-xs" disabled />
+            {% endif %}
         </td>
         <td>
-            <form hx-post="{% url 'accounts:user_permissions_update' project_id=permission.project_id permission_id=permission.id %}"
-                  hx-target="#permission-{{ permission.id }}" 
-                  hx-swap="outerHTML" 
-                  hx-trigger="change" 
-                  class="inline-block">
-                {% csrf_token %}
-                <input type="hidden" name="index" value="{{ index }}">
-                <input type="hidden" name="field_name" value="can_edit"> <input type="checkbox" 
-                       name="can_edit" 
-                       {% if permission.can_view %}checked{% endif %} 
-                       class="checkbox checkbox-xs" />
-            </form>
+            {% if permission.user != user %}
+                <form hx-post="{% url 'accounts:user_permissions_update' project_id=permission.project_id permission_id=permission.id %}"
+                    hx-target="#permission-{{ permission.id }}" 
+                    hx-swap="outerHTML" 
+                    hx-trigger="change" 
+                    class="inline-block">
+                    {% csrf_token %}
+                    <input type="hidden" name="index" value="{{ index }}">
+                    <input type="hidden" name="field_name" value="can_edit"> <input type="checkbox" 
+                        name="can_edit" 
+                        {% if permission.can_edit %}checked{% endif %} 
+                        class="checkbox checkbox-xs" />
+                </form>
+            {% else %}
+                <input type="checkbox" 
+                        {% if permission.can_edit %}checked{% endif %} 
+                        class="checkbox checkbox-xs" disabled />
+            {% endif %}
         </td>
         <td>
-            <form hx-post="{% url 'accounts:user_permissions_update' project_id=permission.project_id permission_id=permission.id %}"
-                  hx-target="#permission-{{ permission.id }}" 
-                  hx-swap="outerHTML" 
-                  hx-trigger="change" 
-                  class="inline-block">
-                {% csrf_token %}
-                <input type="hidden" name="index" value="{{ index }}">
-                <input type="hidden" name="field_name" value="is_admin"> <input type="checkbox" 
-                       name="is_admin" 
-                       {% if permission.can_view %}checked{% endif %} 
-                       class="checkbox checkbox-xs" />
-            </form>
+            {% if permission.user != user %}
+                <form hx-post="{% url 'accounts:user_permissions_update' project_id=permission.project_id permission_id=permission.id %}"
+                    hx-target="#permission-{{ permission.id }}" 
+                    hx-swap="outerHTML" 
+                    hx-trigger="change" 
+                    class="inline-block">
+                    {% csrf_token %}
+                    <input type="hidden" name="index" value="{{ index }}">
+                    <input type="hidden" name="field_name" value="is_admin"> <input type="checkbox" 
+                        name="is_admin" 
+                        {% if permission.is_admin %}checked{% endif %} 
+                        class="checkbox checkbox-xs" />
+                </form>
+            {% else %}
+                <input type="checkbox" 
+                        {% if permission.is_admin %}checked{% endif %} 
+                        class="checkbox checkbox-xs" disabled />
+            {% endif %}
         </td>
         <td>{{ permission.user.last_login }}</td>
         <td>
+            {% if permission.user != user %}
             <form hx-delete="{% url 'accounts:user_permissions_update' project_id=permission.project_id permission_id=permission.id %}"
                 hx-confirm="Êtes-vous sûr de vouloir supprimer {{ permission.user.username }} ?"
                 hx-target="#permission-{{ permission.id }}"
@@ -62,6 +81,7 @@
                     🗑️
                 </button>
             </form>
+            {% endif %}
         </td>
     </tr>
 {% endpartialdef %}
@@ -81,7 +101,7 @@
                     <th>Delete</th>
                 </tr>
                 </thead>
-                <tbody>
+                <tbody id="table_user">
                     {% for permission in current_permissions %}
                         {% with index=forloop.counter %}
                             {% partial user_row %}
@@ -100,6 +120,34 @@
                 </tr>
                 </tfoot>
             </table>
+
+            <div class="mt-6 p-4 border border-base-300 rounded-lg bg-base-200">
+                <h3 class="text-xl font-semibold mb-3">➕ Add New User Permission</h3>
+                
+                <form hx-post="{% url 'accounts:user_permissions_add' project_id=project.id %}"
+                    hx-target="#table_user"
+                    hx-swap="beforeend"
+                    > {% csrf_token %}
+
+                    <div class="flex items-center space-x-4">
+                        <label class="form-control w-full max-w-xs">
+                            <select name="user_id" required class="select select-bordered w-full max-w-xs">
+                                <option value="" disabled selected>Select user to add</option>
+                                {% for user in other_users %}
+                                    <option value="{{ user.id }}">{{ user.username }}</option>
+                                {% empty %}
+                                    <option value="" disabled>All users have permissions</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+
+                        <button type="submit" class="btn btn-primary" hx-indicator="#add-user-indicator">
+                            Add User
+                        </button>
+                        <span class="loading loading-spinner loading-sm htmx-indicator" id="add-user-indicator"></span>
+                    </div>
+                </form>
             </div>
+        </div>
     </div>
 </div>

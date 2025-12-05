@@ -1,5 +1,4 @@
 V0
-Create section in project to manage roles
 Dockerfile
 Github actions
 Docker compose
@@ -10,14 +9,18 @@ Update your own comment
 Use ProjectService when possible
 Add Info, help and info_text (rename if possible)
 Write unittest
+use reswap none when possible instead of returning the same object
 
 V2
 Add description to step
 Better UI
 Loading component
+Set completed date and user on task
 
 V3:
 Allow to manage templates on the UI -- Need to align with roles :/
 Review SQL, Cachcing, optimisations
+Migrate to v6
 
 BUG:
+messages only show on refresh

@@ -25,4 +25,5 @@ urlpatterns = [
         views.UpdateUserPermissionForm.as_view(),
         name="user_permissions_update",
     ),
+    path("user_permissions/<int:project_id>/permissions/add/", views.AddUserPermissionForm.as_view(), name="user_permissions_add"),
 ]
