@@ -1,24 +1,24 @@
 {# Flash Messages #}
-{% if messages %}
-<div class="toast toast-top toast-end z-50">
-    {% for message in messages %}
-    <div class="alert
-        {% if message.tags == 'success' %}alert-success
-        {% elif message.tags == 'error' %}alert-error
-        {% elif message.tags == 'warning' %}alert-warning
-        {% else %}alert-info{% endif %}
-        shadow-lg">
-        <div>
-            <span class="text-lg">
-                {% if message.tags == 'success' %}✓
-                {% elif message.tags == 'error' %}✕
-                {% elif message.tags == 'warning' %}⚠
-                {% else %}ℹ{% endif %}
-            </span>
-            <span>{{ message }}</span>
+<div class="toast toast-top toast-end z-50" hx-swap-oob="true" id="messages-container">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert
+            {% if message.tags == 'success' %}alert-success
+            {% elif message.tags == 'error' %}alert-error
+            {% elif message.tags == 'warning' %}alert-warning
+            {% else %}alert-info{% endif %}
+            shadow-lg">
+            <div>
+                <span class="text-lg">
+                    {% if message.tags == 'success' %}✓
+                    {% elif message.tags == 'error' %}✕
+                    {% elif message.tags == 'warning' %}⚠
+                    {% else %}ℹ{% endif %}
+                </span>
+                <span>{{ message }}</span>
+            </div>
+            <button class="btn btn-ghost btn-sm btn-circle" onclick="this.closest('.alert').remove()">✕</button>
         </div>
-        <button class="btn btn-ghost btn-sm btn-circle" onclick="this.closest('.alert').remove()">✕</button>
-    </div>
-    {% endfor %}
+        {% endfor %}
+    {% endif %}
 </div>
-{% endif %}

@@ -23,10 +23,14 @@ document.addEventListener('click', function(event) {
 /**
  * Auto-dismiss alerts after 5 seconds
  */
-document.addEventListener('DOMContentLoaded', function() {
-    const alerts = document.querySelectorAll('.alert');
+// Fonction pour auto-fermer les alertes
+function autoCloseAlerts() {
+    const alerts = document.querySelectorAll('#messages-container .alert');
     
     alerts.forEach(function(alert) {
+        if (alert.dataset.autoCloseSet) return;
+        alert.dataset.autoCloseSet = 'true';
+        
         setTimeout(function() {
             alert.style.animation = 'slideOut 0.3s ease';
             setTimeout(function() {
@@ -34,4 +38,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 300);
         }, 5000);
     });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    autoCloseAlerts();
+});
+
+document.addEventListener('htmx:afterSwap', function(event) {
+    autoCloseAlerts();
 });
