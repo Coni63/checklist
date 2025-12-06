@@ -60,36 +60,32 @@ class ProjectListView(LoginRequiredMixin, ListView):
         return context
 
     def _compute_user_roles(self, user):
-        # 3. Initialiser les rôles
+        """
+        Return a dict of list of roles per projects  {
+            1: ["read", "edit"],
+            2: ["read"]
+        }
+        """
         project_roles = {}
 
-        # 4. Vérifier l'utilisateur et le project_id
         if not user.is_authenticated:
             return project_roles
 
         project_ids = [str(project.id) for project in self.object_list]
 
-        # Tenter de récupérer les permissions spécifiques à ce projet pour cet utilisateur
         permissions = UserProjectPermissions.objects.get_user_permissions(user=user, project_id=project_ids)
+
         for permission in permissions:
-            roles = set()
-
-            # Priorité : admin > edit > read (méthode cumulative recommandée)
+            # Priority : admin > edit > read
+            roles = []
             if permission.is_admin:
-                roles.add("admin")
-                roles.add("edit")
-                roles.add("read")
+                roles = ["admin", "edit", "read"]
+            elif permission.can_edit:
+                roles = ["edit", "read"]
+            elif permission.can_view:
+                roles = ["read"]
 
-            if permission.can_edit:
-                roles.add("edit")
-                roles.add("read")
-
-            if permission.can_view:
-                roles.add("read")
-
-            project_roles[permission.project_id] = list(roles)
-
-        print(project_roles)
+            project_roles[permission.project_id] = roles
 
         return project_roles
 
@@ -97,7 +93,7 @@ class ProjectListView(LoginRequiredMixin, ListView):
 class ProjectCreateView(LoginRequiredMixin, CreateView):
     """
     View to create a new project. Returns a page and a form.
-    ️On success, redirects to the project edit page.
+    On success, redirects to the project edit page.
     """
 
     model = Project
@@ -109,15 +105,15 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         # 1. Create the project instance
-        response = super().form_valid(form)  # C'est ici que self.object est défini
+        response = super().form_valid(form)
 
         # 2. Create UserProjectPermissions for the creator
         UserProjectPermissions.objects.create(
             user=self.request.user,
-            project=self.object,  # Le projet qui vient d'être créé
-            is_admin=True,  # Lui donne les droits d'administration
-            can_edit=True,  # Un admin peut éditer
-            can_view=True,  # Un admin peut voir
+            project=self.object,
+            is_admin=True,
+            can_edit=True,
+            can_view=True,
         )
 
         # 3. Response with success message
@@ -172,12 +168,19 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
     """
 
     def post(self, request, project_id):
-        project = get_object_or_404(Project, pk=project_id)
+        project = Project.objects.get(pk=project_id)
+        if not project:
+            messages.error(request, "Project not found.")
+            return reswap(HttpResponse(status=200), "none")
+
         step_template_id = request.POST.get("step_template_id")
         override_name = request.POST.get("override_name", "").strip()
 
         try:
-            step_template = get_object_or_404(StepTemplate, id=step_template_id, is_active=True)
+            step_template = StepTemplate.objects.get(id=step_template_id, is_active=True)
+            if not step_template:
+                messages.error(request, "Step not found.")
+                return reswap(HttpResponse(status=200), "none")
 
             # Determine step order and count
             result = ProjectStep.objects.filter(project=project).aggregate(max_order=Max("order"), total=Count("id"))
@@ -238,10 +241,9 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
             )
             return HttpResponse(step_counter + step_content)
 
-        except Exception as e:
+        except Exception:
             messages.error(request, "Something went wrong when adding the step to the project.")
-            # TODO: return proper HTMX error response
-            return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
+            return reswap(HttpResponse(status=200), "none")
 
 
 class ReorderProjectStepsView(ProjectAdminRequiredMixin, View):
@@ -305,10 +307,9 @@ class RemoveProjectStepView(ProjectAdminRequiredMixin, View):
                 # Return empty response (card will be removed by HTMX)
                 return HttpResponse(step_counter)
 
-        except Exception as e:
+        except Exception:
             messages.error(request, "Something went wrong when deleting the step from the project.")
-            # TODO: return proper HTMX error response
-            return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
+            return reswap(HttpResponse(status=200), "none")
 
 
 class ProjectDetailView(ProjectReadRequiredMixin, CommonContextMixin, DetailView):
@@ -384,8 +385,7 @@ class AddProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMi
 
         if not title:
             messages.error(request, "Task title cannot be empty.")
-            # TODO: return proper HTMX error response
-            return HttpResponse("", status=400)
+            return reswap(HttpResponse(status=200), "none")
 
         try:
             context = self.get_context_data()
@@ -405,8 +405,6 @@ class AddProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMi
             )
             context["task"] = project_task
 
-            print(context)
-
             messages.success(request, "Task added successfully.")
 
             # Return HTML fragment for the new task row
@@ -416,10 +414,9 @@ class AddProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMi
                 context,
             )
 
-        except Exception as e:
+        except Exception:
             messages.error(request, "Something went wrong when adding the task to the step.")
-            # TODO: return proper HTMX error response
-            return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
+            return reswap(HttpResponse(status=200), "none")
 
 
 class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
@@ -463,6 +460,7 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
                 project_task.mark_na(request.user)
         except Exception as e:
             messages.error(request, str(e))
+            return reswap(HttpResponse(status=200), "none")
 
         row_html = render_to_string("projects/partials/task_row.html", context)
 
@@ -505,17 +503,15 @@ class DeleteProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
 
         if not project_task.manually_created:
             messages.error(request, "Only manually created tasks can be deleted.")
-            return render(request, "projects/partials/task_row.html", context)
+            return reswap(HttpResponse(status=200), "none")
 
         try:
             project_task.delete()
-            # Return empty response (row will be removed by HTMX)
             return HttpResponse("")
 
-        except Exception as e:
+        except Exception:
             messages.error(request, "Something went wrong when deleting the task from the step.")
-            # TODO: return proper HTMX error response
-            return HttpResponse(f'<div class="error-message">Error: {str(e)}</div>', status=400)
+            return reswap(HttpResponse(status=200), "none")
 
 
 def toggle_task_form(request, project_id, step_id):
@@ -576,7 +572,6 @@ class TaskCommentCreateView(ProjectEditRequiredMixin, CommonContextMixin, Create
 
 
 class TaskCommentUpdateView(OwnerOrAdminMixin, CommonContextMixin, UpdateView):
-    # TODO: adjust & test when developped
     model = TaskComment
     fields = ["comment_text"]
     pk_url_kwarg = "comment_id"
@@ -626,4 +621,4 @@ class TaskCommentDeleteView(ProjectEditRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.soft_delete()
-        return HttpResponse("")  # Return empty response to remove the element
+        return HttpResponse("")

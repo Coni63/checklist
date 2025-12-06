@@ -8,7 +8,6 @@ app_name = "accounts"
 urlpatterns = [
     path(
         "login/",
-        # auth_views.LoginView.as_view(redirect_authenticated_user=True, next_page="projects:project_list"),
         views.login_view,
         name="login",
     ),

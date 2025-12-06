@@ -38,9 +38,8 @@ def register_view(request):
         form = BasicRegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # Connexion immédiate de l'utilisateur après l'inscription (optionnel)
             login(request, user)
-            return redirect("projects:project_list")  # Redirigez vers une page d'accueil après l'inscription
+            return redirect("projects:project_list")
         else:
             return render(request, "accounts/register.html", {"form": form})
     else:
@@ -53,22 +52,17 @@ def register_view(request):
 
 @login_required  # Ensures only logged-in users can access this view
 def my_profile(request):
-    # The current logged-in user is request.user
-
     if request.method == "POST":
-        # 1. Initialize the form with POST data AND the existing user instance
         form = UserEditForm(request.POST, instance=request.user)
-
         if form.is_valid():
-            # 2. Save updates to the existing user
             form.save()
-            # It's best practice to redirect after a successful POST
-            return redirect("accounts:profile")  # Assuming you have a URL name 'my_profile'
-
-        # If the form is NOT valid, fall through to render the template with errors
+            messages.success(request, "Update saved !")
+            return redirect("accounts:profile")
+        else:
+            messages.warning(request, "Invalid form")
+            # If the form is NOT valid, fall through to render the template with errors
 
     else:  # This handles the initial GET request
-        # 3. Initialize the form with the existing user instance so fields are pre-filled
         form = UserEditForm(instance=request.user)
 
     # 4. Render the correct template with the current user and the form
@@ -106,11 +100,11 @@ class UpdateUserPermissionForm(ProjectAdminRequiredMixin, View):
     """
 
     def post(self, request, project_id, permission_id):
-        # 2. Récupérez la Permission spécifique
+        # 1. Fetch existing permission if exist
         try:
             permission = UserProjectPermissions.objects.get(pk=permission_id, project__id=project_id)
         except UserProjectPermissions.DoesNotExist:
-            # Réponse 404 si la permission n'existe pas dans ce projet
+            # If not exist, don't change something
             messages.error(request, "The permission does not exist.")
             return reswap(HttpResponse(status=200), "none")
 
@@ -118,22 +112,19 @@ class UpdateUserPermissionForm(ProjectAdminRequiredMixin, View):
             messages.error(request, "You cannot delete yourself")
             return reswap(HttpResponse(status=200), "none")
 
-        # 3. Récupérez les données du formulaire
-        # Les checkboxes non cochées n'apparaissent pas dans request.POST,
-        # donc on vérifie leur présence.
-
+        # 2. Get data
         field_name = request.POST.get("field_name")
         index = request.POST.get("index", "#")
 
         if field_name == "can_view":
-            if permission.can_view:
+            if permission.can_view:  # If we remove the read access, the user should lose all access
                 permission.can_view = False
                 permission.can_edit = False
                 permission.is_admin = False
             else:
                 permission.can_view = True
 
-        elif field_name == "can_edit":
+        elif field_name == "can_edit":  # If we remove the edit access, the user should lose admin access
             if permission.can_edit:
                 permission.can_edit = False
                 permission.is_admin = False
@@ -143,17 +134,17 @@ class UpdateUserPermissionForm(ProjectAdminRequiredMixin, View):
         elif field_name == "is_admin":
             permission.is_admin = not permission.is_admin
 
-        # 3. Update la permission
+        # 3. Update
         permission.save()
 
         return render(request, "projects/partials/permission_table.html#user_row", {"index": index, "permission": permission})
 
     def delete(self, request, project_id, permission_id):
-        # 2. Récupérez la Permission spécifique
+        # 1. Fetch existing permission if exist
         try:
             permission = UserProjectPermissions.objects.get(pk=permission_id, project__id=project_id)
         except UserProjectPermissions.DoesNotExist:
-            # Réponse 404 si la permission n'existe pas dans ce projet
+            # If not exist, don't change something
             messages.error(request, "The permission does not exist.")
             return reswap(HttpResponse(status=200), "none")
 
@@ -161,7 +152,7 @@ class UpdateUserPermissionForm(ProjectAdminRequiredMixin, View):
             messages.error(request, "You cannot delete yourself")
             return reswap(HttpResponse(status=200), "none")
 
-        # 3. Supprimez la Permission
+        # 2. Delete the permission
         permission.delete()
 
         return HttpResponse(status=200)
@@ -173,21 +164,24 @@ class AddUserPermissionForm(ProjectAdminRequiredMixin, View):
     """
 
     def post(self, request, project_id):
-        # 1. Vérifiez l'existence du Projet
-        project = get_object_or_404(Project, pk=project_id)
+        # 1. Fetch existing project if exist
+        project = Project.objects.get(pk=project_id)
+        if not project:
+            messages.error(request, "Project not found.")
+            return reswap(HttpResponse(status=200), "none")
 
-        # 2. Récupérez l'ID de l'utilisateur à ajouter
+        # 2. Fetch user
         user_id = request.POST.get("user_id")
-
         if not user_id:
-            # Réponse d'erreur si aucun utilisateur n'est sélectionné
-            return HttpResponse("Please select a user.", status=400)
+            messages.error(request, "Please select a user.")
+            return reswap(HttpResponse(status=200), "none")
 
-        # 3. Récupérez l'objet User
-        user_to_add = get_object_or_404(User, pk=user_id)
+        user_to_add = User.objects.get(pk=user_id)
+        if not user_to_add:
+            messages.error(request, "User not found.")
+            return reswap(HttpResponse(status=200), "none")
 
-        # 4. Créez l'objet Permission (sans permissions au départ)
-        # On vérifie d'abord pour éviter les duplicatas (bien que le queryset 'other_users' le gère déjà)
+        # 3. Create the permission with no access, user will adjust afterward
         qs = UserProjectPermissions.objects.filter(project=project)
         index = qs.count() + 1
 
@@ -198,7 +192,7 @@ class AddUserPermissionForm(ProjectAdminRequiredMixin, View):
         permission = UserProjectPermissions.objects.create(
             project=project,
             user=user_to_add,
-            can_view=False,  # Default permissions
+            can_view=False,
             can_edit=False,
             is_admin=False,
         )

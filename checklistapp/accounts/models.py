@@ -43,10 +43,10 @@ class UserProjectPermissions(models.Model):
 
     def __str__(self):
         if self.is_admin:
-            return f"{self.user.email} is admin of {self.project.name}"
+            return f"{self.user.email} / {self.project.name} : RWA"
         elif self.can_edit:
-            return f"{self.user.email} can edit {self.project.name}"
+            return f"{self.user.email} / {self.project.name} : RW-"
         elif self.can_view:
-            return f"{self.user.email} can view {self.project.name}"
+            return f"{self.user.email} / {self.project.name} : R--"
         else:
-            return f"{self.user.email} has no access to {self.project.name}"
+            return f"{self.user.email} / {self.project.name} : ---"
