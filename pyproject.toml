@@ -8,11 +8,15 @@ dependencies = [
     "cookiecutter>=2.6.0",
     "crispy-tailwind>=1.0.3",
     "django>=5.2.8",
+    "django-environ>=0.12.0",
     "django-htmx>=1.27.0",
     "django-tailwind[cookiecutter,honcho,reload]>=4.2.0",
     "django-template-partials>=25.3",
     "django-widget-tweaks>=1.5.0",
+    "gunicorn>=23.0.0",
+    "psycopg2-binary>=2.9.11",
 ]
+
 
 [dependency-groups]
 dev = ["django-debug-toolbar>=6.1.0", "ruff>=0.14.6"]

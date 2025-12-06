@@ -1,8 +1,6 @@
 V0
-Dockerfile
 Github actions
-Docker compose
-Postgres DB
+README
 
 BUG:
 messages only show on refresh
@@ -24,3 +22,4 @@ Use ProjectService when possible
 Allow to manage templates on the UI -- Need to align with roles :/
 Review SQL, Cachcing, optimisations
 Migrate to v6
+Multiple settings.py

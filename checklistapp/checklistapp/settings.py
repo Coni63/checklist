@@ -14,20 +14,28 @@ import os
 import sys
 from pathlib import Path
 
+import environ
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+env = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False)
+)
+environ.Env.read_env(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklistapp/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-al3p#@*zbfe(z4vap+p70h^0x!4+*=)=w4r8jzg$4^*rt9p4@k"
+SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env("DEBUG")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1").split(",")
 
 
 # Application definition
@@ -88,10 +96,7 @@ WSGI_APPLICATION = "checklistapp.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": env.db(),
 }
 
 
@@ -143,7 +148,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "accounts.User"
 TAILWIND_APP_NAME = "theme"
-NPM_BIN_PATH = r"C:\Users\Nicolas\AppData\Roaming\npm\npm.cmd"
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 CRISPY_TEMPLATE_PACK = "tailwind"
@@ -151,6 +155,7 @@ CRISPY_TEMPLATE_PACK = "tailwind"
 TESTING = "test" in sys.argv or "PYTEST_VERSION" in os.environ
 
 if DEBUG and not TESTING:
+    NPM_BIN_PATH = env("NPM_BIN_PATH")
     # Add django_browser_reload only in DEBUG mode
     INSTALLED_APPS += [
         "django_browser_reload",

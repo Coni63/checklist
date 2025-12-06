@@ -1,0 +1,70 @@
+services:
+  db:
+    image: postgres:18.1-bookworm
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: checklist
+    # Ajout du healthcheck pour que l'état 'service_healthy' puisse être utilisé par depends_on
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d checklist"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # Volume pour la persistance des données
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+  app-setup:
+    image: test:latest
+    # Attend que le service 'db' soit démarré et dans l'état 'healthy' (disponible)
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DEBUG: off
+      SECRET_KEY: "django-insecure-al3p#@*zbfe(z4vap+p70h^0x!4+*=)=w4r8jzg$4^*rt9p4@k"
+      # Mise à jour de la variable pour se connecter au service 'db' (PostgreSQL)
+      DATABASE_URL: postgres://admin:password@db:5432/checklist
+    volumes:
+      # Monte le volume statique nommé sur le dossier de destination
+      - static_volume:/app/staticfiles
+    command: >
+      sh -c "
+      python3 manage.py migrate --noinput && 
+      python3 manage.py collectstatic --noinput
+      "
+    
+  app:
+    image: test:latest
+    depends_on:
+      app-setup:
+        condition: service_completed_successfully
+    environment:
+      DEBUG: off
+      SECRET_KEY: "django-insecure-al3p#@*zbfe(z4vap+p70h^0x!4+*=)=w4r8jzg$4^*rt9p4@k"
+      # Mise à jour de la variable pour se connecter au service 'db' (PostgreSQL)
+      DATABASE_URL: postgres://admin:password@db:5432/checklist
+      DJANGO_ALLOWED_HOSTS: "127.0.0.1,localhost,0.0.0.0"
+    ports:
+      - 8000:8000
+    # command: ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
+
+  nginx:
+    image: nginx:stable-alpine
+    depends_on:
+      - app
+    ports:
+      - "80:80" # Expose Nginx sur le port 80 de l'hôte
+    volumes:
+      # 🚨 AJOUTER CE VOLUME PARTAGÉ
+      - static_volume:/app/static:ro # Nginx accède aux fichiers statiques collectés par 'app'
+      # Vous devrez créer ce fichier localement (voir étape C)
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+# Définition des volumes
+volumes:
+  postgres_data:
+  static_volume: 

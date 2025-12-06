@@ -1,4 +1,3 @@
-from projects.models import Project
 from core.mixins import ProjectAdminRequiredMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
@@ -8,6 +7,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic.base import View
 from django_htmx.http import reswap
+from projects.models import Project
 
 from accounts.models import UserProjectPermissions
 
@@ -171,26 +171,26 @@ class AddUserPermissionForm(ProjectAdminRequiredMixin, View):
     """
     View to handle the creation of a new UserProjectPermissions record.
     """
+
     def post(self, request, project_id):
         # 1. Vérifiez l'existence du Projet
         project = get_object_or_404(Project, pk=project_id)
 
         # 2. Récupérez l'ID de l'utilisateur à ajouter
         user_id = request.POST.get("user_id")
-        
+
         if not user_id:
             # Réponse d'erreur si aucun utilisateur n'est sélectionné
             return HttpResponse("Please select a user.", status=400)
-        
+
         # 3. Récupérez l'objet User
         user_to_add = get_object_or_404(User, pk=user_id)
-        
+
         # 4. Créez l'objet Permission (sans permissions au départ)
         # On vérifie d'abord pour éviter les duplicatas (bien que le queryset 'other_users' le gère déjà)
         qs = UserProjectPermissions.objects.filter(project=project)
         index = qs.count() + 1
-        
-        
+
         if qs.filter(user=user_to_add).exists():
             messages.error(request, f"Permission for {user_to_add.username} already exists.")
             return reswap(HttpResponse(status=200), "none")
@@ -198,7 +198,7 @@ class AddUserPermissionForm(ProjectAdminRequiredMixin, View):
         permission = UserProjectPermissions.objects.create(
             project=project,
             user=user_to_add,
-            can_view=False, # Default permissions
+            can_view=False,  # Default permissions
             can_edit=False,
             is_admin=False,
         )
