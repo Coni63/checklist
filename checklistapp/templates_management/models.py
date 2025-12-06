@@ -22,10 +22,12 @@ class StepTemplate(models.Model):
 class TaskTemplate(models.Model):
     step_template = models.ForeignKey(StepTemplate, on_delete=models.CASCADE, related_name="tasks")
     title = models.CharField(max_length=500)
-    info_url = models.URLField(blank=True, null=True)
     order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    info_text = models.TextField(null=True, blank=True)
+    help_url = models.URLField(null=True, help_text="Link to documentation support to perform the task")
+    work_url = models.URLField(null=True, help_text="Link to the source where the action must be applied (git, jira, ...)")
 
     class Meta:
         ordering = ["order"]

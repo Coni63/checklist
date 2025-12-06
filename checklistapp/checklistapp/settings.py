@@ -70,7 +70,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
-    'core.middleware.HTMXMessagesMiddleware',
+    "core.middleware.HTMXMessagesMiddleware",
 ]
 
 ROOT_URLCONF = "checklistapp.urls"

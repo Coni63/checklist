@@ -101,6 +101,7 @@ class ProjectStep(models.Model):
         help_text="Template this step was created from",
     )
     title = models.CharField(max_length=200, help_text="Custom title, overrides template name")
+    description = models.TextField(blank=True)
     icon = models.CharField(max_length=10)
     order = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -176,13 +177,14 @@ class ProjectTask(models.Model):
         help_text="Template this task was created from",
     )
     title = models.CharField(max_length=500, help_text="Custom title, overrides template")
-    info_url = models.URLField(blank=True, null=True)
+    info_text = models.TextField(null=True, blank=True)
+    help_url = models.URLField(null=True, help_text="Link to documentation support to perform the task")
+    work_url = models.URLField(null=True, help_text="Link to the source where the action must be applied (git, jira, ...)")
     order = models.IntegerField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
-    comment = models.TextField(blank=True, help_text="Simple comment field (Phase 1)")
+    completed_by = models.ForeignKey("accounts.User", on_delete=models.CASCADE, null=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     manually_created = models.BooleanField(
         default=False,
         help_text="Indicates if the task was created manually or from a template",
@@ -195,19 +197,22 @@ class ProjectTask(models.Model):
     def __str__(self):
         return f"{self.project_step.title} - Task {self.order}"
 
-    def mark_done(self):
+    def mark_done(self, user):
         self.status = "done"
         self.completed_at = timezone.now()
+        self.completed_by = user
         self.save()
 
-    def mark_na(self):
+    def mark_na(self, user):
         self.status = "na"
         self.completed_at = timezone.now()
+        self.completed_by = user
         self.save()
 
     def mark_pending(self):
         self.status = "pending"
         self.completed_at = None
+        self.completed_by = None
         self.save()
 
 

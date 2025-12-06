@@ -64,8 +64,7 @@
 
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-base-content mb-2" id="contentTitle">{{ active_step.to_str }}</h1>
-    <p class="text-base-content/70" id="contentSubtitle"></p>
-    {# TODO: add maybe a description to a step #}
+    <p class="text-base-content/70" id="contentSubtitle">{{ active_step.description }}</p>
 </div>
 
 {% with completion=active_step.get_completion_percentage text=active_step.get_progress_text oob=false %}

@@ -1,6 +1,7 @@
 from accounts.models import UserProjectPermissions
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied, ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, PermissionDenied
+
 
 class AbstractProjectAccessMixin(LoginRequiredMixin):
     """Mixin pour vérifier l'accès (read, write, admin) à un projet spécifique."""
@@ -54,48 +55,43 @@ class OwnerOrAdminMixin(LoginRequiredMixin):
     """
 
     # 🚨 DÉFINIR CE CHAMP dans la vue qui utilise le mixin, ex: object_model = Item
-    object_model = None 
+    object_model = None
     # Le nom du champ sur l'objet qui contient l'utilisateur (l'auteur/owner), ex: 'owner' ou 'created_by'
-    owner_field = 'owner'
+    owner_field = "owner"
     object_key_name = "pk"
 
     def dispatch(self, request, *args, **kwargs):
         # 1. Vérifications initiales (projet_id et modèle)
         if self.object_model is None:
-            raise ImproperlyConfigured(
-                "Le mixin OwnerOrAdminMixin nécessite que 'object_model' soit défini."
-            )
+            raise ImproperlyConfigured("Le mixin OwnerOrAdminMixin nécessite que 'object_model' soit défini.")
 
         object_id = kwargs.get(self.object_key_name)
         project_id = kwargs.get("project_id")
-        
+
         if not object_id or not project_id:
-            raise ImproperlyConfigured(
-                "Le mixin nécessite 'pk' (ID de l'objet) ET 'project_id' dans les kwargs de l'URL."
-            )
+            raise ImproperlyConfigured("Le mixin nécessite 'pk' (ID de l'objet) ET 'project_id' dans les kwargs de l'URL.")
 
         try:
             # 2. Récupérer l'objet et son auteur
             current_object = self.object_model.objects.get(pk=object_id)
             object_owner = getattr(current_object, self.owner_field)
-            
+
             # Vérifier si l'utilisateur est l'auteur de l'objet
-            is_owner = (request.user == object_owner)
-            
+            is_owner = request.user == object_owner
+
         except self.object_model.DoesNotExist:
-            raise PermissionDenied("Access denied.") # Ou Http404, selon votre préférence
+            raise PermissionDenied("Access denied.")  # Ou Http404, selon votre préférence
 
         # 3. Vérifier les permissions du projet
         user_permission = UserProjectPermissions.objects.get_user_permissions(request.user, project_id)
 
         if not user_permission:
-             # Si l'utilisateur n'a aucune permission sur le projet, il faut au moins qu'il soit l'auteur.
-             has_permission = is_owner
+            # Si l'utilisateur n'a aucune permission sur le projet, il faut au moins qu'il soit l'auteur.
+            has_permission = is_owner
         else:
-             # Autorisation si l'utilisateur est admin DU PROJET OU l'auteur de l'objet
-             is_project_admin = user_permission.is_admin 
-             has_permission = is_project_admin or is_owner
-
+            # Autorisation si l'utilisateur est admin DU PROJET OU l'auteur de l'objet
+            is_project_admin = user_permission.is_admin
+            has_permission = is_project_admin or is_owner
 
         # 4. Autorisation finale
         if not has_permission:
@@ -103,7 +99,7 @@ class OwnerOrAdminMixin(LoginRequiredMixin):
             raise PermissionDenied("Access denied.")
 
         # L'objet est accessible dans la vue si nécessaire
-        request.current_object = current_object 
+        request.current_object = current_object
 
         return super().dispatch(request, *args, **kwargs)
 

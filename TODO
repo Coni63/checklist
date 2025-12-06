@@ -3,10 +3,7 @@ V0
 BUG:
 
 V1 (must have features)
-Add description to step
-Add Info, help and info_text (rename if possible)
 use reswap none when possible instead of returning the same object
-Set completed date and user on task
 
 V2 (refacto UI with all features presents)
 Better UI

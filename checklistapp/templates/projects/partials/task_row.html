@@ -24,13 +24,33 @@
                     {% elif task.status == 'na' %}italic text-base-content/60{% endif %}">
                     {{task.title}}
                 </h3>
+                
+                {% if task.status == 'done' or task.status == 'na' %}
+                    <div class="flex items-center gap-2">
+                         <span class="font-semibold text-base-content">{{ task.completed_by.username }}</span>
+                         <span class="text-xs text-base-content/60">{{ task.completed_at|timesince }} ago</span>
+                    </div>
+                {% endif %}
             </div>
 
             {# Action Buttons #}
             <div class="flex gap-2 items-center flex-wrap">
-                {% if task.info %}
-                    <a href="{{ task.info }}" target="_blank" class="btn btn-sm btn-info btn-outline" title="More info">
-                        ℹ Info
+                {% if task.help_url %}
+                    <a href="{{ task.help_url }}" target="_blank" class="btn btn-sm btn-info btn-outline" title="Link to documentation">
+                        ❓ Help
+                    </a>
+                {% endif %}
+                {% if task.work_url %}
+                    <a href="{{ task.work_url }}" target="_blank" class="btn btn-sm btn-info btn-outline" title="Link to action">
+                        👉 Link
+                    </a>
+                {% endif %}
+                {% if task.info_text %}
+                    <a href="#" class="btn btn-sm btn-outline-info" 
+                        data-toggle="tooltip" 
+                        data-placement="top" 
+                        title="{{ task.info_text }}">
+                        💬 Info
                     </a>
                 {% endif %}
 

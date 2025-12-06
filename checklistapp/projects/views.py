@@ -1,5 +1,11 @@
 from accounts.models import UserProjectPermissions
-from core.mixins import CommonContextMixin, ProjectAdminRequiredMixin, ProjectEditRequiredMixin, ProjectReadRequiredMixin, OwnerOrAdminMixin
+from core.mixins import (
+    CommonContextMixin,
+    OwnerOrAdminMixin,
+    ProjectAdminRequiredMixin,
+    ProjectEditRequiredMixin,
+    ProjectReadRequiredMixin,
+)
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models, transaction
@@ -185,6 +191,7 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
             # Create the project step
             project_step = ProjectStep.objects.create(
                 project=project,
+                description=step_template.description,
                 step_template=step_template,
                 title=step_title,
                 icon=getattr(step_template, "icon", "📋"),
@@ -198,7 +205,9 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
                     project_step=project_step,
                     task_template=task_template,
                     title=task_template.title,
-                    info_url=getattr(task_template, "info_url", ""),
+                    info_text=task_template.info_text,
+                    help_url=task_template.help_url,
+                    work_url=task_template.work_url,
                     order=j,
                 )
             messages.success(request, "Step added successfully.")
@@ -449,9 +458,9 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
             if new_status.startswith("un"):
                 project_task.mark_pending()
             elif new_status == "done":
-                project_task.mark_done()
+                project_task.mark_done(request.user)
             elif new_status == "na":
-                project_task.mark_na()
+                project_task.mark_na(request.user)
         except Exception as e:
             messages.error(request, str(e))
 
@@ -573,7 +582,7 @@ class TaskCommentUpdateView(OwnerOrAdminMixin, CommonContextMixin, UpdateView):
     pk_url_kwarg = "comment_id"
     template_name = "projects/partials/comment_form_edit.html"
     object_model = TaskComment  # object used to check if we are owner
-    owner_field = 'user'
+    owner_field = "user"
     object_key_name = "comment_id"
 
     def get_queryset(self):
