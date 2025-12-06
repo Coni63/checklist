@@ -64,3 +64,5 @@ Support iterative processes (multiple instances of same step)
 1. Refer to `docker-compose.yaml`. It is highly not recommended to use a database in Production in the docker-compose.
 
 > The image is not compatible with a `DEBUG=on` as several dependancies are not installed
+
+> Refer to [this link](https://hub.docker.com/r/coni57/project-checklist) for images
