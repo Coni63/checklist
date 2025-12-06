@@ -48,9 +48,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the Django project to the container
 COPY --chown=python:python /checklistapp/ /app/
 
-# Collecte les fichiers statiques dans le dossier STATIC_ROOT
-RUN python manage.py collectstatic --noinput
-
 USER python
 
 # Expose the Django port
