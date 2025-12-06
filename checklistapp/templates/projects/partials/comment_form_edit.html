@@ -1,0 +1,18 @@
+<div>
+    <form
+        hx-post="{% url 'projects:comment_edit' project_id=project_id step_id=step_id task_id=task_id comment_id=comment_id %}"
+        hx-target="closest div"
+        hx-swap="outerHTML"
+        class="space-y-2">
+        {% csrf_token %}
+        <textarea
+            name="comment_text"
+            placeholder="Add your comment..."
+            rows="3"
+            required
+            class="textarea textarea-bordered w-full text-sm">{{ object.comment_text }}</textarea>
+        <div class="flex justify-end">
+            <button type="submit" class="btn btn-sm btn-primary">Save changes</button>
+        </div>
+    </form>
+</div>

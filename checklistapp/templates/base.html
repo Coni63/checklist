@@ -1,0 +1,52 @@
+{% load static tailwind_tags %}
+{% load django_htmx %}
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>{% block title %}Checklist Manager{% endblock %}</title>
+
+    {# HTMX #}
+
+    {% htmx_script %}
+
+    {# Favicon #}
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+
+    {# CSS #}
+    {% tailwind_css %}
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% block extra_css %}{% endblock %}
+
+    {# Meta tags for SEO #}
+    <meta name="description" content="{% block meta_description %}Manage your projects with multi-step checklists{% endblock %}">
+
+    {# CSRF Token for AJAX requests #}
+    <script>
+        window.CSRF_TOKEN = '{{ csrf_token }}';
+    </script>
+</head>
+<body class="min-h-screen bg-base-200 flex flex-col" hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
+    {# Navigation Bar #}
+    {% include 'navbar.html' %}
+
+    {# Messages #}
+    {% include 'messages.html' %}
+
+    {# Main Content Area #}
+    <main class="flex-1 flex overflow-auto">
+        {# Page Content #}
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- {% include 'footer.html' %} -->
+
+    {# JavaScript #}
+    <script src="{% static 'js/base.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

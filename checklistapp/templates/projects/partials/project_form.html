@@ -1,0 +1,81 @@
+{% load widget_tweaks %}
+
+{# This page render only the form to edit the project. Crispy form was unfortunately not working... #}
+
+<div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            {# Grid pour name et status #}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                {# Name field #}
+                <div class="form-control">
+                    <label for="{{ form.name.id_for_label }}" class="label">
+                        <span class="label-text font-semibold">{{ form.name.label }}</span>
+                    </label>
+                    {{ form.name|add_class:"input input-bordered w-full" }}
+                    {% if form.name.errors %}
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.name.errors.0 }}</span>
+                        </label>
+                    {% endif %}
+                    {% if form.name.help_text %}
+                        <label class="label">
+                            <span class="label-text-alt">{{ form.name.help_text }}</span>
+                        </label>
+                    {% endif %}
+                </div>
+
+                {# Status field #}
+                <div class="form-control">
+                    <label for="{{ form.status.id_for_label }}" class="label">
+                        <span class="label-text font-semibold">{{ form.status.label }}</span>
+                    </label>
+                    {{ form.status|add_class:"select select-bordered w-full" }}
+                    {% if form.status.errors %}
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.status.errors.0 }}</span>
+                        </label>
+                    {% endif %}
+                    {% if form.status.help_text %}
+                        <label class="label">
+                            <span class="label-text-alt">{{ form.status.help_text }}</span>
+                        </label>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Description field #}
+            <div class="form-control mb-4">
+                <label for="{{ form.description.id_for_label }}" class="label">
+                    <span class="label-text font-semibold">{{ form.description.label }}</span>
+                </label>
+                {{ form.description|add_class:"textarea textarea-bordered w-full" }}
+                {% if form.description.errors %}
+                    <label class="label">
+                        <span class="label-text-alt text-error">{{ form.description.errors.0 }}</span>
+                    </label>
+                {% endif %}
+                {% if form.description.help_text %}
+                    <label class="label">
+                        <span class="label-text-alt">{{ form.description.help_text }}</span>
+                    </label>
+                {% endif %}
+            </div>
+
+            {# Form Actions #}
+            <div class="card-actions justify-start pt-4 border-t border-base-300">
+                <button type="submit" class="btn btn-primary gap-2">
+                    <span>{{ submit_icon|default:"💾" }}</span>
+                    <span>{{ submit_label|default:"Save Changes" }}</span>
+                </button>
+                {% if cancel_url %}
+                <a href="{{ cancel_url }}" class="btn btn-ghost">
+                    Cancel
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>

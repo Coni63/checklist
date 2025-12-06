@@ -1,0 +1,21 @@
+<div id="comments-container" class="space-y-3 mb-4">
+    {% for comment in comments %}
+        {% include 'projects/partials/comment_item.html' %}
+    {% empty %}
+        {% if 'edit' not in roles %}
+            <div class="card bg-base-100 shadow-sm border border-base-200">
+                <div class="card-body p-4 text-center">
+                    <p class="text-base-content/70 text-sm">
+                        No comments :(
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+{% if 'edit' in roles %}
+<div class="mt-4">
+    {% include 'projects/partials/comment_form.html' %}
+</div>
+{% endif %}

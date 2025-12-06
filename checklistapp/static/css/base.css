@@ -1,0 +1,41 @@
+/* ============================================
+   Base CSS - Minimal custom styles
+   Most styles are now handled by Tailwind/DaisyUI
+   ============================================ */
+
+/* ============================================
+   CSS Variables for theme customization
+   ============================================ */
+:root {
+    /* You can add custom CSS variables here if needed */
+    /* These can be referenced in templates for quick theme adjustments */
+}
+
+main {
+        background-color: #fec;
+}
+
+/* ============================================
+   Custom utility classes (if needed)
+   ============================================ */
+
+.active-step {
+    margin-left: 0.5rem;
+}
+
+/* ============================================
+   Animation overrides or custom animations
+   ============================================ */
+
+/* Animation used to remove alerts */
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+

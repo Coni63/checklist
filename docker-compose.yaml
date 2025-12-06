@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:18.1-bookworm
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: checklist
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d checklist"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+  app-setup:
+    image: coni57/project-checklist
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DEBUG: off
+      SECRET_KEY: "django-insecure-al3p#@*zbfe(z4vap+p70h^0x!4+*=)=w4r8jzg$4^*rt9p4@k"
+      DATABASE_URL: postgres://admin:password@db:5432/checklist
+    volumes:
+      # Extract the static files to be served by NGINX
+      - static_volume:/app/staticfiles
+    command: >
+      sh -c "
+      python3 manage.py migrate --noinput && 
+      python3 manage.py collectstatic --noinput
+      "
+    
+  app:
+    image: coni57/project-checklist
+    depends_on:
+      app-setup:
+        condition: service_completed_successfully
+    environment:
+      DEBUG: off
+      SECRET_KEY: "django-insecure-al3p#@*zbfe(z4vap+p70h^0x!4+*=)=w4r8jzg$4^*rt9p4@k"
+      DATABASE_URL: postgres://admin:password@db:5432/checklist
+      DJANGO_ALLOWED_HOSTS: "127.0.0.1,localhost,0.0.0.0"
+    ports:
+      - 8000:8000
+    # if you want to run it without gunicorn for example for dev
+    # command: ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
+
+  nginx:
+    image: nginx:stable-alpine
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/app/static:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  postgres_data:
+  static_volume: 

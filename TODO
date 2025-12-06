@@ -1,0 +1,11 @@
+V2 (refacto UI with all features presents)
+Better UI
+Loading component
+
+V3 (optimisation - industrialisation)
+Write unittest
+Use ProjectService when possible
+Allow to manage templates on the UI -- Need to align with roles :/
+Review SQL, Cachcing, optimisations
+Migrate to v6
+Multiple settings.py
