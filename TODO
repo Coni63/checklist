@@ -3,7 +3,6 @@ V0
 BUG:
 
 V1 (must have features)
-Update your own comment
 Add description to step
 Add Info, help and info_text (rename if possible)
 use reswap none when possible instead of returning the same object

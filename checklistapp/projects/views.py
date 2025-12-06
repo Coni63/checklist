@@ -1,5 +1,5 @@
 from accounts.models import UserProjectPermissions
-from core.mixins import CommonContextMixin, ProjectAdminRequiredMixin, ProjectEditRequiredMixin, ProjectReadRequiredMixin
+from core.mixins import CommonContextMixin, ProjectAdminRequiredMixin, ProjectEditRequiredMixin, ProjectReadRequiredMixin, OwnerOrAdminMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models, transaction
@@ -566,12 +566,15 @@ class TaskCommentCreateView(ProjectEditRequiredMixin, CommonContextMixin, Create
         return HttpResponse(html)
 
 
-class TaskCommentUpdateView(ProjectEditRequiredMixin, CommonContextMixin, UpdateView):
+class TaskCommentUpdateView(OwnerOrAdminMixin, CommonContextMixin, UpdateView):
     # TODO: adjust & test when developped
     model = TaskComment
     fields = ["comment_text"]
     pk_url_kwarg = "comment_id"
-    template_name = "projects/partials/comment_form.html"
+    template_name = "projects/partials/comment_form_edit.html"
+    object_model = TaskComment  # object used to check if we are owner
+    owner_field = 'user'
+    object_key_name = "comment_id"
 
     def get_queryset(self):
         # Only allow editing own comments
@@ -587,6 +590,7 @@ class TaskCommentUpdateView(ProjectEditRequiredMixin, CommonContextMixin, Update
         html = render_to_string(
             "projects/partials/comment_item.html",
             {
+                **self.get_context_data(),
                 "comment": self.object,
                 "user": self.request.user,
             },
