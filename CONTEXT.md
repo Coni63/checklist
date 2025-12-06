@@ -3,7 +3,9 @@
 ## Project Overview
 
 This project is a multi-step checklist management system designed to help users organize and execute complex workflows that consist of multiple sequential or parallel steps. Each step contains a list of tasks that need to be completed, with support for task status tracking (Done/N/A), comments, and reference documentation links.
-Core Concept
+
+### Core Concept
+
 Think of it as a recipe/procedure management system where:
 
 A Project is like planning a dinner party
