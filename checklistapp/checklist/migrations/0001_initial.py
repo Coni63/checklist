@@ -4,17 +4,17 @@ import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
 
-class Migration(migrations.Migration):
 
+class Migration(migrations.Migration):
     dependencies = [
-        ('projects', '0005_remove_projecttask_comment_and_more'),
+        ("projects", "0005_remove_projecttask_comment_and_more"),
     ]
 
     operations = [
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.CreateModel(
-                    name='ProjectStep',
+                    name="ProjectStep",
                     fields=[
                         (
                             "id",
@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
                         (
                             "description",
                             models.TextField(blank=True),
-                        )
+                        ),
                     ],
                     options={
                         "ordering": ["order"],
@@ -65,7 +65,7 @@ class Migration(migrations.Migration):
                     },
                 ),
                 migrations.CreateModel(
-                    name='ProjectTask',
+                    name="ProjectTask",
                     fields=[
                         (
                             "id",
@@ -150,7 +150,7 @@ class Migration(migrations.Migration):
                     },
                 ),
                 migrations.CreateModel(
-                    name='TaskComment',
+                    name="TaskComment",
                     fields=[
                         (
                             "id",
@@ -188,16 +188,16 @@ class Migration(migrations.Migration):
             ],
             database_operations=[
                 migrations.RunSQL(
-                    sql='''
+                    sql="""
                         ALTER TABLE projects_projectstep RENAME TO checklist_projectstep;
                         ALTER TABLE projects_projecttask RENAME TO checklist_projecttask;
                         ALTER TABLE projects_taskcomment RENAME TO checklist_taskcomment;
-                    ''',
-                    reverse_sql='''
+                    """,
+                    reverse_sql="""
                         ALTER TABLE checklist_projectstep RENAME TO projects_projectstep;
                         ALTER TABLE checklist_projecttask RENAME TO projects_projecttask;
                         ALTER TABLE checklist_taskcomment RENAME TO projects_taskcomment;
-                    ''',
+                    """,
                 ),
             ],
         ),

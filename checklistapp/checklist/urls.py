@@ -1,7 +1,7 @@
 from django.urls import path
+from projects.views import ProjectDetailView
 
 from . import views
-from projects.views import ProjectDetailView
 
 app_name = "checklist"
 

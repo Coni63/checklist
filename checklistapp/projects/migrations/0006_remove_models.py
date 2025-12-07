@@ -4,19 +4,20 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("projects", "0005_remove_projecttask_comment_and_more"),
         ("checklist", "0001_initial"),
     ]
 
-    migrations.SeparateDatabaseAndState(
-        state_operations=[
-            migrations.DeleteModel(name='ProjectStep'),
-            migrations.DeleteModel(name='ProjectTask'),
-            migrations.DeleteModel(name='TaskComment'),
-        ],
-        database_operations=[
-            # Models are already moved
-        ],
-    ),
+    (
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.DeleteModel(name="ProjectStep"),
+                migrations.DeleteModel(name="ProjectTask"),
+                migrations.DeleteModel(name="TaskComment"),
+            ],
+            database_operations=[
+                # Models are already moved
+            ],
+        ),
+    )

@@ -1,20 +1,13 @@
 from accounts.models import UserProjectPermissions
 from checklist.models import ProjectStep
-from core.mixins import (
-    ProjectAdminRequiredMixin,ProjectReadRequiredMixin,CommonContextMixin
-)
+from core.mixins import CommonContextMixin, ProjectAdminRequiredMixin, ProjectReadRequiredMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse_lazy
-from django.views.generic import (
-    CreateView,
-    ListView,
-    UpdateView,
-    DetailView,
-    DeleteView
-)
-from templates_management.models import StepTemplate
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from templates_management.models import StepTemplate
+
 from .forms import ProjectCreationForm
 from .models import Project
 
@@ -210,4 +203,3 @@ class ProjectDeleteView(ProjectAdminRequiredMixin, DeleteView):
     # Optional: allow "GET" request to delete (dangerous but sometimes needed for a simple link)
     def get(self, request, *args, **kwargs):
         return self.delete(request, *args, **kwargs)
-

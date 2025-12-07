@@ -10,14 +10,12 @@ from django.contrib import messages
 from django.db import models, transaction
 from django.db.models import Count, Max
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
-from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import (
     CreateView,
     DeleteView,
-    DetailView,
     ListView,
     UpdateView,
 )
@@ -180,8 +178,6 @@ class RemoveProjectStepView(ProjectAdminRequiredMixin, View):
         except Exception:
             messages.error(request, "Something went wrong when deleting the step from the project.")
             return reswap(HttpResponse(status=200), "none")
-
-
 
 
 class AddProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
