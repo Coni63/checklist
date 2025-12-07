@@ -14,8 +14,11 @@ module.exports = {
   theme: {
     extend: {},
   },
-  plugins: [require("daisyui")],
+  plugins: [
+    //require("daisyui")
+  ],
   daisyui: {
+    /*
     themes: [
       {
         light: {
@@ -53,5 +56,7 @@ module.exports = {
       "luxury",
       "dracula",
     ],
+    */
+    themes: false
   },
 };

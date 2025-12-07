@@ -11,10 +11,6 @@
     /* These can be referenced in templates for quick theme adjustments */
 }
 
-main {
-        background-color: #fec;
-}
-
 /* ============================================
    Custom utility classes (if needed)
    ============================================ */
@@ -38,4 +34,3 @@ main {
         opacity: 0;
     }
 }
-

@@ -1,61 +1,86 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
 {% load partials %}
+{% load static %}
 
 {% block title %}My Projects - Checklist Manager{% endblock %}
 
 {% partialdef project_card %}
     <div class="max-w-2xl mt-4 mx-auto bg-gray-100 shadow-lg rounded-2xl w-100">
-    <div class="px-6 py-5">
-        <div class="flex items-start">
-        <div class="flex-grow truncate">
-            <div class="w-full sm:flex justify-between items-center mb-1">
-                <h2 class="text-2xl leading-snug font-extrabold truncate mb-0">{{ project.name }}</h2>
-            </div>
-            {% if project.status == 'active' or project.status == 'in_progress' %}
-                <span class="bg-yellow-500 px-2 py-0.5 font-semibold text-sm rounded-lg">{{ project.get_status_display }}</span>
-            {% elif project.status == 'completed' %}
-                <span class="bg-green-500 px-2 py-0.5 font-semibold text-sm rounded-lg">{{ project.get_status_display }}</span>
-            {% else %}
-                <span class="bg-red-500 px-2 py-0.5 font-semibold text-sm rounded-lg">{{ project.get_status_display }}</span>
-            {% endif %}
-            <div class="flex items-end justify-between whitespace-normal">
-                <div class="max-w-md mt-1 h-[64px]">
-                    <p class="mb-2 text-sm text-base-content/70">{{ project.description|truncatechars:100 }}</p>
+        <div class="px-6 py-5">
+            <div class="flex items-start">
+                <div class="flex-grow truncate mr-2">
+                    <div class="w-full sm:flex justify-between items-center mb-1">
+                        <a href="{% url 'projects:project_detail' project.id %}" title="Details">
+                            <h2 class="text-2xl leading-snug font-bold truncate mb-0">{{ project.name }}</h2>
+                        </a>
+                    </div>
+                    {% if project.status == 'active' or project.status == 'in_progress' %}
+                        <span class="bg-yellow-500 px-2 py-0.5 font-semibold text-sm rounded-lg">{{ project.get_status_display }}</span>
+                    {% elif project.status == 'completed' %}
+                        <span class="bg-green-500 px-2 py-0.5 font-semibold text-sm rounded-lg">{{ project.get_status_display }}</span>
+                    {% else %}
+                        <span class="bg-red-500 px-2 py-0.5 font-semibold text-sm rounded-lg">{{ project.get_status_display }}</span>
+                    {% endif %}
+                    <div class="flex items-end justify-between whitespace-normal">
+                        <div class="max-w-md mt-1 h-[64px]">
+                            <p class="mb-2 text-sm text-base-content/70">{{ project.description|truncatechars:100 }}</p>
+                        </div>
+                    </div>
+                    {% with completion=project.get_completion_percentage %}
+                    <div class="mt-4">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-base-content/70">Progress</span>
+                                <span class="font-semibold">{{ completion }}</span>
+                            </div>
+                            <progress class="progress progress-primary w-full" value="{{ completion|cut:'%' }}" max="100"></progress>
+                    </div>
+                    {% endwith %}
+                </div>
+                <div class="flex flex-col mt-0 gap-[10px]">
+                    <a href="{% url 'projects:project_detail' project.id %}" title="Details">
+                        <i data-lucide="external-link" class="cursor-pointer flex gap-2 items-center text-left text-sm font-medium group focus:outline-none focus-visible:border-b" style="width: 16px; height: 16px;"></i>
+                    </a>
+                    {% if 'admin' in roles|get_item:project.id %}
+                    <a href="{% url 'projects:project_edit' project.id %}" title="Edit">
+                        <i data-lucide="pencil" class="cursor-pointer flex gap-2 items-center text-left text-sm font-medium group focus:outline-none focus-visible:border-b icon-sm" style="width: 16px; height: 16px;"></i>
+                    </a>
+                    <form action="{% url 'projects:project_delete' project.id %}"
+                            method="post"
+                            class="inline"
+                            onsubmit="return confirm('Delete this project?');">
+                        {% csrf_token %}
+                        <button type="submit" title="Delete">
+                            <i data-lucide="trash-2" class="cursor-pointer flex gap-2 items-center text-left text-sm font-medium group focus:outline-none focus-visible:border-b" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
-            {% with completion=project.get_completion_percentage %}
-            <div class="mt-4">
-                    <div class="flex justify-between text-sm mb-1">
-                        <span class="text-base-content/70">Progress</span>
-                        <span class="font-semibold">{{ completion }}</span>
-                    </div>
-                    <progress class="progress progress-primary w-full" value="{{ completion|cut:'%' }}" max="100"></progress>
+        </div>
+    </div>
+{% endpartialdef %}
+
+{% partialdef no_project %}
+<div class="col-span-full">
+    <div class="hero bg-base-200 rounded-box shadow-xl border border-base-300">
+        <div class="hero-content text-center py-16">
+            <div class="max-w-md">
+                <div class="flex justify-center mb-6">
+                    <i data-lucide="clipboard" style="width: 96px; height: 96px;"></i>
+                </div>
+                <h1 class="text-xl font-bold text-base-content">No Projects Yet</h1>
+                <p class="py-4 text-base-content/70">
+                    It looks like you haven't created any projects. Start by adding your first project!
+                </p>
+                <a href="{% url 'projects:project_create' %}" class="btn btn-primary btn-lg mt-4">
+                    <i data-lucide="plus"></i>
+                    Create First Project
+                </a>
             </div>
-            {% endwith %}
-        </div>
-        <div class="flex flex-col mt-0 gap-[10px]">
-            <a href="{% url 'projects:project_detail' project.id %}" title="Details">
-                <i data-lucide="external-link" class="cursor-pointer flex gap-2 items-center text-left text-sm font-medium group focus:outline-none focus-visible:border-b"></i>
-            </a>
-            {% if 'admin' in roles|get_item:project.id %}
-            <a href="{% url 'projects:project_edit' project.id %}" title="Edit">
-                <i data-lucide="pencil" class="cursor-pointer flex gap-2 items-center text-left text-sm font-medium group focus:outline-none focus-visible:border-b"></i>
-            </a>
-            <form action="{% url 'projects:project_delete' project.id %}"
-                    method="post"
-                    class="inline"
-                    onsubmit="return confirm('Delete this project?');">
-                {% csrf_token %}
-                <button type="submit" title="Delete">
-                    <i data-lucide="trash-2" class="cursor-pointer flex gap-2 items-center text-left text-sm font-medium group focus:outline-none focus-visible:border-b"></i>
-                </button>
-            </form>
-            {% endif %}
-        </div>
         </div>
     </div>
-    </div>
+</div>
 {% endpartialdef %}
 
 {% block content %}
@@ -70,19 +95,23 @@
         </a>
     </div>
 
-    {# Filters using tabs #}
-    <div role="tablist" class="tabs tabs-boxed mb-8 bg-base-100 shadow-md">
-        <a href="?status=all" role="tab" class="tab {% if status == 'all' %}tab-active{% endif %}">
-            All
+    {# Filters projects #}
+    <div role="tablist" class="tabs tabs-boxed mb-8 bg-base-100 shadow-md flex justify-center">
+        <a href="?status=all" role="tab" class="flex justify-center space-x-1.5 px-4 py-2 w-35 text-sm font-medium rounded-lg transition-colors duration-200 {% if status == 'all' %}bg-white text-indigo-700 shadow-md{% else %}text-gray-600 hover:bg-white hover:text-gray-900{% endif %}">
+            <i data-lucide="external-link"></i>
+            &nbsp;All
         </a>
-        <a href="?status=active" role="tab" class="tab {% if status == 'active' %}tab-active{% endif %}">
-            Active
+        <a href="?status=active" role="tab" class="flex justify-center space-x-1.5 px-4 py-2 w-35 text-sm font-medium rounded-lg transition-colors duration-200 {% if status == 'active' %}bg-white text-indigo-700 shadow-md{% else %}text-gray-600 hover:bg-white hover:text-gray-900{% endif %}">
+            <i data-lucide="folder-open-dot"></i>
+            &nbsp;Active
         </a>
-        <a href="?status=completed" role="tab" class="tab {% if status == 'completed' %}tab-active{% endif %}">
-            Completed
+        <a href="?status=completed" role="tab" class="flex justify-center space-x-2 px-4 py-2 w-35 text-sm font-medium rounded-lg transition-colors duration-200 {% if status == 'completed' %}bg-white text-indigo-700 shadow-md{% else %}text-gray-600 hover:bg-white hover:text-gray-900{% endif %}">
+            <i data-lucide="bookmark-check"></i>
+            &nbsp;Completed
         </a>
-        <a href="?status=archived" role="tab" class="tab {% if status == 'archived' %}tab-active{% endif %}">
-            Archived
+        <a href="?status=archived" role="tab" class="flex justify-center space-x-3 px-4 py-2 w-35 text-sm font-medium rounded-lg transition-colors duration-200 {% if status == 'archived' %}bg-white text-indigo-700 shadow-md{% else %}text-gray-600 hover:bg-white hover:text-gray-900{% endif %}">
+            <i data-lucide="archive"></i>
+            &nbsp;Archived
         </a>
     </div>
 
@@ -91,29 +120,7 @@
         {% for project in projects %}
             {% partial project_card %}
         {% empty %}
-
-            <div class="col-span-full">
-                <div class="hero bg-base-200 rounded-box shadow-xl border border-base-300">
-                    <div class="hero-content text-center py-16">
-                        <div class="max-w-md">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-primary/70 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                            <h1 class="text-xl font-bold text-base-content">No Projects Yet</h1>
-                            <p class="py-4 text-base-content/70">
-                                It looks like you haven't created any projects. Start by adding your first project!
-                            </p>
-                            <a href="{% url 'projects:project_create' %}" class="btn btn-primary btn-lg mt-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                </svg>
-                                Create First Project
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        
+            <!-- {% partial no_project %} -->
         {% endfor %}
     </div>
 </div>
