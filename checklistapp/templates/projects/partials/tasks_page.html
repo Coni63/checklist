@@ -5,7 +5,7 @@
 {% partialdef new_task_toggle %}
     {% if show_form %}
         <form 
-            hx-post="{% url 'projects:task_create' project_id=project_id step_id=step_id %}" 
+            hx-post="{% url 'projects:checklist:task_create' project_id=project_id step_id=step_id %}" 
             hx-target="#task-list"
             hx-swap="beforeend"
             class="space-y-2 p-4 border rounded-lg bg-base-200"
@@ -26,7 +26,7 @@
                 <button 
                     class="btn" 
                     type="button"
-                    hx-get="{% url 'projects:toggle_task_form' step_id=step_id project_id=project_id %}"
+                    hx-get="{% url 'projects:checklist:toggle_task_form' step_id=step_id project_id=project_id %}"
                     hx-target="#new-task-form-container"
                     hx-swap="innerHTML"
                 >
@@ -37,7 +37,7 @@
     {% else %}
         <button 
             class="btn btn-primary"
-            hx-get="{% url 'projects:toggle_task_form' step_id=step_id project_id=project_id %}?show_form=1"
+            hx-get="{% url 'projects:checklist:toggle_task_form' step_id=step_id project_id=project_id %}?show_form=1"
             hx-target="#new-task-form-container"
             hx-swap="innerHTML"
         >

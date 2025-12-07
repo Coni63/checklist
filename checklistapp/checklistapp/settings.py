@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "templates_management",
     "home",
     "core",
+    "checklist",
 ]
 
 MIDDLEWARE = [
