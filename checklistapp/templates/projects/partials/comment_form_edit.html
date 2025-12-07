@@ -1,6 +1,6 @@
 <div>
     <form
-        hx-post="{% url 'projects:comment_edit' project_id=project_id step_id=step_id task_id=task_id comment_id=comment_id %}"
+        hx-post="{% url 'projects:checklist:comment_edit' project_id=project_id step_id=step_id task_id=task_id comment_id=comment_id %}"
         hx-target="closest div"
         hx-swap="outerHTML"
         class="space-y-2">

@@ -11,7 +11,7 @@
             {% elif status == 'Completed' %}border-success
             {% else %}border-base-300{% endif %}
             {% if step.id == active_step_id %}active-step{% endif %}"
-            hx-get="{% url 'projects:step_detail' project_id=project.id step_id=step.id %}"
+            hx-get="{% url 'projects:checklist:step_detail' project_id=project.id step_id=step.id %}"
             hx-target="#tasks-area-list"
             hx-swap="innerHTML"
             hx-push-url="true"
@@ -25,7 +25,7 @@
             {% elif status == 'Completed' %}border-success
             {% else %}border-base-300{% endif %}
             {% if step.id == active_step_id %}active-step{% endif %}"
-            hx-get="{% url 'projects:step_detail' project_id=project.id step_id=step.id %}"
+            hx-get="{% url 'projects:checklist:step_detail' project_id=project.id step_id=step.id %}"
             hx-target="#tasks-area-list"
             hx-swap="innerHTML"
             hx-push-url="true"

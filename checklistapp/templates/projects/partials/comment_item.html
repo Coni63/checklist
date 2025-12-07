@@ -12,14 +12,14 @@
             <div>
                 <button
                     class="btn btn-ghost btn-xs text-error"
-                    hx-post="{% url 'projects:comment_edit' project_id=project_id step_id=step_id task_id=task_id comment_id=comment.id %}"
+                    hx-post="{% url 'projects:checklist:comment_edit' project_id=project_id step_id=step_id task_id=task_id comment_id=comment.id %}"
                     hx-target="#comment-{{ comment.id }}"
                     hx-swap="outerHTML">
                     ✏️
                 </button>
                 <button
                     class="btn btn-ghost btn-xs text-error"
-                    hx-delete="{% url 'projects:comment_delete' project_id=project_id step_id=step_id task_id=task_id comment_id=comment.id %}"
+                    hx-delete="{% url 'projects:checklist:comment_delete' project_id=project_id step_id=step_id task_id=task_id comment_id=comment.id %}"
                     hx-target="#comment-{{ comment.id }}"
                     hx-swap="outerHTML"
                     hx-confirm="Are you sure you want to delete this comment?">

@@ -5,6 +5,6 @@ from .models import ProjectTask
 
 
 @receiver(post_save, sender=ProjectTask)
-def update_step_and_project_status(sender, instance: ProjectTask, **kwargs):
-    """Signal to update project step and project status when a task status is updated"""
+def update_project_status(sender, instance: ProjectTask, **kwargs):
+    """Signal to update project status when a task is updated"""
     instance.project_step.project.update_status()
