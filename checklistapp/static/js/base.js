@@ -47,3 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('htmx:afterSwap', function(event) {
     autoCloseAlerts();
 });
+
+// Setup icons: https://lucide.dev/icons/
+lucide.createIcons();

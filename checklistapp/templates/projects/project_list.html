@@ -1,7 +1,62 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
+{% load partials %}
 
 {% block title %}My Projects - Checklist Manager{% endblock %}
+
+{% partialdef project_card %}
+    <div class="max-w-2xl mt-4 mx-auto bg-gray-100 shadow-lg rounded-2xl w-100">
+    <div class="px-6 py-5">
+        <div class="flex items-start">
+        <div class="flex-grow truncate">
+            <div class="w-full sm:flex justify-between items-center mb-1">
+                <h2 class="text-2xl leading-snug font-extrabold truncate mb-0">{{ project.name }}</h2>
+            </div>
+            {% if project.status == 'active' or project.status == 'in_progress' %}
+                <span class="bg-yellow-500 px-2 py-0.5 font-semibold text-sm rounded-lg">{{ project.get_status_display }}</span>
+            {% elif project.status == 'completed' %}
+                <span class="bg-green-500 px-2 py-0.5 font-semibold text-sm rounded-lg">{{ project.get_status_display }}</span>
+            {% else %}
+                <span class="bg-red-500 px-2 py-0.5 font-semibold text-sm rounded-lg">{{ project.get_status_display }}</span>
+            {% endif %}
+            <div class="flex items-end justify-between whitespace-normal">
+                <div class="max-w-md mt-1 h-[64px]">
+                    <p class="mb-2 text-sm text-base-content/70">{{ project.description|truncatechars:100 }}</p>
+                </div>
+            </div>
+            {% with completion=project.get_completion_percentage %}
+            <div class="mt-4">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-base-content/70">Progress</span>
+                        <span class="font-semibold">{{ completion }}</span>
+                    </div>
+                    <progress class="progress progress-primary w-full" value="{{ completion|cut:'%' }}" max="100"></progress>
+            </div>
+            {% endwith %}
+        </div>
+        <div class="flex flex-col mt-0 gap-[10px]">
+            <a href="{% url 'projects:project_detail' project.id %}" title="Details">
+                <i data-lucide="external-link" class="cursor-pointer flex gap-2 items-center text-left text-sm font-medium group focus:outline-none focus-visible:border-b"></i>
+            </a>
+            {% if 'admin' in roles|get_item:project.id %}
+            <a href="{% url 'projects:project_edit' project.id %}" title="Edit">
+                <i data-lucide="pencil" class="cursor-pointer flex gap-2 items-center text-left text-sm font-medium group focus:outline-none focus-visible:border-b"></i>
+            </a>
+            <form action="{% url 'projects:project_delete' project.id %}"
+                    method="post"
+                    class="inline"
+                    onsubmit="return confirm('Delete this project?');">
+                {% csrf_token %}
+                <button type="submit" title="Delete">
+                    <i data-lucide="trash-2" class="cursor-pointer flex gap-2 items-center text-left text-sm font-medium group focus:outline-none focus-visible:border-b"></i>
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        </div>
+    </div>
+    </div>
+{% endpartialdef %}
 
 {% block content %}
 <div class="container mx-auto max-w-7xl p-6">
@@ -34,63 +89,7 @@
     {# Project Grid #}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for project in projects %}
-        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-200 border border-base-300">
-            <div class="card-body">
-                {# Title + Status #}
-                <div class="flex items-start justify-between gap-2 mb-2">
-                    <a href="{% url 'projects:project_detail' project.id %}" class="card-title hover:text-primary transition-colors">
-                        {{ project.name }}
-                    </a>
-                    {% if project.status %}
-                        <div class="badge badge-lg
-                            {% if project.status == 'active' or project.status == 'in_progress' %}badge-info
-                            {% elif project.status == 'completed' %}badge-success
-                            {% else %}badge-ghost{% endif %}">
-                            {{ project.get_status_display }}
-                        </div>
-                    {% endif %}
-                </div>
-
-                {# Description #}
-                {% if project.description %}
-                <p class="text-base-content/70 text-sm flex-grow">
-                    {{ project.description|truncatechars:100 }}
-                </p>
-                {% else %}
-                <div class="flex-grow"></div>
-                {% endif %}
-
-                {% with completion=project.get_completion_percentage %}
-                    {# Progress Bar #}
-                    <div class="mt-4">
-                        <div class="flex justify-between text-sm mb-1">
-                            <span class="text-base-content/70">Progress</span>
-                            <span class="font-semibold">{{ completion }}</span>
-                        </div>
-                        <progress class="progress progress-primary w-full" value="{{ completion|cut:'%' }}" max="100"></progress>
-                    </div>
-
-                    {# Actions #}
-                    <div class="card-actions justify-end border-t border-base-300">
-                        {% if 'admin' in roles|get_item:project.id %}
-                        <a href="{% url 'projects:project_edit' project.id %}" class="btn btn-ghost btn-sm" title="Edit">
-                            ⚙️
-                        </a>
-                        <form action="{% url 'projects:project_delete' project.id %}"
-                              method="post"
-                              class="inline"
-                              onsubmit="return confirm('Delete this project?');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-ghost btn-sm text-error" title="Delete">
-                                🗑️
-                            </button>
-                        </form>
-                        {% endif %}
-                    </div>
-                {% endwith %}
-            </div>
-        </div>
-
+            {% partial project_card %}
         {% empty %}
 
             <div class="col-span-full">
