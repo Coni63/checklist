@@ -23,14 +23,14 @@
                     </li>
                     <li>
                         <a href="{% url 'accounts:profile' %}" class="flex items-center gap-2">
-                            <span>👤</span>
+                            <span><i data-lucide="user-round-pen" style="width:16px;height:16px;"></i></span>
                             <span>Profile</span>
                         </a>
                     </li>
                     {% if user.is_staff %}
                         <li>
                             <a href="{% url 'admin:index' %}" target="_blank" class="flex items-center gap-2">
-                                <span>⚙️</span>
+                                <span><i data-lucide="settings" style="width:16px;height:16px;"></i></span>
                                 <span>Admin</span>
                             </a>
                         </li>
@@ -40,7 +40,7 @@
                         <form method="post" action="{% url 'accounts:logout' %}">
                             {% csrf_token %}
                             <button type="submit" class="flex items-center gap-2 w-full">
-                                <span>🚪</span>
+                                <span><i data-lucide="log-out" style="width:16px;height:16px;"></i></span>
                                 <span>Logout</span>
                             </button>
                         </form>

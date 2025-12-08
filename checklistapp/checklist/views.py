@@ -247,7 +247,7 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
 
         new_status = request.POST.get("status", "").strip()
 
-        if new_status not in ["unna", "undone", "done", "na"]:
+        if new_status not in ["done", "na"]:
             messages.error(request, "Invalid status value.")
             return render(
                 request,
@@ -256,7 +256,7 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
             )
 
         try:
-            if new_status.startswith("un"):
+            if new_status == project_task.status:
                 project_task.mark_pending()
             elif new_status == "done":
                 project_task.mark_done(request.user)

@@ -4,34 +4,19 @@
 
 {% partialdef step_item %}
     {% with status=step.get_status %}
-        {% if oob %} 
-            <div class="card card-compact bg-base-100 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4
-            {% if status == 'Not Started' %}border-error
-            {% elif status == 'In Progress' %}border-warning
-            {% elif status == 'Completed' %}border-success
-            {% else %}border-base-300{% endif %}
-            {% if step.id == active_step_id %}active-step{% endif %}"
-            hx-get="{% url 'projects:checklist:step_detail' project_id=project.id step_id=step.id %}"
-            hx-target="#tasks-area-list"
-            hx-swap="innerHTML"
-            hx-push-url="true"
-            hx-swap-oob="true"
-            hx-on::before-request="document.querySelectorAll('#stepList .card').forEach(el => el.classList.remove('active-step')); this.classList.add('active-step')"
-            id="step-card-{{step.id}}">
-        {% else %}
-            <div class="card card-compact bg-base-100 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4
-            {% if status == 'Not Started' %}border-error
-            {% elif status == 'In Progress' %}border-warning
-            {% elif status == 'Completed' %}border-success
-            {% else %}border-base-300{% endif %}
-            {% if step.id == active_step_id %}active-step{% endif %}"
-            hx-get="{% url 'projects:checklist:step_detail' project_id=project.id step_id=step.id %}"
-            hx-target="#tasks-area-list"
-            hx-swap="innerHTML"
-            hx-push-url="true"
-            hx-on::before-request="document.querySelectorAll('#stepList .card').forEach(el => el.classList.remove('active-step')); this.classList.add('active-step')"
-            id="step-card-{{step.id}}">
-        {% endif %}
+        <div class="card card-compact bg-base-100 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 p-0
+        {% if status == 'Not Started' %}border-error
+        {% elif status == 'In Progress' %}border-warning
+        {% elif status == 'Completed' %}border-success
+        {% else %}border-base-300{% endif %}
+        {% if step.id == active_step_id %}active-step{% endif %}"
+        hx-get="{% url 'projects:checklist:step_detail' project_id=project.id step_id=step.id %}"
+        hx-target="#tasks-area-list"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        {% if oob %} hx-swap-oob="true" {% endif %}
+        hx-on::before-request="document.querySelectorAll('#stepList .card').forEach(el => el.classList.remove('active-step')); this.classList.add('active-step')"
+        id="step-card-{{step.id}}">
             <div class="card-body">
                 <div class="flex items-start justify-between gap-2">
                     <h3 class="font-semibold text-base-content">{{step.to_str}}</h3>
@@ -72,9 +57,11 @@
             {% include "projects/partials/tasks_page.html" with step=active_step %}
         {% else %}
             <div class="text-center py-20">
-                <div class="text-6xl mb-4">📋</div>
-                <h1 class="text-3xl font-bold text-base-content mb-2">Select a step</h1>
-                <p class="text-base-content/70">Choose a checklist from the sidebar</p>
+                <div class="flex justify-center mb-6">
+                    <i data-lucide="clipboard" style="width: 96px; height: 96px;"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-base-content">Select a step</h1>
+                <p class="py-4 text-xl text-base-content/70">Choose a step from the sidebar</p>
             </div>
         {% endif %}
     </div>
