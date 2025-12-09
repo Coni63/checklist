@@ -57,11 +57,17 @@ Support iterative processes (multiple instances of same step)
    uv run python manage.py tailwind start
    uv run python manage.py runserver
    ```
-1. Open `localhost:8000`, Register an account or login with the superadmin account (not recommended in Production obviously)
+1. Open `localhost`, Register an account or login with the superadmin account (not recommended in Production obviously)
 
 ## Deployment
 
 1. Refer to `docker-compose.yaml`. It is highly not recommended to use a database in Production in the docker-compose.
+
+2. To create a superuser run the following command:
+
+```
+docker exec -it <containerid> python3 manage.py createsuperuser
+```
 
 > The image is not compatible with a `DEBUG=on` as several dependancies are not installed
 
