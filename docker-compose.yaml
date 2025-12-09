@@ -16,7 +16,7 @@ services:
       - postgres_data:/var/lib/postgresql
 
   app-setup:
-    image: coni57/project-checklist
+    image: coni57/project-checklist:latest
     depends_on:
       db:
         condition: service_healthy
@@ -34,7 +34,7 @@ services:
       "
     
   app:
-    image: coni57/project-checklist
+    image: coni57/project-checklist:latest
     depends_on:
       app-setup:
         condition: service_completed_successfully

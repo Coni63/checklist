@@ -1,4 +1,4 @@
-# First, build the application in the `/app` directory
+# First, build the requirements.txt
 FROM ghcr.io/astral-sh/uv:bookworm-slim AS builder
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
@@ -17,7 +17,17 @@ COPY ./pyproject.toml /app/pyproject.toml
 COPY ./uv.lock /app/uv.lock
 RUN uv sync
 RUN uv export --no-hashes --no-header --no-annotate --no-dev --format requirements.txt > requirements.txt
-RUN cat requirements.txt
+
+# Second - Build Tailwind statics
+FROM node:25-alpine AS tailwind-builder
+
+COPY ./checklistapp/theme/ /app/checklistapp/theme/
+
+WORKDIR /app/checklistapp/theme/static_src/
+
+RUN npm install
+
+RUN npm run build
 
 # Use the official Python runtime image
 FROM python:3.11-slim
@@ -47,6 +57,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the Django project to the container
 COPY --chown=python:python /checklistapp/ /app/
+COPY --from=tailwind-builder /app/checklistapp/theme/static/ /app/checklistapp/theme/static/
+
+# create folder for staticfile that is writable
+RUN mkdir -p /app/staticfiles
+RUN chown python:python /app/staticfiles
+RUN chmod 755 /app/staticfiles
 
 USER python
 
