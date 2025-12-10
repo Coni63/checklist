@@ -36,10 +36,10 @@ class TaskTemplateAdmin(admin.ModelAdmin):
 
     def has_work_url(self, obj):
         return bool(obj.work_url)
-    
+
     def has_info_text(self, obj):
         return bool(obj.info_text)
-    
+
     has_help_url.boolean = True
     has_help_url.short_description = "Has Help Link"
 

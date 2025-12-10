@@ -1,11 +1,11 @@
-
+{% load custom_filters %}
 
 <div class="bg-white p-4 rounded-lg shadow-md" id="comment-{{ comment.id }}">
     <div class="card-body p-0">
         <div class="flex items-start justify-between gap-2 mb-2">
             <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-semibold text-base-content">{{ comment.user.username }}</span>
-                <span class="text-xs text-base-content/60">{{ comment.created_at|timesince }} ago</span>
+                <span class="text-xs text-base-content/60">{{ comment.created_at|smart_timesince }}</span>
                 {% if comment.updated_at != comment.created_at %}
                     <span class="badge badge-xs badge-ghost">edited</span>
                 {% endif %}

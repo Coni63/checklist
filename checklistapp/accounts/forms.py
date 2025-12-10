@@ -16,11 +16,11 @@ class BasicRegisterForm(UserCreationForm):
         super().__init__(*args, **kwargs)
 
         # Cleanup help text to clean the form
-        self.fields['username'].help_text = ''
-        if 'password1' in self.fields:
-            self.fields['password1'].help_text = ''
-        if 'password2' in self.fields:
-            self.fields['password2'].help_text = ''
+        self.fields["username"].help_text = ""
+        if "password1" in self.fields:
+            self.fields["password1"].help_text = ""
+        if "password2" in self.fields:
+            self.fields["password2"].help_text = ""
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -53,7 +53,7 @@ class UserEditForm(forms.ModelForm):
                 attrs={
                     "placeholder": "Enter your last name",
                 }
-            )
+            ),
         }
 
         labels = {

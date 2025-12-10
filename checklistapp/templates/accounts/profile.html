@@ -1,5 +1,5 @@
 {% extends "base.html" %} 
-{% load crispy_forms_tags %} 
+{% load crispy_forms_tags custom_filters %} 
 
 {% block title %}Mon Profil{% endblock %}
 
@@ -63,7 +63,7 @@
                     <b class="col-start-2">{{ user.email|default:"Not set" }}</b>
 
                     <span class="justify-self-end">Registered on :</span>
-                    <b class="col-start-2">{{ user.date_joined|date:"d M Y" }}</b>
+                    <b class="col-start-2">{{ user.date_joined|smart_timesince }}</b>
                 </div>
             </div>
         </div>

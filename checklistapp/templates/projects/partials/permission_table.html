@@ -1,4 +1,4 @@
-{% load partials static %}
+{% load partials static custom_filters %}
 
 {# This page render the project edit page in which you can set user permission #}
 
@@ -66,7 +66,7 @@
                         class="checkbox checkbox-xs" disabled />
             {% endif %}
         </td>
-        <td class="py-3 px-4 text-center">{{ permission.user.last_login|date:"d M Y H:m:s" }}</td>
+        <td class="py-3 px-4 text-center">{{ permission.user.last_login|smart_timesince }}</td>
         <td class="py-3 px-2 text-center">
             {% if permission.user != user %}
             <form hx-delete="{% url 'accounts:user_permissions_update' project_id=permission.project_id permission_id=permission.id %}"

@@ -126,15 +126,16 @@ class EditProjectStepsView(ProjectAdminRequiredMixin, View):
         if new_title:
             step.title = new_title
             step.save()
-            return render(request, 'projects/partials/tasks_page.html#step_title_display', {'step': step})
+            return render(request, "projects/partials/tasks_page.html#step_title_display", {"step": step})
 
         new_description = request.POST.get("description")
         if new_description is not None:
             step.description = new_description
             step.save()
-            return render(request, 'projects/partials/tasks_page.html#step_description_display', {'step': step})
+            return render(request, "projects/partials/tasks_page.html#step_description_display", {"step": step})
 
         return reswap(HttpResponse(status=200), "none")
+
 
 class ReorderProjectStepsView(ProjectAdminRequiredMixin, View):
     """
@@ -449,6 +450,7 @@ class TaskCommentDeleteView(ProjectEditRequiredMixin, DeleteView):
         self.object.soft_delete()
         return HttpResponse("")
 
+
 # View to return inline form
 def edit_step_description_form(request, project_id, step_id):
     step = ProjectStep.objects.filter(pk=step_id, project__id=project_id).first()
@@ -457,9 +459,8 @@ def edit_step_description_form(request, project_id, step_id):
         messages.error(request, "Task or Project not found.")
         return reswap(HttpResponse(status=200), "none")
 
-    return render(request, "projects/partials/tasks_page.html#step_description_form", context={
-        "step": step
-    })
+    return render(request, "projects/partials/tasks_page.html#step_description_form", context={"step": step})
+
 
 def edit_step_title_form(request, project_id, step_id):
     step = ProjectStep.objects.filter(pk=step_id, project__id=project_id).first()
@@ -468,9 +469,7 @@ def edit_step_title_form(request, project_id, step_id):
         messages.error(request, "Task or Project not found.")
         return reswap(HttpResponse(status=200), "none")
 
-    return render(request, "projects/partials/tasks_page.html#step_title_form", context={
-        "step": step
-    })
+    return render(request, "projects/partials/tasks_page.html#step_title_form", context={"step": step})
 
 
 def get_step_title_display(request, project_id, step_id):
@@ -480,9 +479,8 @@ def get_step_title_display(request, project_id, step_id):
         messages.error(request, "Task or Project not found.")
         return reswap(HttpResponse(status=200), "none")
 
-    return render(request, "projects/partials/tasks_page.html#step_title_display", context={
-        "step": step
-    })
+    return render(request, "projects/partials/tasks_page.html#step_title_display", context={"step": step})
+
 
 def get_step_description_display(request, project_id, step_id):
     step = ProjectStep.objects.filter(pk=step_id, project__id=project_id).first()
@@ -491,6 +489,4 @@ def get_step_description_display(request, project_id, step_id):
         messages.error(request, "Task or Project not found.")
         return reswap(HttpResponse(status=200), "none")
 
-    return render(request, "projects/partials/tasks_page.html#step_description_display", context={
-        "step": step
-    })
+    return render(request, "projects/partials/tasks_page.html#step_description_display", context={"step": step})

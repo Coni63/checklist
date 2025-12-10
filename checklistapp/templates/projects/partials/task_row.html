@@ -1,3 +1,4 @@
+{% load custom_filters %}
 
 {# This page render the card of a single task on the project detail page #}
 
@@ -28,7 +29,7 @@
                 {% if task.status == 'done' or task.status == 'na' %}
                     <div class="flex items-center gap-2">
                          <span class="font-semibold text-base-content">{{ task.completed_by.username }}</span>
-                         <span class="text-xs text-base-content/60">{{ task.completed_at|timesince }} ago</span>
+                         <span class="text-xs text-base-content/60">{{ task.completed_at|smart_timesince }}</span>
                     </div>
                 {% endif %}
             </div>
