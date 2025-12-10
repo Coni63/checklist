@@ -59,4 +59,16 @@ module.exports = {
     */
     themes: false
   },
+  safelist: [ /* Add classes that can be provided by crispy forms and are ignored at compile time */
+    "border",
+    "border-red-400",
+    "rounded-b",
+    "bg-red-100",
+    "px-4",
+    "py-3",
+    "text-red-700",
+    "text-red-500",
+    "text-xs",
+    "italic",
+  ],
 };
