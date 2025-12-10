@@ -11,11 +11,9 @@
         <p class="text-lg text-base-content/70">Configure your project by selecting step templates</p>
     </div>
 
-    {% include "projects/partials/project_form.html" with submit_label="Save Changes" submit_icon="💾" %}
+    {% include "projects/partials/project_form.html" with submit_label="Save Changes" submit_icon="save" %}
 
     {% include "projects/partials/project_step_form.html" %}
-
-    <!-- {% include "projects/partials/permission_table.html" %} -->
 
     <div id="permission-table-container" 
          hx-get="{% url 'accounts:user_permissions_list' project_id=project.id %}"

@@ -67,8 +67,8 @@
             {# Form Actions #}
             <div class="card-actions justify-start pt-4 border-t border-base-300">
                 <button type="submit" class="btn btn-primary gap-2">
-                    <span>{{ submit_icon|default:"💾" }}</span>
-                    <span>{{ submit_label|default:"Save Changes" }}</span>
+                    <span><i data-lucide="{{ submit_icon }}" style="width: 16px; height: 16px;"></i></span>
+                    <span>{{ submit_label }}</span>
                 </button>
                 {% if cancel_url %}
                 <a href="{{ cancel_url }}" class="btn btn-ghost">

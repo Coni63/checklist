@@ -6,6 +6,15 @@
     <div class="badge badge-primary badge-lg" id="counter-step" hx-swap-oob="true">{{ count }} step{{ count|pluralize }}</div>
 {% endpartialdef %}
 
+{% partialdef task_counter %}
+    <div class="flex items-center gap-3 mt-1">
+        <span class="text-xs text-base-content/60 flex items-center gap-1">
+            <i data-lucide="clipboard-check" style="width: 12px; height: 12px;"></i>
+            {{ count }} task{{ count|pluralize }}
+        </span>
+    </div>
+{% endpartialdef %}
+
 {% partialdef step_row %}
 <div class="card bg-base-200 shadow-md hover:shadow-lg transition-shadow cursor-move" 
     id="step-{{ step.id }}"
@@ -21,17 +30,13 @@
             </div>
 
             {# Step Icon & Info #}
-            <span class="text-3xl">{{ step.icon }}</span>
+            <span class="text-3xl w-10 text-center">{{ step.icon }}</span>
             <div class="flex-1 min-w-0">
                 <h3 class="font-semibold text-base">{{ step.title }}</h3>
-                <div class="flex items-center gap-3 mt-1">
-                    <span class="text-xs text-base-content/60 flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                        </svg>
-                        {{ step.tasks.count }} task{{ step.tasks.count|pluralize }}
-                    </span>
-                </div>
+                {% with count=step.tasks.count %}
+                    {% partial task_counter %}
+                {% endwith %}
+                
             </div>
 
             {# Actions #}
@@ -43,9 +48,7 @@
                     hx-swap="outerHTML"
                     hx-confirm="Remove this step from the project?"
                     title="Remove step">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
                 </button>
             </div>
         </div>
@@ -71,9 +74,7 @@
             {# LEFT COLUMN: Available Templates (1/3 width) #}
             <div class="lg:col-span-1">
                 <h2 class="card-title text-lg mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                    </svg>
+                    <i data-lucide="list"></i>
                     Step Templates
                 </h2>
                 
@@ -90,7 +91,7 @@
                                     <input type="hidden" name="step_template_id" value="{{ template.id }}">
                                     
                                     {# Step Icon #}
-                                    <span class="text-3xl">{{ template.icon }}</span>
+                                    <span class="text-3xl w-10 text-center">{{ template.icon }}</span>
                                     
                                     {# Step Name Input & Info #}
                                     <div class="flex-1 min-w-0">
@@ -100,22 +101,15 @@
                                             class="input input-sm input-bordered w-full font-semibold"
                                             placeholder="Step name..."
                                             value="{{ template.name }}">
-                                        <div class="flex items-center gap-3 mt-1">
-                                            <span class="text-xs text-base-content/60 flex items-center gap-1">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                                </svg>
-                                                {{ template.tasks.count }} task{{ template.tasks.count|pluralize }}
-                                            </span>
-                                        </div>
+                                        {% with count=template.tasks.count %}
+                                            {% partial task_counter %}
+                                        {% endwith %}
                                     </div>
 
                                     {# Add Button #}
                                     <div class="flex gap-2">
                                         <button type="submit" class="btn btn-sm btn-primary btn-square" title="Add step">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                            </svg>
+                                            <i data-lucide="plus"></i>
                                         </button>
                                     </div>
                                 </form>
@@ -131,9 +125,7 @@
             <div class="lg:col-span-1">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="card-title text-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
+                        <i data-lucide="clipboard-list"></i>
                         Project Steps
                     </h2>
                     {% with count=project_steps|length %}
@@ -154,22 +146,6 @@
                         </div>
                     {% endfor %}
                 </div>
-
-                <!-- {# Action Buttons #}
-                <div class="card-actions justify-end mt-6 pt-6 border-t border-base-300">
-                    <a href="{% url 'projects:project_list' %}" class="btn btn-ghost gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        Cancel
-                    </a>
-                    <a href="{% url 'projects:project_list' %}" class="btn btn-primary gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        Save & Close
-                    </a>
-                </div> -->
             </div>
         </div>
     </div>
