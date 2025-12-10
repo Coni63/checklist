@@ -20,7 +20,7 @@ class ProjectCreationForm(forms.ModelForm):
         widgets = {
             "name": forms.TextInput(
                 attrs={
-                    "placeholder": "Enter project name (e.g., Dinner Party)",
+                    "placeholder": "Enter project name",
                     "autofocus": True,
                 }
             ),

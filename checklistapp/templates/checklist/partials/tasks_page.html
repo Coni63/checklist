@@ -1,0 +1,181 @@
+{% load partials custom_filters %}
+
+{# This page render the list of tasks as well as the progress-bar of the current step #}
+
+{% partialdef new_task_toggle %}
+    {% if show_form %}
+        <form 
+            hx-post="{% url 'projects:checklist:task_create' project_id=project_id step_id=step_id %}" 
+            hx-target="#task-list"
+            hx-swap="beforeend"
+            class="space-y-2 p-4 border rounded-lg bg-base-200"
+        >
+            {% csrf_token %}
+            <div>
+                <label class="label">Title</label>
+                <input 
+                    type="text" 
+                    name="title" 
+                    class="input input-bordered w-full" 
+                    required
+                    autofocus
+                />
+            </div>
+            <div class="flex gap-2">
+                <button class="btn btn-primary" type="submit">Create</button>
+                <button 
+                    class="btn" 
+                    type="button"
+                    hx-get="{% url 'projects:checklist:toggle_task_form' step_id=step_id project_id=project_id %}"
+                    hx-target="#new-task-form-container"
+                    hx-swap="innerHTML"
+                >
+                    Cancel
+                </button>
+            </div>
+        </form>
+    {% else %}
+        <button 
+            class="btn btn-primary"
+            hx-get="{% url 'projects:checklist:toggle_task_form' step_id=step_id project_id=project_id %}?show_form=1"
+            hx-target="#new-task-form-container"
+            hx-swap="innerHTML"
+        >
+            + Add Task
+        </button>
+    {% endif %}
+{% endpartialdef %}
+
+{% partialdef progress_bar %}
+    {% if oob %}
+        <div class="mb-6" id="tasks-area-progress" hx-swap-oob="true" hx-swap="outerHTML">
+    {% else %}
+        <div class="mb-6" id="tasks-area-progress">
+    {% endif %}
+        <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-medium text-base-content">Progress</span>
+            <span class="text-sm font-semibold text-base-content">{{ text }}</span>
+        </div>
+        <progress class="progress progress-primary w-full" value="{{ completion|cut:'%' }}" max="100"></progress>
+        <div class="text-xs text-base-content/70 mt-1">{{ completion }} complete</div>
+    </div>
+{% endpartialdef %}
+
+{% partialdef step_title_display %}
+    <div class="flex items-center space-x-2" 
+        id="step-title-wrapper-{{ step.id }}">
+        
+        <h1 class="text-3xl font-bold text-base-content" 
+            hx-get="{% url 'projects:checklist:step_edit' project_id=step.project.id step_id=step.id %}"
+            hx-target="#step-title-wrapper-{{ step.id }}"
+            hx-swap="outerHTML">
+            {{ step.title }}
+        </h1>
+        
+        {% if 'admin' in roles %}
+        <button hx-get="{% url 'projects:checklist:edit_step_title_form' project_id=step.project.id step_id=step.id %}"
+                hx-target="#step-title-wrapper-{{ step.id }}"
+                hx-swap="outerHTML"
+                class="text-base-content/50 hover:text-primary transition-colors p-1 rounded">
+                <i data-lucide="pencil" style="width:16px;height:16px;"></i>
+            </button>
+        {% endif %}
+    </div>
+{% endpartialdef %}
+
+{% partialdef step_title_form %}
+    <form hx-post="{% url 'projects:checklist:step_edit' project_id=step.project.id step_id=step.id %}"
+        hx-target="#step-title-wrapper-{{ step.id }}" 
+        hx-swap="outerHTML"
+        class="flex items-center space-x-2"
+        id="step-title-wrapper-{{ step.id }}">
+
+        <input type="text" name="title" 
+            value="{{ step.title }}"
+            class="text-3xl font-bold text-base-content border-b border-primary focus:outline-none bg-transparent w-full"
+            autofocus> 
+
+        <button type="submit" class="text-success hover:text-green-700 transition-colors p-1 rounded">
+            </button>
+        
+        <button type="button" 
+                hx-get="{% url 'projects:checklist:get_step_title_display' project_id=step.project.id step_id=step.id %}"
+                hx-target="#step-title-wrapper-{{ step.id }}"
+                hx-swap="outerHTML"
+                class="transition-colors p-1 rounded">
+            <i data-lucide="save" style="width:16px;height:16px;"></i>
+        </button>
+    </form>
+{% endpartialdef %}
+
+{% partialdef step_description_display %}
+<div class="flex items-center space-x-2"  id="step-description-wrapper-{{ step.id }}">
+    <p class="text-base-content/70" id="contentSubtitleDisplay">{{ step.description|default:"Add description..." }}</p>
+    {% if 'admin' in roles %}
+    <button hx-get="{% url 'projects:checklist:edit_step_description_form' project_id=step.project.id step_id=step.id %}"
+        hx-target="#step-description-wrapper-{{ step.id }}"
+        hx-swap="outerHTML"
+        class="text-base-content/50 hover:text-primary transition-colors p-1 rounded">
+        <i data-lucide="pencil" style="width:16px;height:16px;"></i>
+    </button>
+    {% endif %}
+</div>
+{% endpartialdef %}
+
+{% partialdef step_description_form %}
+    <form hx-post="{% url 'projects:checklist:step_edit' project_id=step.project.id step_id=step.id %}"
+        hx-target="#step-description-wrapper-{{ step.id }}" 
+        hx-swap="outerHTML"
+        class="flex items-center space-x-2 w-full"
+        id="step-description-wrapper-{{ step.id }}">
+
+        <textarea name="description" 
+              class="text-base-content/70 border-b border-primary focus:outline-none bg-transparent w-full resize-none p-1"
+              rows="4"  
+              autofocus>{{ step.description }}</textarea>
+
+        <button type="submit" class="text-success hover:text-green-700 transition-colors p-1 rounded">
+            <i data-lucide="save" style="width:16px;height:16px;"></i>
+        </button>
+        
+        <button type="button" 
+            hx-get="{% url 'projects:checklist:get_step_description_display' project_id=step.project.id step_id=step.id %}"
+            hx-target="#step-description-wrapper-{{ step.id }}"
+            hx-swap="outerHTML"
+            class="transition-colors p-1 rounded">
+        </button>
+    </form>
+{% endpartialdef %}
+
+<div class="mb-8">
+    {% with step=active_step %}
+        <div class="flex items-center space-x-2">
+            {% if step.icon %}
+                <h1 class="text-3xl font-bold text-base-content">{{ step.icon }}</h1>
+            {% endif %}
+            {% partial step_title_display %}
+        </div>
+        <div class="flex items-center space-x-2 mt-2">
+            {% partial step_description_display %}
+        </div>
+    {% endwith %}
+</div>
+
+{% with completion=active_step.get_completion_percentage text=active_step.get_progress_text oob=false %}
+    {% partial progress_bar %}
+{% endwith %}
+
+<div class="space-y-2 mt-6" id="task-list">
+    {% for task in active_step.tasks.all %}
+        {% include 'checklist/partials/task_row.html' with task=task index=forloop.counter %}
+    {% endfor %}
+</div>
+
+<!-- BUTTON TO SHOW FORM -->
+{% if 'edit' in roles %}
+    <div class="mt-4"  id="new-task-form-container">
+        {% with project_id=active_step.project.id step_id=active_step.id %}
+            {% partial new_task_toggle %}
+        {% endwith %}
+    </div>
+{% endif %}

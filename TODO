@@ -1,12 +1,8 @@
-V2 (refacto UI with all features presents)
-Better UI
-Loading component
-Allow to edit step tital and description on the detail page
-
 V3 (optimisation - industrialisation)
 Write unittest
 Use ProjectService when possible
 Allow to manage templates on the UI -- Maybe requires tenants
 Review SQL, Cachcing, optimisations
-Migrate to django v6
+Migrate to django v6 + CPS self & nonce
 Multiple settings.py
+Loader components ?

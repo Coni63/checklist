@@ -78,7 +78,9 @@ class ListUserForm(ProjectAdminRequiredMixin, View):
     template_name = "accounts/user_list.html"
 
     def get(self, request, project_id, *args, **kwargs):
-        current_permissions = UserProjectPermissions.objects.filter(project_id=project_id).select_related("user")
+        current_permissions = (
+            UserProjectPermissions.objects.filter(project_id=project_id).select_related("user").order_by("user__username")
+        )
 
         users_with_permissions = current_permissions.values_list("user_id", flat=True)
         all_users_without_permissions = User.objects.all().exclude(id__in=users_with_permissions)

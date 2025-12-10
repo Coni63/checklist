@@ -1,10 +1,63 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Home - Checklist Manager{% endblock %}
 
 {% block content %}
 
-
+<section class="text-gray-600 body-font bg-white dark:bg-slate-900 w-full">
+    <div class="container mx-auto flex md:px-24 md:py-10 md:flex-row flex-col items-center">
+        <div
+            class="lg:flex-grow mt-5 md:mt-0   md:w-1.5/2 lg:pr-24 md:pr-16 flex flex-col md:items-start md:text-left mb-16 md:mb-0 items-center text-center">
+            <h1
+                class="text-2xl font-extrabold leading-9 tracking-tight mb-3 text-gray-900 dark:text-gray-100 sm:text-4xl sm:leading-10 md:text-5xl md:leading-normal">
+                Project Checklist
+            </h1>
+            <p class="mb-8 md:pl-0  pl-2 pr-2 leading-relaxed dark:text-gray-300">
+                Centralize, customize, and track your multi-step workflows with the most structured and flexible checklist management system.
+            </p>
+            <div class="mt-4 mb-8">
+                <ul class="space-y-4">
+                    <li class="my-1 flex flex-col">
+                        <div class="flex items-center font-medium">
+                            <i data-lucide="check" style="width: 24px; height: 24px; color: green; margin-right: 1rem"></i>
+                            Workflow standardization
+                        </div>
+                        <div class="text-sm text-slate-600 ml-10">
+                            Apply reliable templates to reduce errors and ensure consistent execution across teams.
+                        </div>
+                    </li>
+                    <li class="my-1 flex flex-col">
+                        <div class="flex items-center font-medium">
+                            <i data-lucide="check" style="width: 24px; height: 24px; color: green; margin-right: 1rem"></i>
+                            Visual progress tracking
+                        </div>
+                        <div class="text-sm text-slate-600 ml-10">
+                            Keep clear visibility on every step and task so nothing slips through the cracks.
+                        </div>
+                    </li>
+                    <li class="my-1 flex flex-col">
+                        <div class="flex items-center font-medium">
+                            <i data-lucide="check" style="width: 24px; height: 24px; color: green; margin-right: 1rem"></i>
+                            Total flexibility
+                        </div>
+                        <div class="text-sm text-slate-600 ml-10">
+                            Add, duplicate, or adapt steps on the fly to match your real-world processes.
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="flex justify-center mt-4">
+                <a href="{% url 'accounts:login' %}"
+                    class="inline-flex text-white bg-primary border-0 py-2 px-6 focus:outline-none hover:bg-primary-600 rounded text-lg">Login</a>
+                <a href="{% url 'accounts:register' %}"
+                    class="ml-4 inline-flex text-white bg-primary border-0 py-2 px-6 focus:outline-none hover:bg-primary-600 rounded text-lg">Register</a>
+            </div>
+        </div>
+        <div class="lg:max-w-lg lg:w-full mb-5 md:mb-0 md:w-1/2 w-3/6">
+            <img class="object-cover object-center rounded" alt="hero" src="{% static 'img/checklist-check-list.svg' %}">
+        </div>
+    </div>
+</section>
 
 {% endblock %}
 

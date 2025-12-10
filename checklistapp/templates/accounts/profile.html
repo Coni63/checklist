@@ -1,5 +1,5 @@
 {% extends "base.html" %} 
-{% load crispy_forms_tags %} 
+{% load crispy_forms_tags custom_filters %} 
 
 {% block title %}Mon Profil{% endblock %}
 
@@ -11,7 +11,7 @@
             <div class="card-body p-8">
                 
                 <h2 class="card-title text-3xl font-bold mb-6 text-center">
-                    <i class="fas fa-user-circle mr-3"></i> Mon Profil
+                    <i data-lucide="user" style="width: 32px; height: 32px;"></i>Profile
                 </h2>
 
                 {# Afficher les messages Django (e.g., messages de succès après la redirection) #}
@@ -47,20 +47,24 @@
 
                     <div class="card-actions justify-end mt-6">
                         <button type="submit" class="btn btn-primary btn-block">
-                            <i class="fas fa-save mr-2"></i> Enregistrer les modifications
+                            Save
                         </button>
                     </div>
                 </form>
                 {# Fin du formulaire #}
 
-                <div class="divider">Informations supplémentaires</div>
+                <div class="divider"></div>
                 
-                <p class="text-sm text-center text-base-content/70">
-                    Nom d'utilisateur : <b>{{ user.username }}</b>
-                    <br>
-                    Membre depuis : {{ user.date_joined|date:"d M Y" }}
-                </p>
+                <div class="grid grid-cols-[max-content,max-content,1fr] gap-x-2 text-left">
+                    <span class="justify-self-end">Username :</span>
+                    <b class="col-start-2 justify-self-start">{{ user.username }}</b>
 
+                    <span class="justify-self-end">Email :</span>
+                    <b class="col-start-2">{{ user.email|default:"Not set" }}</b>
+
+                    <span class="justify-self-end">Registered on :</span>
+                    <b class="col-start-2">{{ user.date_joined|smart_timesince }}</b>
+                </div>
             </div>
         </div>
     </div>

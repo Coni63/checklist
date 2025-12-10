@@ -13,6 +13,31 @@ urlpatterns = [
         name="step_add",
     ),
     path(
+        "steps/<int:step_id>/edit/",
+        views.EditProjectStepsView.as_view(),
+        name="step_edit",
+    ),
+    path(
+        "steps/<int:step_id>/edit_step_title_form",
+        views.edit_step_title_form,
+        name="edit_step_title_form",
+    ),
+    path(
+        "steps/<int:step_id>/edit_step_description_form",
+        views.edit_step_description_form,
+        name="edit_step_description_form",
+    ),
+    path(
+        "steps/<int:step_id>/get_step_title_display",
+        views.get_step_title_display,
+        name="get_step_title_display",
+    ),
+    path(
+        "steps/<int:step_id>/get_step_description_display",
+        views.get_step_description_display,
+        name="get_step_description_display",
+    ),
+    path(
         "steps/<int:step_id>/",
         ProjectDetailView.as_view(),
         name="step_detail",
