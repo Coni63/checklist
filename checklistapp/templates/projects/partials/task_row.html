@@ -16,6 +16,7 @@
                 {% else %}badge-error{% endif %}
                 font-bold">
                 {{ task.order }}
+                {% if task.manually_created %}*{% endif %}
             </div>
 
             {# Task Title #}

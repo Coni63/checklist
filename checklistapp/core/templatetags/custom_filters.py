@@ -26,7 +26,6 @@ def smart_timesince(value):
         return value.strftime("%Y-%m-%d %H:%M:%S")
 
     time_difference = now - value
-    print(now, value, time_difference)
 
     # La condition est : si le temps écoulé est d'au moins 1 jour (86400 secondes)
     if time_difference <= timedelta(days=1):

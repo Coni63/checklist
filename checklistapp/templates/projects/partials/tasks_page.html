@@ -1,4 +1,4 @@
-{% load partials %}
+{% load partials custom_filters %}
 
 {# This page render the list of tasks as well as the progress-bar of the current step #}
 
@@ -72,12 +72,14 @@
             {{ step.title }}
         </h1>
         
+        {% if 'admin' in roles %}
         <button hx-get="{% url 'projects:checklist:edit_step_title_form' project_id=step.project.id step_id=step.id %}"
                 hx-target="#step-title-wrapper-{{ step.id }}"
                 hx-swap="outerHTML"
                 class="text-base-content/50 hover:text-primary transition-colors p-1 rounded">
                 <i data-lucide="pencil" style="width:16px;height:16px;"></i>
             </button>
+        {% endif %}
     </div>
 {% endpartialdef %}
 
@@ -100,7 +102,7 @@
                 hx-get="{% url 'projects:checklist:get_step_title_display' project_id=step.project.id step_id=step.id %}"
                 hx-target="#step-title-wrapper-{{ step.id }}"
                 hx-swap="outerHTML"
-                class="text-error hover:text-red-700 transition-colors p-1 rounded">
+                class="transition-colors p-1 rounded">
             <i data-lucide="save" style="width:16px;height:16px;"></i>
         </button>
     </form>
@@ -109,13 +111,14 @@
 {% partialdef step_description_display %}
 <div class="flex items-center space-x-2"  id="step-description-wrapper-{{ step.id }}">
     <p class="text-base-content/70" id="contentSubtitleDisplay">{{ step.description|default:"Add description..." }}</p>
-
+    {% if 'admin' in roles %}
     <button hx-get="{% url 'projects:checklist:edit_step_description_form' project_id=step.project.id step_id=step.id %}"
         hx-target="#step-description-wrapper-{{ step.id }}"
         hx-swap="outerHTML"
         class="text-base-content/50 hover:text-primary transition-colors p-1 rounded">
         <i data-lucide="pencil" style="width:16px;height:16px;"></i>
     </button>
+    {% endif %}
 </div>
 {% endpartialdef %}
 
@@ -139,7 +142,7 @@
             hx-get="{% url 'projects:checklist:get_step_description_display' project_id=step.project.id step_id=step.id %}"
             hx-target="#step-description-wrapper-{{ step.id }}"
             hx-swap="outerHTML"
-            class="text-error hover:text-red-700 transition-colors p-1 rounded">
+            class="transition-colors p-1 rounded">
         </button>
     </form>
 {% endpartialdef %}

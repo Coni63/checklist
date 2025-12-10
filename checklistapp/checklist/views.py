@@ -226,7 +226,6 @@ class AddProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMi
             project_task = ProjectTask.objects.create(
                 project_step=project_step,
                 title=title,
-                info_url=None,
                 order=current_max_order + 1,
                 manually_created=True,
             )
