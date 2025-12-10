@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import StepTemplate, TaskTemplate
+from .models import StepTemplate, TaskTemplate, MetadataTemplate, TemplateField
 
 
 class TaskTemplateInline(admin.TabularInline):
@@ -48,3 +48,25 @@ class TaskTemplateAdmin(admin.ModelAdmin):
 
     has_info_text.boolean = True
     has_info_text.short_description = "Has Info Text"
+
+
+class TemplateFieldInline(admin.TabularInline):
+    model = TemplateField
+    extra = 1
+
+    fields = [
+        "group_name",
+        "group_order",
+        "field_name",
+        "field_order",
+        "field_type",
+    ]
+
+    ordering = ["group_order", "field_order"]
+
+
+@admin.register(MetadataTemplate)
+class MetadataTemplateAdmin(admin.ModelAdmin):
+    list_display = ["icon", "name", "description", "default_order", "is_active"]
+    search_fields = ["name"]
+    inlines = [TemplateFieldInline]
