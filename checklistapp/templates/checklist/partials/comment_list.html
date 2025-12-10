@@ -1,6 +1,6 @@
 <div id="comments-container" class="space-y-3 mb-4">
     {% for comment in comments %}
-        {% include 'projects/partials/comment_item.html' %}
+        {% include 'checklist/partials/comment_item.html' %}
     {% empty %}
         {% if 'edit' not in roles %}
             <div class="card bg-base-100 shadow-sm border border-base-200">
@@ -16,6 +16,6 @@
 
 {% if 'edit' in roles %}
 <div class="mt-4">
-    {% include 'projects/partials/comment_form.html' %}
+    {% include 'checklist/partials/comment_form.html' %}
 </div>
 {% endif %}

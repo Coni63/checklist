@@ -54,7 +54,7 @@
     {# Main Content Area #}
     <div class="flex-1 overflow-y-auto p-8" id="tasks-area-list">
         {% if active_step %}
-            {% include "projects/partials/tasks_page.html" with step=active_step %}
+            {% include "checklist/partials/tasks_page.html" with step=active_step %}
         {% else %}
             <div class="text-center py-20">
                 <div class="flex justify-center mb-6">

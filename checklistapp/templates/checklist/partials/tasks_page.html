@@ -167,7 +167,7 @@
 
 <div class="space-y-2 mt-6" id="task-list">
     {% for task in active_step.tasks.all %}
-        {% include 'projects/partials/task_row.html' with task=task index=forloop.counter %}
+        {% include 'checklist/partials/task_row.html' with task=task index=forloop.counter %}
     {% endfor %}
 </div>
 

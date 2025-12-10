@@ -174,7 +174,7 @@ class ProjectDetailView(ProjectReadRequiredMixin, CommonContextMixin, DetailView
     def render_to_response(self, context, **response_kwargs):
         # Si c'est une requête HTMX, retourne seulement le partial des tâches
         if self.request.headers.get("HX-Request"):
-            return render(self.request, "projects/partials/tasks_page.html", context)
+            return render(self.request, "checklist/partials/tasks_page.html", context)
 
         # Sinon retourne la page complète
         return super().render_to_response(context, **response_kwargs)

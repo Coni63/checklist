@@ -126,13 +126,13 @@ class EditProjectStepsView(ProjectAdminRequiredMixin, View):
         if new_title:
             step.title = new_title
             step.save()
-            return render(request, "projects/partials/tasks_page.html#step_title_display", {"step": step})
+            return render(request, "checklist/partials/tasks_page.html#step_title_display", {"step": step})
 
         new_description = request.POST.get("description")
         if new_description is not None:
             step.description = new_description
             step.save()
-            return render(request, "projects/partials/tasks_page.html#step_description_display", {"step": step})
+            return render(request, "checklist/partials/tasks_page.html#step_description_display", {"step": step})
 
         return reswap(HttpResponse(status=200), "none")
 
@@ -236,7 +236,7 @@ class AddProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMi
             # Return HTML fragment for the new task row
             return render(
                 request,
-                "projects/partials/task_row.html",
+                "checklist/partials/task_row.html",
                 context,
             )
 
@@ -263,7 +263,7 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
             messages.error(request, "Task not found.")
             return render(
                 request,
-                "projects/partials/task_row.html",
+                "checklist/partials/task_row.html",
                 context,
             )
 
@@ -273,7 +273,7 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
             messages.error(request, "Invalid status value.")
             return render(
                 request,
-                "projects/partials/task_row.html",
+                "checklist/partials/task_row.html",
                 context,
             )
 
@@ -288,10 +288,10 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
             messages.error(request, str(e))
             return reswap(HttpResponse(status=200), "none")
 
-        row_html = render_to_string("projects/partials/task_row.html", context)
+        row_html = render_to_string("checklist/partials/task_row.html", context)
 
         step_html = render_to_string(
-            "projects/partials/project_content.html#step_item",
+            "checklist/partials/project_content.html#step_item",
             {
                 **context,
                 "oob": True,
@@ -301,7 +301,7 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
             },
         )
         progress_html = render_to_string(
-            "projects/partials/tasks_page.html#progress_bar",
+            "checklist/partials/tasks_page.html#progress_bar",
             {
                 **context,
                 "oob": True,
@@ -349,14 +349,14 @@ def toggle_task_form(request, project_id, step_id):
 
     return render(
         request,
-        "projects/partials/tasks_page.html#new_task_toggle",
+        "checklist/partials/tasks_page.html#new_task_toggle",
         {"project_id": project_id, "step_id": step_id, "show_form": show_form},
     )
 
 
 class TaskCommentListView(ProjectReadRequiredMixin, CommonContextMixin, ListView):
     model = TaskComment
-    template_name = "projects/partials/comment_list.html"
+    template_name = "checklist/partials/comment_list.html"
     context_object_name = "comments"
 
     def get_queryset(self):
@@ -377,7 +377,7 @@ class TaskCommentListView(ProjectReadRequiredMixin, CommonContextMixin, ListView
 class TaskCommentCreateView(ProjectEditRequiredMixin, CommonContextMixin, CreateView):
     model = TaskComment
     fields = ["comment_text"]
-    template_name = "projects/partials/comment_form.html"
+    template_name = "checklist/partials/comment_form.html"
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
@@ -393,7 +393,7 @@ class TaskCommentCreateView(ProjectEditRequiredMixin, CommonContextMixin, Create
         context["comment"] = self.object
         context["user"] = self.request.user
 
-        html = render_to_string("projects/partials/comment_item.html", context)
+        html = render_to_string("checklist/partials/comment_item.html", context)
         return HttpResponse(html)
 
 
@@ -401,7 +401,7 @@ class TaskCommentUpdateView(OwnerOrAdminMixin, CommonContextMixin, UpdateView):
     model = TaskComment
     fields = ["comment_text"]
     pk_url_kwarg = "comment_id"
-    template_name = "projects/partials/comment_form_edit.html"
+    template_name = "checklist/partials/comment_form_edit.html"
     object_model = TaskComment  # object used to check if we are owner
     owner_field = "user"
     object_key_name = "comment_id"
@@ -418,7 +418,7 @@ class TaskCommentUpdateView(OwnerOrAdminMixin, CommonContextMixin, UpdateView):
         self.object = form.save()
 
         html = render_to_string(
-            "projects/partials/comment_item.html",
+            "checklist/partials/comment_item.html",
             {
                 **self.get_context_data(),
                 "comment": self.object,
@@ -458,7 +458,7 @@ def edit_step_description_form(request, project_id, step_id):
         messages.error(request, "Task or Project not found.")
         return reswap(HttpResponse(status=200), "none")
 
-    return render(request, "projects/partials/tasks_page.html#step_description_form", context={"step": step})
+    return render(request, "checklist/partials/tasks_page.html#step_description_form", context={"step": step})
 
 
 def edit_step_title_form(request, project_id, step_id):
@@ -468,7 +468,7 @@ def edit_step_title_form(request, project_id, step_id):
         messages.error(request, "Task or Project not found.")
         return reswap(HttpResponse(status=200), "none")
 
-    return render(request, "projects/partials/tasks_page.html#step_title_form", context={"step": step})
+    return render(request, "checklist/partials/tasks_page.html#step_title_form", context={"step": step})
 
 
 def get_step_title_display(request, project_id, step_id):
@@ -478,7 +478,7 @@ def get_step_title_display(request, project_id, step_id):
         messages.error(request, "Task or Project not found.")
         return reswap(HttpResponse(status=200), "none")
 
-    return render(request, "projects/partials/tasks_page.html#step_title_display", context={"step": step})
+    return render(request, "checklist/partials/tasks_page.html#step_title_display", context={"step": step})
 
 
 def get_step_description_display(request, project_id, step_id):
@@ -488,4 +488,4 @@ def get_step_description_display(request, project_id, step_id):
         messages.error(request, "Task or Project not found.")
         return reswap(HttpResponse(status=200), "none")
 
-    return render(request, "projects/partials/tasks_page.html#step_description_display", context={"step": step})
+    return render(request, "checklist/partials/tasks_page.html#step_description_display", context={"step": step})
