@@ -39,10 +39,8 @@ class UserEditForm(forms.ModelForm):
     """
 
     class Meta:
-        # Use the imported User model
         model = User
-        # Select relevant User fields
-        fields = ["first_name", "last_name", "email"]
+        fields = ["first_name", "last_name"]
 
         widgets = {
             "first_name": forms.TextInput(
@@ -55,23 +53,15 @@ class UserEditForm(forms.ModelForm):
                 attrs={
                     "placeholder": "Enter your last name",
                 }
-            ),
-            "email": forms.EmailInput(
-                attrs={
-                    "placeholder": "Enter your email address",
-                    "readonly": "readonly",  # user is not allowed to update the email
-                }
-            ),
+            )
         }
 
         labels = {
             "first_name": "First Name",
             "last_name": "Last Name",
-            "email": "Email Address",
         }
 
         help_texts = {
-            "first_name": "Your given name.",
-            "last_name": "Your family name.",
-            "email": "Your primary contact email. Cannot be modified.",
+            "first_name": None,
+            "last_name": None,
         }
