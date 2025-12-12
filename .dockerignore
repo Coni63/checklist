@@ -1,0 +1,7 @@
+**/tests/
+**/tests.py
+
+**/theme/static_src
+
+.env*
+**/*.sqlite3
