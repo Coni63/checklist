@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Status Project: {{ project.name }} - Checklist Manager{% endblock %}
+
+
+
+{% block content %}
+    {# I needed project_content because we cannot use django-templates with extends 'base.html' #}
+    {% include 'inventory/partials/project_content.html' %}
+{% endblock %}

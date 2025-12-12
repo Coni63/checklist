@@ -12,7 +12,7 @@ urlpatterns = [
         name="step_add",
     ),
     path(
-        "/setup",
+        "setup/",
         views.ListProjectStepView.as_view(),
         name="checklist_setup",
     ),
@@ -22,27 +22,27 @@ urlpatterns = [
         name="step_edit",
     ),
     path(
-        "<int:step_id>/edit_step_title_form",
+        "<int:step_id>/edit_step_title_form/",
         views.edit_step_title_form,
         name="edit_step_title_form",
     ),
     path(
-        "<int:step_id>/edit_step_description_form",
+        "<int:step_id>/edit_step_description_form/",
         views.edit_step_description_form,
         name="edit_step_description_form",
     ),
     path(
-        "<int:step_id>/get_step_title_display",
+        "<int:step_id>/get_step_title_display/",
         views.get_step_title_display,
         name="get_step_title_display",
     ),
     path(
-        "<int:step_id>/get_step_description_display",
+        "<int:step_id>/get_step_description_displa/y",
         views.get_step_description_display,
         name="get_step_description_display",
     ),
     path(
-        "/",
+        "",
         views.ProjectStepDetailView.as_view(),
         name="step_detail_default",
     ),

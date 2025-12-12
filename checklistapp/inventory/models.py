@@ -24,10 +24,10 @@ class ProjectInventory(models.Model):
         unique_together = ["project", "order"]
 
     def __str__(self):
-        return self.title
+        return self.name
 
     def __repr__(self):
-        return f"ProjectInventory(id={self.id}, title={self.title})"
+        return f"ProjectInventory(id={self.id}, name={self.name})"
 
 
 class InventoryField(models.Model):

@@ -7,9 +7,14 @@ app_name = "inventory"
 urlpatterns = [
     # Project Inventory URLs
     path(
-        "add/",
+        "inventory_add/",
         views.AddProjectInventoryView.as_view(),
         name="inventory_add",
+    ),
+    path(
+        "setup/",
+        views.ListProjectInventoryView.as_view(),
+        name="inventory_setup",
     ),
     path(
         "reorder/",
@@ -17,13 +22,18 @@ urlpatterns = [
         name="inventory_reorder",
     ),
     path(
-        "inventory/<int:inventory_id>/delete",
+        "<int:inventory_id>/delete/",
         views.RemoveProjectInventoryView.as_view(),
         name="inventory_delete",
     ),
     path(
-        "/",
-        views.ListProjectInventoryView.as_view(),
-        name="inventory_setup",
+        "",
+        views.ProjectInventoryDetailView.as_view(),
+        name="inventory_detail_default",
+    ),
+    path(
+        "<int:inventory_id>/",
+        views.ProjectInventoryDetailView.as_view(),
+        name="inventory_detail",
     ),
 ]

@@ -1,0 +1,81 @@
+<form method="POST" enctype="multipart/form-data" class="space-y-8">
+    {% csrf_token %}
+
+    <input type="hidden" name="inventory_id" value="{{ active_inventory_id }}">
+
+    {% for group_name, fields in groups.items %}
+        <div class="border border-gray-200 rounded-xl p-6 shadow-sm bg-white">
+            <h3 class="text-lg font-semibold mb-4">{{ group_name }}</h3>
+
+            <div class="grid gap-6">
+                {% for field_name, field in fields %}
+                    <div class="flex flex-col space-y-1">
+                        <label for="{{ field.id_for_label }}" class="font-medium text-gray-700">
+                            {{ field.label }}
+                            {% if field.field.required %}
+                                <span class="text-red-500">*</span>
+                            {% endif %}
+                        </label>
+
+                        {% if field.field.is_password %}
+                            <div class="relative">
+
+                                {{ field }}
+
+                                <button type="button"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                                        onclick="togglePassword(this)">
+                                    👁️
+                                </button>
+
+                            </div>
+
+                            {% if field.errors %}
+                                <p class="text-red-500 text-sm mt-1">
+                                    {{ field.errors }}
+                                </p>
+                            {% endif %}
+
+                        {% else %}
+
+                            <div>
+                                {{ field }}
+
+                                {% if field.errors %}
+                                    <p class="text-red-500 text-sm mt-1">
+                                        {{ field.errors }}
+                                    </p>
+                                {% endif %}
+                            </div>
+
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+        </div>
+    {% endfor %}
+
+    <button type="submit"
+            class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+        Save
+    </button>
+</form>
+
+
+{% block extra_js %}
+<script>
+    function togglePassword(btn) {
+        const input = btn.parentElement.querySelector("input[data-password-field]");
+        if (!input) return;
+
+        if (input.type === "password") {
+            input.type = "text";
+            btn.textContent = "🙈";
+        } else {
+            input.type = "password";
+            btn.textContent = "👁️";
+        }
+    }
+</script>
+{% endblock %}
