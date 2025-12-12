@@ -8,7 +8,7 @@ RUN useradd -m -r python && \
     chown -R python /app
 
 # Set the working directory inside the container
-WORKDIR /app
+WORKDIR /app/checklistapp
 
 # Set environment variables 
 # Prevents Python from writing pyc files to disk
