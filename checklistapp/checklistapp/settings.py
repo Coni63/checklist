@@ -31,6 +31,7 @@ environ.Env.read_env(BASE_DIR / ".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env("SECRET_KEY")
+SALT_KEY = env("FERNET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")
@@ -54,11 +55,11 @@ INSTALLED_APPS = [
     "widget_tweaks",
     "django_htmx",
     "template_partials",
-    "accounts",
-    "projects",
-    "templates_management",
     "home",
     "core",
+    "projects",
+    "accounts",
+    "templates_management",
     "checklist",
     "inventory",
 ]

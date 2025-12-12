@@ -2,16 +2,19 @@ arrow==1.4.0
 asgiref==3.11.0
 binaryornot==0.4.4
 certifi==2025.11.12
+cffi==2.0.0 ; platform_python_implementation != 'PyPy'
 chardet==5.2.0
 charset-normalizer==3.4.4
 click==8.3.1
 colorama==0.4.6 ; sys_platform == 'win32'
 cookiecutter==2.6.0
 crispy-tailwind==1.0.3
+cryptography==46.0.3
 django==5.2.8
 django-browser-reload==1.21.0
 django-crispy-forms==2.5
 django-environ==0.12.0
+django-fernet-encrypted-fields==0.3.1
 django-htmx==1.27.0
 django-tailwind==4.2.0 ; python_full_version < '3.11'
 django-tailwind==4.4.1 ; python_full_version >= '3.11'
@@ -26,6 +29,7 @@ markupsafe==3.0.3
 mdurl==0.1.2
 packaging==25.0
 psycopg2-binary==2.9.11
+pycparser==2.23 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
 pygments==2.19.2
 pytailwindcss==0.3.0 ; python_full_version >= '3.11'
 python-dateutil==2.9.0.post0

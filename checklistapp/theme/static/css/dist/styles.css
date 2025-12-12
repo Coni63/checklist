@@ -4174,11 +4174,6 @@
     }
   }
 }
-.ma-classe-test {
-  background-color: red;
-  color: white;
-  padding: 20px;
-}
 @layer base {
   :where(:root),:root:has(input.theme-controller[value=light]:checked),[data-theme=light] {
     color-scheme: light;

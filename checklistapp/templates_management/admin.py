@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import StepTemplate, TaskTemplate, MetadataTemplate, TemplateField
+from .models import InventoryTemplate, StepTemplate, TaskTemplate, TemplateField
 
 
 class TaskTemplateInline(admin.TabularInline):
@@ -60,12 +60,13 @@ class TemplateFieldInline(admin.TabularInline):
         "field_name",
         "field_order",
         "field_type",
+        "is_secret",
     ]
 
     ordering = ["group_order", "field_order"]
 
 
-@admin.register(MetadataTemplate)
+@admin.register(InventoryTemplate)
 class MetadataTemplateAdmin(admin.ModelAdmin):
     list_display = ["icon", "name", "description", "default_order", "is_active"]
     search_fields = ["name"]

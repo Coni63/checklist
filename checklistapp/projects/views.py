@@ -6,7 +6,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
-from templates_management.models import StepTemplate
+from inventory.models import ProjectInventory
+from templates_management.models import InventoryTemplate, StepTemplate
 
 from .forms import ProjectCreationForm
 from .models import Project
@@ -125,12 +126,19 @@ class ProjectEditView(ProjectAdminRequiredMixin, UpdateView):
 
         # Get all available step templates
         context["available_templates"] = StepTemplate.objects.filter(is_active=True).order_by("default_order")
+        context["inventory_templates"] = InventoryTemplate.objects.filter(is_active=True).order_by("default_order")
 
         # Get current project steps
         context["project_steps"] = (
             ProjectStep.objects.filter(project=self.object)
             .select_related("step_template")
             .prefetch_related("tasks")
+            .order_by("order")
+        )
+        context["project_inventory"] = (
+            ProjectInventory.objects.filter(project=self.object)
+            .select_related("inventory_template")
+            .prefetch_related("fields")
             .order_by("order")
         )
 

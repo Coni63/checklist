@@ -15,5 +15,6 @@ urlpatterns = [
         views.ProjectDeleteView.as_view(),
         name="project_delete",
     ),
-    path("<int:project_id>/", include(("checklist.urls", "checklist"), namespace="checklist")),
+    path("<int:project_id>/steps/", include(("checklist.urls", "checklist"), namespace="checklist")),
+    path("<int:project_id>/inventory/", include(("inventory.urls", "inventory"), namespace="inventory")),
 ]
