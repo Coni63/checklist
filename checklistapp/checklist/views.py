@@ -18,6 +18,7 @@ from django.views.generic import (
     DeleteView,
     ListView,
     UpdateView,
+    DetailView,
 )
 from django.views.generic.base import ContextMixin
 from django_htmx.http import reswap
@@ -26,6 +27,29 @@ from templates_management.models import StepTemplate
 
 from .models import ProjectStep, ProjectTask, TaskComment
 
+
+class ListProjectStepView(ProjectAdminRequiredMixin, CommonContextMixin, DetailView):
+    """
+    View to display project details, including steps and tasks.
+    Supports HTMX requests to load tasks for a specific step.
+    """
+
+    model = Project
+    template_name = "checklist/partials/project_step_form.html"
+    context_object_name = "project"
+    pk_url_kwarg = "project_id"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["available_templates"] = StepTemplate.objects.filter(is_active=True).order_by("default_order")
+        context["project_steps"] = (
+            ProjectStep.objects.filter(project=self.object)
+            .select_related("step_template")
+            .prefetch_related("tasks")
+            .order_by("order")
+        )
+        return context
 
 class AddProjectStepView(ProjectAdminRequiredMixin, View):
     """
@@ -85,7 +109,7 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
 
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
-                "projects/partials/project_step_form.html#counter_step",
+                "checklist/partials/project_step_form.html#counter_step",
                 {
                     "count": count_step + 1,
                 },
@@ -94,7 +118,7 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
             # If it's the first step, change the hx-swap to replace the empty state div
             if current_max_order == 0:
                 step_content = render_to_string(
-                    "projects/partials/project_step_form.html#step_row",
+                    "checklist/partials/project_step_form.html#step_row",
                     {"step": project_step, "project": project},
                     request=request,
                 )
@@ -103,7 +127,7 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
 
             # Return HTML fragment for the new step card
             step_content = render_to_string(
-                "projects/partials/project_step_form.html#step_row",
+                "checklist/partials/project_step_form.html#step_row",
                 {"step": project_step, "project": project},
                 request=request,
             )
@@ -183,7 +207,7 @@ class RemoveProjectStepView(ProjectAdminRequiredMixin, View):
 
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
-                "projects/partials/project_step_form.html#counter_step",
+                "checklist/partials/project_step_form.html#counter_step",
                 {
                     "count": remaining_steps,
                 },
@@ -192,7 +216,7 @@ class RemoveProjectStepView(ProjectAdminRequiredMixin, View):
             messages.success(request, "Step deleted successfully.")
             if not remaining_steps:
                 # Return empty state HTML
-                empty_html = render_to_string("projects/partials/project_step_form.html#step_empty")
+                empty_html = render_to_string("checklist/partials/project_step_form.html#step_empty")
                 return HttpResponse(step_counter + empty_html)
             else:
                 # Return empty response (card will be removed by HTMX)

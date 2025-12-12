@@ -22,9 +22,9 @@ urlpatterns = [
         views.RemoveProjectInventoryView.as_view(),
         name="inventory_delete",
     ),
-    # path(
-    #     "inventory/<int:inventory_id>/",
-    #     views.ViewProjectInventoryView.as_view(),
-    #     name="inventory_list",
-    # ),
+    path(
+        "/",
+        views.ListProjectInventoryView.as_view(),
+        name="inventory_setup",
+    ),
 ]

@@ -207,7 +207,3 @@ class ProjectDeleteView(ProjectAdminRequiredMixin, DeleteView):
             messages.error(request, "Something went wrong deleting the project.")
 
         return redirect(self.success_url)
-
-    # Optional: allow "GET" request to delete (dangerous but sometimes needed for a simple link)
-    def get(self, request, *args, **kwargs):
-        return self.delete(request, *args, **kwargs)

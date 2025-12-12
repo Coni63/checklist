@@ -13,6 +13,11 @@ urlpatterns = [
         name="step_add",
     ),
     path(
+        "/",
+        views.ListProjectStepView.as_view(),
+        name="checklist_setup",
+    ),
+    path(
         "<int:step_id>/edit/",
         views.EditProjectStepsView.as_view(),
         name="step_edit",

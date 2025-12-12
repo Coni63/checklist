@@ -1,17 +1,24 @@
 from core.mixins import (
+    CommonContextMixin,
     ProjectAdminRequiredMixin,
 )
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count, Max
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.views import View
 from django_htmx.http import reswap
 from projects.models import Project
 from templates_management.models import InventoryTemplate
-
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    ListView,
+    UpdateView,
+    DetailView
+)
 from .models import InventoryField, ProjectInventory
 
 # ViewProjectInventoryView
@@ -169,3 +176,27 @@ class RemoveProjectInventoryView(ProjectAdminRequiredMixin, View):
         except Exception:
             messages.error(request, "Something went wrong when deleting the step from the project.")
             return reswap(HttpResponse(status=200), "none")
+
+
+class ListProjectInventoryView(ProjectAdminRequiredMixin, CommonContextMixin, DetailView):
+    """
+    View to display project details, including steps and tasks.
+    Supports HTMX requests to load tasks for a specific step.
+    """
+
+    model = Project
+    template_name = "inventory/partials/project_inventory_form.html"
+    context_object_name = "project"
+    pk_url_kwarg = "project_id"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["inventory_templates"] = InventoryTemplate.objects.filter(is_active=True).order_by("default_order")
+        context["project_inventory"] = (
+            ProjectInventory.objects.filter(project=self.object) # i need the project Id that is in url
+            .select_related("inventory_template")
+            .prefetch_related("fields")
+            .order_by("order")
+        )
+        return context

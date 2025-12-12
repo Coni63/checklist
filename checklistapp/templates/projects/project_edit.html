@@ -13,12 +13,19 @@
 
     {% include "projects/partials/project_form.html" with submit_label="Save Changes" submit_icon="save" %}
 
-    {% include "projects/partials/project_step_form.html" %}
+    <div hx-get="{% url 'projects:checklist:checklist_setup' project_id=project.id %}"
+         hx-trigger="load" 
+         hx-swap="outerHTML">
+        <p>Loading checklist...</p>
+    </div>
 
-    {% include "projects/partials/project_inventory_form.html" %}
+    <div hx-get="{% url 'projects:inventory:inventory_setup' project_id=project.id %}"
+         hx-trigger="load" 
+         hx-swap="outerHTML">
+        <p>Loading inventory...</p>
+    </div>
 
-    <div id="permission-table-container" 
-         hx-get="{% url 'accounts:user_permissions_list' project_id=project.id %}"
+    <div hx-get="{% url 'accounts:user_permissions_list' project_id=project.id %}"
          hx-trigger="load" 
          hx-swap="outerHTML">
         <p>Loading user permissions...</p>
