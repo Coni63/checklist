@@ -1,33 +1,3 @@
-# First, build the requirements.txt
-FROM ghcr.io/astral-sh/uv:bookworm-slim AS builder
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
-
-# Configure the Python directory so it is consistent
-ENV UV_PYTHON_INSTALL_DIR /python
-
-# Only use the managed Python version
-ENV UV_PYTHON_PREFERENCE=only-managed
-
-# Install Python before the project for caching
-RUN uv python install 3.11
-
-WORKDIR /app
-
-COPY ./pyproject.toml /app/pyproject.toml
-COPY ./uv.lock /app/uv.lock
-RUN uv sync
-RUN uv export --no-hashes --no-header --no-annotate --no-dev --format requirements.txt > requirements.txt
-
-# Second - Build Tailwind statics
-FROM node:25-alpine AS tailwind-builder
-
-COPY ./checklistapp/theme/ /app/checklistapp/theme/
-
-WORKDIR /app/checklistapp/theme/static_src/
-
-RUN npm install
-
-RUN npm run build
 
 # Use the official Python runtime image
 FROM python:3.11-slim
@@ -38,7 +8,7 @@ RUN useradd -m -r python && \
     chown -R python /app
 
 # Set the working directory inside the container
-WORKDIR /app
+WORKDIR /app/checklistapp
 
 # Set environment variables 
 # Prevents Python from writing pyc files to disk
@@ -50,19 +20,18 @@ ENV PYTHONUNBUFFERED=1
 RUN pip install --upgrade pip 
 
 # Copy the Django project  and install dependencies
-COPY --from=builder /app/requirements.txt  /app/requirements.txt
+COPY --chown=python:python ./requirements.txt  /app/requirements.txt
 
 # run this command to install all dependencies 
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the Django project to the container
-COPY --chown=python:python /checklistapp/ /app/
-COPY --from=tailwind-builder /app/checklistapp/theme/static/ /app/checklistapp/theme/static/
+COPY --chown=python:python ./checklistapp/ /app/checklistapp/
 
 # create folder for staticfile that is writable
-RUN mkdir -p /app/staticfiles
-RUN chown python:python /app/staticfiles
-RUN chmod 755 /app/staticfiles
+RUN mkdir -p /app/checklistapp/staticfiles
+RUN chown python:python /app/checklistapp/staticfiles
+RUN chmod 744 /app/checklistapp/staticfiles
 
 USER python
 
