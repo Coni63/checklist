@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @plugin "daisyui";
 
 /**
@@ -9,3 +13,5 @@
   * the scope of this path.
   */
 @source "../../../**/*.{html,py,js}";
+@source "../../templates/**/*.{html,js}";
+@source "../../../**/templates/**/*.{html,py,js}";
