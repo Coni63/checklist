@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     "home",
     "core",
     "checklist",
-    "metadata",
+    "inventory",
 ]
 
 MIDDLEWARE = [
