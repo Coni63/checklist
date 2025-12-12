@@ -1,6 +1,5 @@
 from django.urls import path
 
-# from projects.views import ProjectDetailView
 from . import views
 
 app_name = "inventory"

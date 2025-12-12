@@ -51,6 +51,45 @@ class ListProjectStepView(ProjectAdminRequiredMixin, CommonContextMixin, DetailV
         )
         return context
 
+class ProjectStepDetailView(ProjectReadRequiredMixin, CommonContextMixin, DetailView):
+    """
+    View to display project details, including steps and tasks.
+    Supports HTMX requests to load tasks for a specific step.
+    """
+
+    model = Project
+    template_name = "checklist/checklist_detail.html"
+    context_object_name = "project"
+    pk_url_kwarg = "project_id"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["steps"] = self.object.steps.prefetch_related("tasks")
+        context["completion"] = self.object.get_completion_percentage()
+
+        # Si un step_id est dans l'URL, on charge ce step
+        step_id = context.get("step_id")
+        if step_id:
+            step = get_object_or_404(
+                ProjectStep.objects.prefetch_related("tasks"),
+                id=step_id,
+                project=self.object,
+            )
+            context["active_step"] = step
+            context["active_step_id"] = step_id
+            context["tasks"] = step.tasks.all()
+
+        return context
+
+    def render_to_response(self, context, **response_kwargs):
+        # Si c'est une requête HTMX, retourne seulement le partial des tâches
+        if self.request.headers.get("HX-Request"):
+            return render(self.request, "checklist/partials/tasks_page.html", context)
+
+        # Sinon retourne la page complète
+        return super().render_to_response(context, **response_kwargs)
+
+
 class AddProjectStepView(ProjectAdminRequiredMixin, View):
     """
     View to handle adding a new step to a project via HTMX.

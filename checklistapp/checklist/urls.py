@@ -1,5 +1,4 @@
 from django.urls import path
-from projects.views import ProjectDetailView
 
 from . import views
 
@@ -13,7 +12,7 @@ urlpatterns = [
         name="step_add",
     ),
     path(
-        "/",
+        "/setup",
         views.ListProjectStepView.as_view(),
         name="checklist_setup",
     ),
@@ -43,8 +42,13 @@ urlpatterns = [
         name="get_step_description_display",
     ),
     path(
+        "/",
+        views.ProjectStepDetailView.as_view(),
+        name="step_detail_default",
+    ),
+    path(
         "<int:step_id>/",
-        ProjectDetailView.as_view(),
+        views.ProjectStepDetailView.as_view(),
         name="step_detail",
     ),
     path(
