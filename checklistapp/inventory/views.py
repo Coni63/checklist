@@ -20,6 +20,7 @@ from django.views.generic import (
     UpdateView,
     DetailView
 )
+from django.views.generic.base import ContextMixin
 import base64
 from .models import InventoryField, ProjectInventory
 from .forms import DynamicInventoryForm
@@ -203,111 +204,6 @@ class ListProjectInventoryView(ProjectAdminRequiredMixin, CommonContextMixin, De
             .order_by("order")
         )
         return context
-
-
-class ProjectInventoryDetailView(ProjectReadRequiredMixin, CommonContextMixin, DetailView):
-    """
-    View to display project details, including steps and tasks.
-    Supports HTMX requests to load tasks for a specific step.
-    """
-
-    model = Project
-    template_name = "inventory/inventory_detail.html"
-    context_object_name = "project"
-    pk_url_kwarg = "project_id"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["inventories"] = self.object.inventories.prefetch_related("fields")
-
-        # Si un step_id est dans l'URL, on charge ce step
-        inventory_id = context.get("inventory_id")
-        print(inventory_id)
-        if inventory_id:
-            inventory = get_object_or_404(
-                ProjectInventory.objects.prefetch_related("fields"),
-                id=inventory_id,
-                project=self.object,
-            )
-            context["active_inventory"] = inventory
-            context["active_inventory_id"] = inventory_id
-            context["tasks"] = inventory.fields.all()
-
-            form = DynamicInventoryForm(inventory, context)
-            context["form"] = form
-            context["groups"] = ProjectInventoryDetailView.group_fields_by_group(form)
-
-        return context
-
-    def render_to_response(self, context, **response_kwargs):
-        # Si c'est une requête HTMX, retourne seulement le partial des tâches
-        if self.request.headers.get("HX-Request"):
-            return render(self.request, "inventory/partials/fields_form.html", context)
-
-        # Sinon retourne la page complète
-        return super().render_to_response(context, **response_kwargs)
-    
-
-    @staticmethod
-    def group_fields_by_group(form):
-        groups = {}
-
-        # Copy metadata for sorting
-        meta = {}
-
-        for name, field in form.fields.items():
-            group = getattr(field, "group_name", "Other")
-            order = getattr(field, "group_order", 999)
-
-            groups.setdefault(group, []).append((name, form[name]))
-            meta[group] = order
-
-        # Sort groups by group_order
-        sorted_groups = dict(sorted(groups.items(), key=lambda item: meta[item[0]]))
-
-        return sorted_groups
-    
-    def post(self, request, *args, **kwargs):
-        # TODO: check if user is edit
-        self.object = self.get_object()
-        inventory_id = request.POST.get("inventory_id")
-
-        inventory = get_object_or_404(
-            ProjectInventory.objects.prefetch_related("fields"),
-            id=inventory_id,
-            project=self.object,
-        )
-
-        context = self.get_context_data()
-
-        print(context["roles"])
-
-        is_admin = "admin" in context["roles"]
-
-        form = DynamicInventoryForm(inventory, context, request.POST, request.FILES)
-
-        if form.is_valid():
-            form.save(is_admin=is_admin)
-
-            if request.headers.get("HX-Request"):
-                # return freshly rendered partial
-                context = self.get_context_data()
-                context["active_inventory"] = inventory
-                context["form"] = DynamicInventoryForm(inventory, context)
-                context["groups"] = ProjectInventoryDetailView.group_fields_by_group(context["form"])
-                return render(request, "inventory/partials/fields_form.html", context)
-
-            return redirect(request.path)
-
-        # Invalid form
-        context = self.get_context_data()
-        context["form"] = form
-        context["groups"] = ProjectInventoryDetailView.group_fields_by_group(form)
-
-        if request.headers.get("HX-Request"):
-            return render(request, "inventory/partials/fields_form.html", context)
-
-        return self.render_to_response(context)
     
 
 def download_inventory_file(request, project_id, inventory_id, field_id):
@@ -347,3 +243,105 @@ def download_inventory_file(request, project_id, inventory_id, field_id):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     return response
+
+
+class InventoryList(ProjectReadRequiredMixin, CommonContextMixin, ListView):
+    model = ProjectInventory
+    template_name = "inventory/partials/inventory_cards.html"
+    context_object_name = "inventories"
+    pk_url_kwarg = "project_id"
+
+    def get_queryset(self):
+        # Retrieve the project_id from the URL keyword arguments
+        project_id = self.kwargs.get(self.pk_url_kwarg)
+        
+        # Filter ProjectInventory objects where the 'project' field matches the ID
+        return ProjectInventory.objects.filter(project_id=project_id)
+
+class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin, View):
+    """
+    View to display project details, including steps and tasks.
+    Supports HTMX requests to load tasks for a specific step.
+    """
+    template_name = "inventory/partials/inventory_right_side.html"
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+
+        if not request.htmx:
+            project = get_object_or_404(
+                Project,
+                id=context["project_id"],
+            )
+            context["project"] = project
+            context["inventories"] = project.inventories.all()
+            self.template_name = "inventory/inventory_detail.html"
+            return render(request, self.template_name, context)
+
+        inventory_id = context.get("inventory_id")
+        if not inventory_id:
+            return render(request, self.template_name, context)
+
+        inventory = get_object_or_404(
+            ProjectInventory.objects.prefetch_related("fields"),
+            id=inventory_id,
+        )
+        context["tasks"] = inventory.fields.all()
+        context["inventory"] = inventory
+
+        form = DynamicInventoryForm(inventory, context)
+        context["form"] = form
+        context["groups"] = InventoryDetail.group_fields_by_group(form)
+
+        return render(request, self.template_name, context)
+
+    @staticmethod
+    def group_fields_by_group(form):
+        groups = {}
+
+        # Copy metadata for sorting
+        meta = {}
+
+        for name, field in form.fields.items():
+            group = getattr(field, "group_name", "Other")
+            order = getattr(field, "group_order", 999)
+
+            groups.setdefault(group, []).append((name, form[name]))
+            meta[group] = order
+
+        # Sort groups by group_order
+        sorted_groups = dict(sorted(groups.items(), key=lambda item: meta[item[0]]))
+
+        return sorted_groups
+    
+    def post(self, request, *args, **kwargs):
+        inventory_id = request.POST.get("inventory_id")
+
+        inventory = get_object_or_404(
+            ProjectInventory.objects.prefetch_related("fields"),
+            id=inventory_id,
+        )
+
+        context = self.get_context_data()
+
+        is_admin = "admin" in context["roles"]
+
+        form = DynamicInventoryForm(inventory, context, request.POST, request.FILES)
+
+        if form.is_valid():
+            form.save(is_admin=is_admin)
+
+            if request.headers.get("HX-Request"):
+                # return freshly rendered partial
+                context["form"] = DynamicInventoryForm(inventory, context)
+                context["groups"] = InventoryDetail.group_fields_by_group(context["form"])
+                return render(request, "inventory/partials/fields_form.html", context)
+            return redirect(request.path)
+
+        context["form"] = form
+        context["groups"] = InventoryDetail.group_fields_by_group(form)
+
+        if request.headers.get("HX-Request"):
+            return render(request, "inventory/partials/fields_form.html", context)
+
+        return redirect(request.path)

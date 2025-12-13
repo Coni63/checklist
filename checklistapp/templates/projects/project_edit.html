@@ -1,6 +1,4 @@
-{% extends 'base.html' %}
-{% load static %}
-
+{% extends 'base_one_column.html' %}
 
 {% block title %}Setup Project: {{ project.name }} - Checklist Manager{% endblock %}
 
@@ -8,7 +6,7 @@
 <div class="container mx-auto max-w-7xl p-6">
     <div class="text-center mb-10 pb-8 border-b border-base-300">
         <h1 class="text-4xl font-bold text-base-content mb-2">Setup Project: {{ project.name }}</h1>
-        <p class="text-lg text-base-content/70">Configure your project by selecting step templates</p>
+        <p class="text-lg text-base-content/70">Configure your project, setup checklists, inventory and manage accesses.</p>
     </div>
 
     {% include "projects/partials/project_form.html" with submit_label="Save Changes" submit_icon="save" %}
@@ -16,19 +14,19 @@
     <div hx-get="{% url 'projects:checklist:checklist_setup' project_id=project.id %}"
          hx-trigger="load" 
          hx-swap="outerHTML">
-        <p>Loading checklist...</p>
+        {% include "common/partials/loading-card.html" with text="Loading checklist..." %}
     </div>
 
     <div hx-get="{% url 'projects:inventory:inventory_setup' project_id=project.id %}"
          hx-trigger="load" 
          hx-swap="outerHTML">
-        <p>Loading inventory...</p>
+        {% include "common/partials/loading-card.html" with text="Loading inventory..." %}
     </div>
 
     <div hx-get="{% url 'accounts:user_permissions_list' project_id=project.id %}"
          hx-trigger="load" 
          hx-swap="outerHTML">
-        <p>Loading user permissions...</p>
+        {% include "common/partials/loading-card.html" with text="Loading user permissions..." %}
     </div>
 </div>
 {% endblock %}

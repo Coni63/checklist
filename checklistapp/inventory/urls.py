@@ -5,7 +5,7 @@ from . import views
 app_name = "inventory"
 
 urlpatterns = [
-    # Project Inventory URLs
+    # Configuration Inventory URLs
     path(
         "inventory_add/",
         views.AddProjectInventoryView.as_view(),
@@ -26,15 +26,21 @@ urlpatterns = [
         views.RemoveProjectInventoryView.as_view(),
         name="inventory_delete",
     ),
+    # Project Inventory pages
     path(
         "",
-        views.ProjectInventoryDetailView.as_view(),
-        name="inventory_detail_default",
+        views.InventoryDetail.as_view(),
+        name="inventory_page",
     ),
     path(
         "<int:inventory_id>/",
-        views.ProjectInventoryDetailView.as_view(),
+        views.InventoryDetail.as_view(),
         name="inventory_detail",
+    ),
+    path(
+        "list_inventory/",
+        views.InventoryList.as_view(),
+        name="list_inventory",
     ),
     path("<int:inventory_id>/field/<int:field_id>/download", views.download_inventory_file, name='download_inventory_file'),
 ]

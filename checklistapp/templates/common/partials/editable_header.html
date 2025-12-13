@@ -1,0 +1,11 @@
+<div class="mb-8">
+    <div class="flex items-center space-x-2">
+        {% if icon %}
+            <h1 class="text-3xl font-bold text-base-content">{{ item.icon }}</h1>
+        {% endif %}
+            {{ item.title }}
+    </div>
+    <div class="flex items-center space-x-2 mt-2">
+            {{ item.description }}
+    </div>
+</div>
