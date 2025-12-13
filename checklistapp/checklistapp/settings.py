@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "templates_management",
     "checklist",
     "inventory",
+    "common",
 ]
 
 MIDDLEWARE = [

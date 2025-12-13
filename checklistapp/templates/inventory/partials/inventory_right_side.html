@@ -1,5 +1,3 @@
-{% with item=inventory %}
-    {% include 'common/partials/editable_header.html' %}
-{% endwith %}
+{% include 'common/partials/editable_header.html' with object=inventory field_prefix='inventory' can_edit=can_edit edit_endpoint_base='projects:inventory:inventory_header_edit' %}
 
 {% include 'inventory/partials/inventory_form.html' %}

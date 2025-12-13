@@ -29,6 +29,10 @@ class ProjectInventory(models.Model):
     def __repr__(self):
         return f"ProjectInventory(id={self.id}, name={self.name})"
 
+    @property
+    def title(self):
+        return self.name
+
     def to_str(self):
         if self.icon:
             return (

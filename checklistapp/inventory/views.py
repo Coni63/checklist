@@ -345,3 +345,25 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             return render(request, "inventory/partials/fields_form.html", context)
 
         return redirect(request.path)
+    
+
+from common.views import editable_header_view
+from .models import ProjectInventory
+
+
+def inventory_header_edit(request, project_id, inventory_id):
+    """Endpoint unifié pour l'édition du header de l'inventory"""
+    def can_edit(req, obj):
+        return True
+    
+    return editable_header_view(
+        request=request,
+        model_class=ProjectInventory,
+        object_id=inventory_id,
+        template_path='common/partials/editable_header.html',
+        field_prefix='inventory',
+        can_edit_check=can_edit,
+        extra_context={'project_id': project_id},
+        filter_kwargs={'project__id': project_id},
+        url_kwargs={'project_id': project_id, 'inventory_id': inventory_id}
+    )
