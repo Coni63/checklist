@@ -23,7 +23,7 @@ RUN pip install --upgrade pip
 COPY --chown=python:python ./requirements.txt  /app/requirements.txt
 
 # run this command to install all dependencies 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy the Django project to the container
 COPY --chown=python:python ./checklistapp/ /app/checklistapp/
