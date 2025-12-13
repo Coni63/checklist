@@ -1,3 +1,8 @@
+import base64
+
+from django.urls import reverse
+
+from common.views import editable_header_view
 from core.mixins import (
     CommonContextMixin,
     ProjectAdminRequiredMixin,
@@ -10,20 +15,14 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views import View
+from django.views.generic import DetailView, ListView
+from django.views.generic.base import ContextMixin
 from django_htmx.http import reswap
 from projects.models import Project
 from templates_management.models import InventoryTemplate
-from django.views.generic import (
-    CreateView,
-    DeleteView,
-    ListView,
-    UpdateView,
-    DetailView
-)
-from django.views.generic.base import ContextMixin
-import base64
-from .models import InventoryField, ProjectInventory
+
 from .forms import DynamicInventoryForm
+from .models import InventoryField, ProjectInventory
 
 # ViewProjectInventoryView
 
@@ -198,50 +197,55 @@ class ListProjectInventoryView(ProjectAdminRequiredMixin, CommonContextMixin, De
 
         context["inventory_templates"] = InventoryTemplate.objects.filter(is_active=True).order_by("default_order")
         context["project_inventory"] = (
-            ProjectInventory.objects.filter(project=self.object) # i need the project Id that is in url
+            ProjectInventory.objects.filter(project=self.object)  # i need the project Id that is in url
             .select_related("inventory_template")
             .prefetch_related("fields")
             .order_by("order")
         )
         return context
-    
+
+
+"""
+Detail page
+"""
+
 
 def download_inventory_file(request, project_id, inventory_id, field_id):
     # 1. Récupérer l'instance du champ
     inventory_field = get_object_or_404(
-        InventoryField, 
+        InventoryField,
         id=field_id,
         # Vous pouvez ajouter ici une vérification de l'utilisateur/permissions
     )
-    
+
     # Sécurité : vérifier que c'est bien un champ de type 'file'
-    if inventory_field.field_type != 'file':
+    if inventory_field.field_type != "file":
         return HttpResponse("Type de champ non supporté pour le téléchargement.", status=400)
 
     # Récupérer la chaîne B64 stockée
     b64_data = inventory_field.file_value
     filename = inventory_field.text_value or "attachement.txt"
-    
+
     if not b64_data:
         return HttpResponse("Le fichier est vide ou n'a pas été défini.", status=404)
 
     try:
         # 2. Décoder la chaîne Base64 en données binaires
         file_content = base64.b64decode(b64_data)
-        
+
     except (TypeError, ValueError):
         # Cela peut arriver si la B64 est mal formée (corruption de données)
         return HttpResponse("Erreur lors du décodage Base64.", status=500)
 
     # 3. Préparer la réponse HTTP pour le téléchargement
     # Si vous avez stocké l'extension ou le nom original, utilisez-le ici.
-    
+
     # B. Créer la réponse
-    response = HttpResponse(file_content, content_type='application/octet-stream')
-    
+    response = HttpResponse(file_content, content_type="application/octet-stream")
+
     # C. Définir l'en-tête Content-Disposition pour forcer le téléchargement
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
     return response
 
 
@@ -254,15 +258,17 @@ class InventoryList(ProjectReadRequiredMixin, CommonContextMixin, ListView):
     def get_queryset(self):
         # Retrieve the project_id from the URL keyword arguments
         project_id = self.kwargs.get(self.pk_url_kwarg)
-        
+
         # Filter ProjectInventory objects where the 'project' field matches the ID
         return ProjectInventory.objects.filter(project_id=project_id)
+
 
 class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin, View):
     """
     View to display project details, including steps and tasks.
     Supports HTMX requests to load tasks for a specific step.
     """
+
     template_name = "inventory/partials/inventory_right_side.html"
 
     def get(self, request, *args, **kwargs):
@@ -293,6 +299,9 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
         context["form"] = form
         context["groups"] = InventoryDetail.group_fields_by_group(form)
 
+        context["edit_endpoint_base"] = reverse("projects:inventory:inventory_header_edit", kwargs={"project_id": context["project_id"], "inventory_id": context["inventory_id"]})
+        context["can_edit"] = "edit" in context["roles"]
+
         return render(request, self.template_name, context)
 
     @staticmethod
@@ -313,7 +322,7 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
         sorted_groups = dict(sorted(groups.items(), key=lambda item: meta[item[0]]))
 
         return sorted_groups
-    
+
     def post(self, request, *args, **kwargs):
         inventory_id = request.POST.get("inventory_id")
 
@@ -345,25 +354,19 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             return render(request, "inventory/partials/fields_form.html", context)
 
         return redirect(request.path)
-    
-
-from common.views import editable_header_view
-from .models import ProjectInventory
 
 
 def inventory_header_edit(request, project_id, inventory_id):
     """Endpoint unifié pour l'édition du header de l'inventory"""
-    def can_edit(req, obj):
-        return True
-    
+    edit_endpoint_base = reverse("projects:inventory:inventory_header_edit", kwargs={"project_id": project_id, "inventory_id": inventory_id})
+
     return editable_header_view(
         request=request,
         model_class=ProjectInventory,
-        object_id=inventory_id,
-        template_path='common/partials/editable_header.html',
-        field_prefix='inventory',
-        can_edit_check=can_edit,
-        extra_context={'project_id': project_id},
-        filter_kwargs={'project__id': project_id},
-        url_kwargs={'project_id': project_id, 'inventory_id': inventory_id}
+        template_path="common/partials/editable_header.html",
+        field_prefix="inventory",
+        can_edit=True,
+        extra_context={"project_id": project_id, "inventory_id": inventory_id},
+        filter_kwargs={"project__id": project_id, "pk": inventory_id},
+        edit_endpoint_base=edit_endpoint_base,
     )

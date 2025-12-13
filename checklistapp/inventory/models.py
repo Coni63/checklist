@@ -12,7 +12,7 @@ class ProjectInventory(models.Model):
         blank=True,
         help_text="Template this step was created from",
     )
-    name = models.CharField(max_length=200, help_text="Custom title, overrides template name")
+    title = models.CharField(max_length=200, help_text="Custom title, overrides template name")
     description = models.TextField(blank=True)
     icon = models.CharField(max_length=10)
     order = models.IntegerField()
@@ -24,27 +24,16 @@ class ProjectInventory(models.Model):
         unique_together = ["project", "order"]
 
     def __str__(self):
-        return self.name
+        return self.title
 
     def __repr__(self):
-        return f"ProjectInventory(id={self.id}, name={self.name})"
-
-    @property
-    def title(self):
-        return self.name
+        return f"ProjectInventory(id={self.id}, name={self.title})"
 
     def to_str(self):
         if self.icon:
-            return (
-                "<span class='inline-flex items-center min-w-10 justify-center'>"
-                f"{self.icon}"
-                "</span>"
-                f"{self.name}"
-            )
-        return (
-            "<span class='inline-flex items-center min-w-10'></span>"
-            f"{self.name}"
-        )
+            return f"<span class='inline-flex items-center min-w-10 justify-center'>{self.icon}</span>{self.title}"
+        return f"<span class='inline-flex items-center min-w-10'></span>{self.title}"
+
 
 class InventoryField(models.Model):
     inventory = models.ForeignKey(ProjectInventory, on_delete=models.CASCADE, related_name="fields")

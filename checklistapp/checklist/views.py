@@ -16,9 +16,9 @@ from django.views import View
 from django.views.generic import (
     CreateView,
     DeleteView,
+    DetailView,
     ListView,
     UpdateView,
-    DetailView,
 )
 from django.views.generic.base import ContextMixin
 from django_htmx.http import reswap
@@ -50,6 +50,7 @@ class ListProjectStepView(ProjectAdminRequiredMixin, CommonContextMixin, DetailV
             .order_by("order")
         )
         return context
+
 
 class ProjectStepDetailView(ProjectReadRequiredMixin, CommonContextMixin, DetailView):
     """

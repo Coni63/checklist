@@ -1,11 +1,11 @@
 from accounts.models import UserProjectPermissions
 from checklist.models import ProjectStep
-from core.mixins import CommonContextMixin, ProjectAdminRequiredMixin, ProjectReadRequiredMixin
+from core.mixins import ProjectAdminRequiredMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 from inventory.models import ProjectInventory
 from templates_management.models import InventoryTemplate, StepTemplate
 
@@ -147,8 +147,6 @@ class ProjectEditView(ProjectAdminRequiredMixin, UpdateView):
     def get_success_url(self):
         messages.success(self.request, f'Project "{self.object.name}" updated successfully!')
         return reverse_lazy("projects:project_edit", kwargs={"project_id": self.object.pk})
-
-
 
 
 class ProjectDeleteView(ProjectAdminRequiredMixin, DeleteView):

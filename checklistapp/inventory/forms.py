@@ -1,11 +1,7 @@
+from core.b64_field import Base64FileField
 from django import forms
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.urls import reverse
-
-from core.b64_field import Base64FileField
-from core.utils import default_midnight
-from .models import InventoryField, ProjectInventory
 
 
 class DynamicInventoryForm(forms.Form):
@@ -19,10 +15,7 @@ class DynamicInventoryForm(forms.Form):
         self.instance = inventory
 
         # Make sure they’re sorted
-        template_fields = (
-            inventory.fields.all()
-            .order_by("group_order", "field_order")
-        )
+        template_fields = inventory.fields.all().order_by("group_order", "field_order")
 
         for inst_field in template_fields:
             field_name = f"field_{inst_field.id}"
@@ -38,7 +31,9 @@ class DynamicInventoryForm(forms.Form):
 
             read_only = "edit" not in context["roles"]
 
-            form_field = self.build_field(inst_field, hide_value, read_only, project_id=context["project_id"], inventory_id=context["inventory_id"])
+            form_field = self.build_field(
+                inst_field, hide_value, read_only, project_id=context["project_id"], inventory_id=context["inventory_id"]
+            )
 
             # store grouping metadata
             form_field.group_name = inst_field.group_name or "Other"
@@ -56,11 +51,13 @@ class DynamicInventoryForm(forms.Form):
                 required=False,
                 read_only=read_only,
                 initial="•••••• (secret set)",
-                widget=forms.TextInput(attrs={
-                    "placeholder": "•••••• (secret set)",
-                    "readonly": True,
-                    "class": "input input-bordered w-full bg-gray-100 cursor-not-allowed"
-                })
+                widget=forms.TextInput(
+                    attrs={
+                        "placeholder": "•••••• (secret set)",
+                        "readonly": True,
+                        "class": "input input-bordered w-full bg-gray-100 cursor-not-allowed",
+                    }
+                ),
             )
 
         match tf.field_type:
@@ -70,7 +67,7 @@ class DynamicInventoryForm(forms.Form):
                     required=False,
                     disabled=read_only,
                     initial=existing_value,
-                    widget=forms.TextInput(attrs={"class": "input input-bordered w-full"})
+                    widget=forms.TextInput(attrs={"class": "input input-bordered w-full"}),
                 )
             case "number":
                 return forms.DecimalField(
@@ -78,7 +75,7 @@ class DynamicInventoryForm(forms.Form):
                     required=False,
                     disabled=read_only,
                     initial=existing_value,
-                    widget=forms.NumberInput(attrs={"class": "input input-bordered w-full"})
+                    widget=forms.NumberInput(attrs={"class": "input input-bordered w-full"}),
                 )
             case "url":
                 return forms.URLField(
@@ -86,7 +83,7 @@ class DynamicInventoryForm(forms.Form):
                     required=False,
                     disabled=read_only,
                     initial=existing_value,
-                    widget=forms.URLInput(attrs={"class": "input input-bordered w-full"})
+                    widget=forms.URLInput(attrs={"class": "input input-bordered w-full"}),
                 )
             case "file":
                 field = Base64FileField(
@@ -94,14 +91,14 @@ class DynamicInventoryForm(forms.Form):
                     required=False,
                     disabled=read_only,
                     initial=existing_value,
-                    widget=forms.ClearableFileInput(attrs={"class": "file-input file-input-bordered w-full"})
+                    widget=forms.ClearableFileInput(attrs={"class": "file-input file-input-bordered w-full"}),
                 )
                 if existing_value:
                     # On stocke l'URL dans un attribut personnalisé du champ pour l'utiliser dans le template
-                    field.download_url = reverse('projects:inventory:download_inventory_file', args=[project_id, inventory_id, tf.id])
-                    field.help_text = (
-                        f'Actual file: <a href="{field.download_url}" target="_blank" class="link link-primary">{tf.text_value or "Download"}</a>'
+                    field.download_url = reverse(
+                        "projects:inventory:download_inventory_file", args=[project_id, inventory_id, tf.id]
                     )
+                    field.help_text = f'Actual file: <a href="{field.download_url}" target="_blank" class="link link-primary">{tf.text_value or "Download"}</a>'
                 return field
             case "password":
                 return forms.CharField(
@@ -114,12 +111,11 @@ class DynamicInventoryForm(forms.Form):
                         attrs={
                             "class": "input input-bordered w-full",
                             "data-password-field": "true",
-                        }
+                        },
                     ),
                 )
             case "datetime":
-                help_text=f"TZ: {settings.TIME_ZONE}"
-
+                help_text = f"TZ: {settings.TIME_ZONE}"
 
                 return forms.DateTimeField(
                     label=tf.field_name,
@@ -143,9 +139,9 @@ class DynamicInventoryForm(forms.Form):
             label=tf.field_name,
             required=False,
             disabled=read_only,
-            widget=forms.TextInput(attrs={"class": "input input-bordered w-full"})
+            widget=forms.TextInput(attrs={"class": "input input-bordered w-full"}),
         )
-    
+
     def save(self, is_admin):
         """
         Store all posted dynamic values into InventoryField model entries.
@@ -161,11 +157,7 @@ class DynamicInventoryForm(forms.Form):
             new_value = self.cleaned_data.get(name)
 
             # SECRET FIELD: prevent non-admin from editing if there was already a value
-            if (
-                inst_field.field_template
-                and getattr(inst_field.field_template, "is_secret", False)
-                and not is_admin
-            ):
+            if inst_field.field_template and getattr(inst_field.field_template, "is_secret", False) and not is_admin:
                 # If non-admin submitted ANYTHING, ignore it completely
                 # (They see a read-only placeholder anyway)
                 continue
@@ -183,7 +175,7 @@ class DynamicInventoryForm(forms.Form):
                     if new_value:
                         inst_field.file_value = new_value
 
-                        if hasattr(field, 'uploaded_filename') and field.uploaded_filename:
+                        if hasattr(field, "uploaded_filename") and field.uploaded_filename:
                             inst_field.text_value = field.uploaded_filename
                 case "password":
                     # Stored encrypted
