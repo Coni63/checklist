@@ -1,7 +1,6 @@
 V2
 Merge templates when possible
-Isolate checklist in checklist also for the edit project with HTMX loading
-Isolate inventory in inventory also for the edit project with HTMX loading
+remove save for ProjectReadRequiredMixincheck that edit non admin does not override password
 
 V3 (optimisation - industrialisation)
 Write unittest

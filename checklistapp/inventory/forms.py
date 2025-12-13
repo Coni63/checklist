@@ -1,5 +1,8 @@
 from django import forms
+from django.conf import settings
 from django.contrib.auth.models import User
+
+from core.utils import default_midnight
 from .models import InventoryField, ProjectInventory
 
 
@@ -8,7 +11,7 @@ class DynamicInventoryForm(forms.Form):
     Form built dynamically from Inventory + existing instance.
     """
 
-    def __init__(self, inventory, is_admin, *args, **kwargs):
+    def __init__(self, inventory, roles, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.instance = inventory
@@ -28,10 +31,12 @@ class DynamicInventoryForm(forms.Form):
                 inst_field.field_template
                 and getattr(inst_field.field_template, "is_secret", False)
                 and existing_value not in (None, "", [])
-                and not is_admin
+                and "admin" not in roles
             )
 
-            form_field = self.build_field(inst_field, hide_value)
+            read_only = "edit" not in roles
+
+            form_field = self.build_field(inst_field, hide_value, read_only)
 
             # store grouping metadata
             form_field.group_name = inst_field.group_name or "Other"
@@ -40,13 +45,14 @@ class DynamicInventoryForm(forms.Form):
 
             self.fields[field_name] = form_field
 
-    def build_field(self, tf, hide_value=False):
+    def build_field(self, tf, hide_value=False, read_only=False):
         existing_value = tf.get_value()
 
         if hide_value:
             return forms.CharField(
                 label=tf.field_name,
                 required=False,
+                read_only=read_only,
                 initial="•••••• (secret set)",
                 widget=forms.TextInput(attrs={
                     "placeholder": "•••••• (secret set)",
@@ -60,6 +66,7 @@ class DynamicInventoryForm(forms.Form):
                 return forms.CharField(
                     label=tf.field_name,
                     required=False,
+                    disabled=read_only,
                     initial=existing_value,
                     widget=forms.TextInput(attrs={"class": "input input-bordered w-full"})
                 )
@@ -67,6 +74,7 @@ class DynamicInventoryForm(forms.Form):
                 return forms.DecimalField(
                     label=tf.field_name,
                     required=False,
+                    disabled=read_only,
                     initial=existing_value,
                     widget=forms.NumberInput(attrs={"class": "input input-bordered w-full"})
                 )
@@ -74,6 +82,7 @@ class DynamicInventoryForm(forms.Form):
                 return forms.URLField(
                     label=tf.field_name,
                     required=False,
+                    disabled=read_only,
                     initial=existing_value,
                     widget=forms.URLInput(attrs={"class": "input input-bordered w-full"})
                 )
@@ -81,14 +90,15 @@ class DynamicInventoryForm(forms.Form):
                 return forms.FileField(
                     label=tf.field_name,
                     required=False,
+                    disabled=read_only,
                     initial=existing_value,
                     widget=forms.ClearableFileInput(attrs={"class": "file-input file-input-bordered w-full"})
                 )
             case "password":
-                print(tf.field_name, existing_value)
                 return forms.CharField(
                     label=tf.field_name,
                     required=False,
+                    disabled=read_only,
                     initial=existing_value,
                     widget=forms.PasswordInput(
                         render_value=True,
@@ -98,11 +108,32 @@ class DynamicInventoryForm(forms.Form):
                         }
                     ),
                 )
+            case "datetime":
+                help_text=f"TZ: {settings.TIME_ZONE}"
+
+
+                return forms.DateTimeField(
+                    label=tf.field_name,
+                    help_text=help_text,
+                    required=False,
+                    disabled=read_only,
+                    initial=existing_value,
+                    input_formats=["%Y-%m-%dT%H:%M:%S"],
+                    widget=forms.DateTimeInput(
+                        attrs={
+                            "type": "datetime-local",
+                            "step": "1",  # autorise les secondes
+                            "class": "input input-bordered w-full",
+                        },
+                        format="%Y-%m-%dT%H:%M:%S",
+                    ),
+                )
 
         # fallback
         return forms.CharField(
             label=tf.field_name,
             required=False,
+            disabled=read_only,
             widget=forms.TextInput(attrs={"class": "input input-bordered w-full"})
         )
     
@@ -128,6 +159,9 @@ class DynamicInventoryForm(forms.Form):
             ):
                 # If non-admin submitted ANYTHING, ignore it completely
                 # (They see a read-only placeholder anyway)
+                continue
+
+            if not new_value:
                 continue
 
             # Save based on type

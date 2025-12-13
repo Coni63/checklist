@@ -15,7 +15,7 @@
         id="step-card-{{step.id}}">
             <div class="card-body">
                 <div class="flex items-start justify-between gap-2">
-                    <h3 class="font-semibold text-base-content">{{inventory.name}}</h3>
+                    <h3 class="font-semibold text-base-content">{{inventory.to_str | safe  }}</h3>
                 </div>
                 <!-- <p class="text-sm text-base-content/70">{{step.get_progress_text}}</p> -->
             </div>

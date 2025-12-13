@@ -29,6 +29,18 @@ class ProjectInventory(models.Model):
     def __repr__(self):
         return f"ProjectInventory(id={self.id}, name={self.name})"
 
+    def to_str(self):
+        if self.icon:
+            return (
+                "<span class='inline-flex items-center min-w-10 justify-center'>"
+                f"{self.icon}"
+                "</span>"
+                f"{self.name}"
+            )
+        return (
+            "<span class='inline-flex items-center min-w-10'></span>"
+            f"{self.name}"
+        )
 
 class InventoryField(models.Model):
     inventory = models.ForeignKey(ProjectInventory, on_delete=models.CASCADE, related_name="fields")

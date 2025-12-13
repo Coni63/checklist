@@ -84,7 +84,7 @@ class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
 
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
-                "projects/partials/project_inventory_form.html#counter_inventory",
+                "inventory/partials/project_inventory_form.html#counter_inventory",
                 {
                     "count": count_step + 1,
                 },
@@ -93,7 +93,7 @@ class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
             # If it's the first step, change the hx-swap to replace the empty state div
             if current_max_order == 0:
                 step_content = render_to_string(
-                    "projects/partials/project_inventory_form.html#inventory_row",
+                    "inventory/partials/project_inventory_form.html#inventory_row",
                     {"inventory": inventory, "project": project},
                     request=request,
                 )
@@ -102,7 +102,7 @@ class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
 
             # Return HTML fragment for the new step card
             step_content = render_to_string(
-                "projects/partials/project_inventory_form.html#inventory_row",
+                "inventory/partials/project_inventory_form.html#inventory_row",
                 {"inventory": inventory, "project": project},
                 request=request,
             )
@@ -160,7 +160,7 @@ class RemoveProjectInventoryView(ProjectAdminRequiredMixin, View):
 
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
-                "projects/partials/project_inventory_form.html#counter_inventory",
+                "inventory/partials/project_inventory_form.html#counter_inventory",
                 {
                     "count": remaining_steps,
                 },
@@ -169,7 +169,7 @@ class RemoveProjectInventoryView(ProjectAdminRequiredMixin, View):
             messages.success(request, "Step deleted successfully.")
             if not remaining_steps:
                 # Return empty state HTML
-                empty_html = render_to_string("projects/partials/project_inventory_form.html#inventory_empty")
+                empty_html = render_to_string("inventory/partials/project_inventory_form.html#inventory_empty")
                 return HttpResponse(step_counter + empty_html)
             else:
                 # Return empty response (card will be removed by HTMX)
@@ -231,9 +231,7 @@ class ProjectInventoryDetailView(ProjectReadRequiredMixin, CommonContextMixin, D
             context["active_inventory_id"] = inventory_id
             context["tasks"] = inventory.fields.all()
 
-            is_admin = "admin" in context["roles"]
-
-            form = DynamicInventoryForm(inventory, is_admin)
+            form = DynamicInventoryForm(inventory, context["roles"])
             context["form"] = form
             context["groups"] = ProjectInventoryDetailView.group_fields_by_group(form)
 
@@ -268,6 +266,7 @@ class ProjectInventoryDetailView(ProjectReadRequiredMixin, CommonContextMixin, D
         return sorted_groups
     
     def post(self, request, *args, **kwargs):
+        # TODO: check if user is edit
         self.object = self.get_object()
         inventory_id = request.POST.get("inventory_id")
 
@@ -277,9 +276,13 @@ class ProjectInventoryDetailView(ProjectReadRequiredMixin, CommonContextMixin, D
             project=self.object,
         )
 
-        is_admin = "admin" in self.get_context_data()["roles"]
+        context = self.get_context_data()
 
-        form = DynamicInventoryForm(inventory, is_admin, request.POST, request.FILES)
+        print(context["roles"])
+
+        is_admin = "admin" in context["roles"]
+
+        form = DynamicInventoryForm(inventory, context["roles"], request.POST, request.FILES)
 
         if form.is_valid():
             form.save(is_admin=is_admin)
@@ -288,7 +291,7 @@ class ProjectInventoryDetailView(ProjectReadRequiredMixin, CommonContextMixin, D
                 # return freshly rendered partial
                 context = self.get_context_data()
                 context["active_inventory"] = inventory
-                context["form"] = DynamicInventoryForm(inventory, is_admin)
+                context["form"] = DynamicInventoryForm(inventory, context["roles"])
                 context["groups"] = ProjectInventoryDetailView.group_fields_by_group(context["form"])
                 return render(request, "inventory/partials/fields_form.html", context)
 
