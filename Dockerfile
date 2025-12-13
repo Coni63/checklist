@@ -31,7 +31,7 @@ COPY --chown=python:python ./checklistapp/ /app/checklistapp/
 # create folder for staticfile that is writable
 RUN mkdir -p /app/checklistapp/staticfiles
 RUN chown python:python /app/checklistapp/staticfiles
-RUN chmod 744 /app/checklistapp/staticfiles
+RUN chmod 755 /app/checklistapp/staticfiles
 
 USER python
 
