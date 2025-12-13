@@ -40,7 +40,15 @@
     {# Sidebar with Steps #}
     <div class="w-80 min-w-80 border-r border-base-300 overflow-y-auto p-6">
         <div class="mb-6">
-            <h1 class="text-2xl font-bold text-base-content mb-2">{{ project.name }}</h1>
+            <div class="flex flex-row justify-between mb-2">
+                <h1 class="text-2xl font-bold text-base-content">{{ project.name }}</h1>
+                <nav class="project-navigation">
+                    <a href="{% url 'projects:inventory:inventory_detail_default' project_id=project.id %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'inventory_detail_default' %}is-active{% endif %}">
+                        Inventory
+                    </a>
+                </nav>
+            </div>
             <p class="text-base-content/70 text-sm">{{ project.description|truncatechars:100 }}</p>
         </div>
 

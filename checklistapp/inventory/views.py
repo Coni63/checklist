@@ -222,6 +222,7 @@ class ProjectInventoryDetailView(ProjectReadRequiredMixin, CommonContextMixin, D
 
         # Si un step_id est dans l'URL, on charge ce step
         inventory_id = context.get("inventory_id")
+        print(inventory_id)
         if inventory_id:
             inventory = get_object_or_404(
                 ProjectInventory.objects.prefetch_related("fields"),

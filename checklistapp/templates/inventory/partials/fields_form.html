@@ -1,3 +1,17 @@
+<div class="mb-8">
+    {% with step=active_inventory %}
+        <div class="flex items-center space-x-2">
+            {% if step.icon %}
+                <h1 class="text-3xl font-bold text-base-content">{{ step.icon }}</h1>
+            {% endif %}
+             {{ step.name }}
+        </div>
+        <div class="flex items-center space-x-2 mt-2">
+             {{ step.description }}
+        </div>
+    {% endwith %}
+</div>
+
 <form method="POST" enctype="multipart/form-data" class="space-y-8">
     {% csrf_token %}
 
