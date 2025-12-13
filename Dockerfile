@@ -23,7 +23,7 @@ RUN pip install --upgrade pip
 COPY --chown=python:python ./requirements.txt  /app/requirements.txt
 
 # run this command to install all dependencies 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy the Django project to the container
 COPY --chown=python:python ./checklistapp/ /app/checklistapp/
@@ -31,7 +31,7 @@ COPY --chown=python:python ./checklistapp/ /app/checklistapp/
 # create folder for staticfile that is writable
 RUN mkdir -p /app/checklistapp/staticfiles
 RUN chown python:python /app/checklistapp/staticfiles
-RUN chmod 744 /app/checklistapp/staticfiles
+RUN chmod 755 /app/checklistapp/staticfiles
 
 USER python
 
