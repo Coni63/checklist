@@ -36,4 +36,5 @@ urlpatterns = [
         views.ProjectInventoryDetailView.as_view(),
         name="inventory_detail",
     ),
+    path("<int:inventory_id>/field/<int:field_id>/download", views.download_inventory_file, name='download_inventory_file'),
 ]

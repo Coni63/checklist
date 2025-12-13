@@ -64,8 +64,11 @@ class InventoryField(models.Model):
         blank=True,
         default="",
     )
-    number_value = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
-    file_value = models.FileField(upload_to="inventory_files/", null=True, blank=True)
+    number_value = models.IntegerField(null=True, blank=True)
+    file_value = models.TextField(  # store b64 file
+        blank=True,
+        default="",
+    )
     # Requires https://pypi.org/project/django-fernet-encrypted-fields/
     password_value = EncryptedTextField(max_length=500, null=True, blank=True)
     datetime_value = models.DateTimeField(null=True, blank=True)

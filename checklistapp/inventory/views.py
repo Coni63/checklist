@@ -20,6 +20,7 @@ from django.views.generic import (
     UpdateView,
     DetailView
 )
+import base64
 from .models import InventoryField, ProjectInventory
 from .forms import DynamicInventoryForm
 
@@ -231,7 +232,7 @@ class ProjectInventoryDetailView(ProjectReadRequiredMixin, CommonContextMixin, D
             context["active_inventory_id"] = inventory_id
             context["tasks"] = inventory.fields.all()
 
-            form = DynamicInventoryForm(inventory, context["roles"])
+            form = DynamicInventoryForm(inventory, context)
             context["form"] = form
             context["groups"] = ProjectInventoryDetailView.group_fields_by_group(form)
 
@@ -282,7 +283,7 @@ class ProjectInventoryDetailView(ProjectReadRequiredMixin, CommonContextMixin, D
 
         is_admin = "admin" in context["roles"]
 
-        form = DynamicInventoryForm(inventory, context["roles"], request.POST, request.FILES)
+        form = DynamicInventoryForm(inventory, context, request.POST, request.FILES)
 
         if form.is_valid():
             form.save(is_admin=is_admin)
@@ -291,7 +292,7 @@ class ProjectInventoryDetailView(ProjectReadRequiredMixin, CommonContextMixin, D
                 # return freshly rendered partial
                 context = self.get_context_data()
                 context["active_inventory"] = inventory
-                context["form"] = DynamicInventoryForm(inventory, context["roles"])
+                context["form"] = DynamicInventoryForm(inventory, context)
                 context["groups"] = ProjectInventoryDetailView.group_fields_by_group(context["form"])
                 return render(request, "inventory/partials/fields_form.html", context)
 
@@ -306,3 +307,42 @@ class ProjectInventoryDetailView(ProjectReadRequiredMixin, CommonContextMixin, D
             return render(request, "inventory/partials/fields_form.html", context)
 
         return self.render_to_response(context)
+    
+
+def download_inventory_file(request, project_id, inventory_id, field_id):
+    # 1. Récupérer l'instance du champ
+    inventory_field = get_object_or_404(
+        InventoryField, 
+        id=field_id,
+        # Vous pouvez ajouter ici une vérification de l'utilisateur/permissions
+    )
+    
+    # Sécurité : vérifier que c'est bien un champ de type 'file'
+    if inventory_field.field_type != 'file':
+        return HttpResponse("Type de champ non supporté pour le téléchargement.", status=400)
+
+    # Récupérer la chaîne B64 stockée
+    b64_data = inventory_field.file_value
+    filename = inventory_field.text_value or "attachement.txt"
+    
+    if not b64_data:
+        return HttpResponse("Le fichier est vide ou n'a pas été défini.", status=404)
+
+    try:
+        # 2. Décoder la chaîne Base64 en données binaires
+        file_content = base64.b64decode(b64_data)
+        
+    except (TypeError, ValueError):
+        # Cela peut arriver si la B64 est mal formée (corruption de données)
+        return HttpResponse("Erreur lors du décodage Base64.", status=500)
+
+    # 3. Préparer la réponse HTTP pour le téléchargement
+    # Si vous avez stocké l'extension ou le nom original, utilisez-le ici.
+    
+    # B. Créer la réponse
+    response = HttpResponse(file_content, content_type='application/octet-stream')
+    
+    # C. Définir l'en-tête Content-Disposition pour forcer le téléchargement
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response

@@ -1,7 +1,9 @@
 from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.urls import reverse
 
+from core.b64_field import Base64FileField
 from core.utils import default_midnight
 from .models import InventoryField, ProjectInventory
 
@@ -11,7 +13,7 @@ class DynamicInventoryForm(forms.Form):
     Form built dynamically from Inventory + existing instance.
     """
 
-    def __init__(self, inventory, roles, *args, **kwargs):
+    def __init__(self, inventory, context, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.instance = inventory
@@ -31,12 +33,12 @@ class DynamicInventoryForm(forms.Form):
                 inst_field.field_template
                 and getattr(inst_field.field_template, "is_secret", False)
                 and existing_value not in (None, "", [])
-                and "admin" not in roles
+                and "admin" not in context["roles"]
             )
 
-            read_only = "edit" not in roles
+            read_only = "edit" not in context["roles"]
 
-            form_field = self.build_field(inst_field, hide_value, read_only)
+            form_field = self.build_field(inst_field, hide_value, read_only, project_id=context["project_id"], inventory_id=context["inventory_id"])
 
             # store grouping metadata
             form_field.group_name = inst_field.group_name or "Other"
@@ -45,7 +47,7 @@ class DynamicInventoryForm(forms.Form):
 
             self.fields[field_name] = form_field
 
-    def build_field(self, tf, hide_value=False, read_only=False):
+    def build_field(self, tf, hide_value=False, read_only=False, project_id=None, inventory_id=None):
         existing_value = tf.get_value()
 
         if hide_value:
@@ -87,13 +89,20 @@ class DynamicInventoryForm(forms.Form):
                     widget=forms.URLInput(attrs={"class": "input input-bordered w-full"})
                 )
             case "file":
-                return forms.FileField(
+                field = Base64FileField(
                     label=tf.field_name,
                     required=False,
                     disabled=read_only,
                     initial=existing_value,
                     widget=forms.ClearableFileInput(attrs={"class": "file-input file-input-bordered w-full"})
                 )
+                if existing_value:
+                    # On stocke l'URL dans un attribut personnalisé du champ pour l'utiliser dans le template
+                    field.download_url = reverse('projects:inventory:download_inventory_file', args=[project_id, inventory_id, tf.id])
+                    field.help_text = (
+                        f'Actual file: <a href="{field.download_url}" target="_blank" class="link link-primary">{tf.text_value or "Download"}</a>'
+                    )
+                return field
             case "password":
                 return forms.CharField(
                     label=tf.field_name,
@@ -173,6 +182,9 @@ class DynamicInventoryForm(forms.Form):
                 case "file":
                     if new_value:
                         inst_field.file_value = new_value
+
+                        if hasattr(field, 'uploaded_filename') and field.uploaded_filename:
+                            inst_field.text_value = field.uploaded_filename
                 case "password":
                     # Stored encrypted
                     inst_field.password_value = new_value
