@@ -1,0 +1,40 @@
+{% load partials %}
+
+{# This page render the project details with steps and the tasks if a step is selected #}
+
+{% partialdef step_item %}
+    {% with status=step.get_status %}
+        <div class="card card-compact bg-base-100 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 p-0
+        {% if status == 'Not Started' %}border-error
+        {% elif status == 'In Progress' %}border-warning
+        {% elif status == 'Completed' %}border-success
+        {% else %}border-base-300{% endif %}
+        {% if step.id == active_step_id %}active-step{% endif %}"
+        hx-get="{% url 'projects:checklist:step_detail' project_id=project_id step_id=step.id %}"
+        hx-target="#content-block"
+        hx-swap="innerHTML"
+        hx-push-url="true"
+        {% if oob %} hx-swap-oob="true" {% endif %}
+        hx-on::before-request="document.querySelectorAll('#sidebar .card').forEach(el => el.classList.remove('active-step')); this.classList.add('active-step')"
+        id="step-card-{{step.id}}">
+            <div class="card-body">
+                <div class="flex items-start justify-between gap-2">
+                    <h3 class="font-semibold text-base-content">{{step.to_str}}</h3>
+                    <div class="badge badge-sm
+                        {% if status == 'Not Started' %}badge-error
+                        {% elif status == 'In Progress' %}badge-warning
+                        {% elif status == 'Completed' %}badge-success
+                        {% else %}badge-ghost{% endif %}"
+                        id="status-badge-{{ step.id }}" style="white-space: nowrap;">
+                        {{ status }}
+                    </div>
+                </div>
+                <p class="text-sm text-base-content/70">{{step.get_progress_text}}</p>
+            </div>
+        </div>
+    {% endwith %}
+{% endpartialdef %}
+
+{% for step in steps %}
+    {% partial step_item %}
+{% endfor %}

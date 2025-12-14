@@ -41,6 +41,7 @@ urlpatterns = [
         views.get_step_description_display,
         name="get_step_description_display",
     ),
+    path("list/", views.ListStepView.as_view(), name="list_steps"),
     path(
         "",
         views.ProjectStepDetailView.as_view(),

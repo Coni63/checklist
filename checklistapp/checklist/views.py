@@ -355,7 +355,7 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
         row_html = render_to_string("checklist/partials/task_row.html", context)
 
         step_html = render_to_string(
-            "checklist/partials/project_content.html#step_item",
+            "checklist/partials/step_cards.html#step_item",
             {
                 **context,
                 "oob": True,
@@ -416,6 +416,22 @@ def toggle_task_form(request, project_id, step_id):
         "checklist/partials/tasks_page.html#new_task_toggle",
         {"project_id": project_id, "step_id": step_id, "show_form": show_form},
     )
+
+
+class ListStepView(ProjectAdminRequiredMixin, CommonContextMixin, ListView):
+    """
+    View to display project details, including steps and tasks.
+    Supports HTMX requests to load tasks for a specific step.
+    """
+
+    model = ProjectStep
+    template_name = "checklist/partials/step_cards.html"
+    context_object_name = "steps"
+    pk_url_kwarg = "project_id"
+
+    def get_queryset(self):
+        project_id = self.kwargs.get(self.pk_url_kwarg)
+        return self.model.objects.filter(project_id=project_id)
 
 
 class TaskCommentListView(ProjectReadRequiredMixin, CommonContextMixin, ListView):
@@ -553,3 +569,14 @@ def get_step_description_display(request, project_id, step_id):
         return reswap(HttpResponse(status=200), "none")
 
     return render(request, "checklist/partials/tasks_page.html#step_description_display", context={"step": step})
+
+
+
+
+
+
+
+
+
+
+

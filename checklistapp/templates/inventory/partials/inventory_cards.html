@@ -24,21 +24,3 @@
 {% for inventory in inventories %}
     {% partial step_item %}
 {% endfor %}
-
-{% block extra_js %}
-<script>
-    function togglePassword(btn) {
-        const input = btn.parentElement.querySelector("input[data-password-field]");
-        if (!input) return;
-
-        if (input.type === "password") {
-            input.type = "text";
-            btn.innerHTML = '<i data-lucide="eye-closed" style="width:16px;height:16px;"></i>';
-        } else {
-            input.type = "password";
-            btn.innerHTML = '<i data-lucide="eye" style="width:16px;height:16px;"></i>';
-        }
-        lucide.createIcons();
-    }
-</script>
-{% endblock %}
