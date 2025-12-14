@@ -401,7 +401,7 @@ def toggle_task_form(request, project_id, step_id):
     )
 
 
-class ListStepView(ProjectAdminRequiredMixin, CommonContextMixin, ListView):
+class ListStepView(ProjectReadRequiredMixin, CommonContextMixin, ListView):
     """
     View to display project details, including steps and tasks.
     Supports HTMX requests to load tasks for a specific step.
