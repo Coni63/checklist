@@ -45,15 +45,17 @@ class DynamicInventoryForm(forms.Form):
     def build_field(self, tf, hide_value=False, read_only=False, project_id=None, inventory_id=None):
         existing_value = tf.get_value()
 
+        ro = {"readonly": "readonly"} if read_only else {}
+
         if hide_value:
             return forms.CharField(
                 label=tf.field_name,
                 required=False,
-                read_only=read_only,
-                initial="•••••• (secret set)",
+                disabled=True,
+                initial="••••••",
                 widget=forms.TextInput(
                     attrs={
-                        "placeholder": "•••••• (secret set)",
+                        "placeholder": "••••••",
                         "readonly": True,
                         "class": "input input-bordered w-full bg-gray-100 cursor-not-allowed",
                     }
@@ -65,33 +67,29 @@ class DynamicInventoryForm(forms.Form):
                 return forms.CharField(
                     label=tf.field_name,
                     required=False,
-                    disabled=read_only,
                     initial=existing_value,
-                    widget=forms.TextInput(attrs={"class": "input input-bordered w-full"}),
+                    widget=forms.TextInput(attrs={"class": "input input-bordered w-full", **ro}),
                 )
             case "number":
                 return forms.DecimalField(
                     label=tf.field_name,
                     required=False,
-                    disabled=read_only,
                     initial=existing_value,
-                    widget=forms.NumberInput(attrs={"class": "input input-bordered w-full"}),
+                    widget=forms.NumberInput(attrs={"class": "input input-bordered w-full", **ro}),
                 )
             case "url":
                 return forms.URLField(
                     label=tf.field_name,
                     required=False,
-                    disabled=read_only,
                     initial=existing_value,
-                    widget=forms.URLInput(attrs={"class": "input input-bordered w-full"}),
+                    widget=forms.URLInput(attrs={"class": "input input-bordered w-full", **ro}),
                 )
             case "file":
                 field = Base64FileField(
                     label=tf.field_name,
                     required=False,
-                    disabled=read_only,
                     initial=existing_value,
-                    widget=forms.ClearableFileInput(attrs={"class": "file-input file-input-bordered w-full"}),
+                    widget=forms.ClearableFileInput(attrs={"class": "file-input file-input-bordered w-full", **ro}),
                 )
                 if existing_value:
                     # On stocke l'URL dans un attribut personnalisé du champ pour l'utiliser dans le template
@@ -104,13 +102,13 @@ class DynamicInventoryForm(forms.Form):
                 return forms.CharField(
                     label=tf.field_name,
                     required=False,
-                    disabled=read_only,
                     initial=existing_value,
                     widget=forms.PasswordInput(
                         render_value=True,
                         attrs={
                             "class": "input input-bordered w-full",
                             "data-password-field": "true",
+                            **ro
                         },
                     ),
                 )
@@ -121,7 +119,6 @@ class DynamicInventoryForm(forms.Form):
                     label=tf.field_name,
                     help_text=help_text,
                     required=False,
-                    disabled=read_only,
                     initial=existing_value,
                     input_formats=["%Y-%m-%dT%H:%M:%S"],
                     widget=forms.DateTimeInput(
@@ -129,6 +126,7 @@ class DynamicInventoryForm(forms.Form):
                             "type": "datetime-local",
                             "step": "1",  # autorise les secondes
                             "class": "input input-bordered w-full",
+                            **ro
                         },
                         format="%Y-%m-%dT%H:%M:%S",
                     ),
@@ -138,8 +136,7 @@ class DynamicInventoryForm(forms.Form):
         return forms.CharField(
             label=tf.field_name,
             required=False,
-            disabled=read_only,
-            widget=forms.TextInput(attrs={"class": "input input-bordered w-full"}),
+            widget=forms.TextInput(attrs={"class": "input input-bordered w-full", **ro}),
         )
 
     def save(self, is_admin):

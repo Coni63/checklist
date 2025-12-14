@@ -1,9 +1,3 @@
-V2
-Merge templates when possible
-remove save for ProjectReadRequiredMixincheck that edit non admin does not override password
-Ensure security of access 
-
-
 V3 (optimisation - industrialisation)
 Write unittest
 Use ProjectService when possible
