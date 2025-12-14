@@ -105,11 +105,7 @@ class DynamicInventoryForm(forms.Form):
                     initial=existing_value,
                     widget=forms.PasswordInput(
                         render_value=True,
-                        attrs={
-                            "class": "input input-bordered w-full",
-                            "data-password-field": "true",
-                            **ro
-                        },
+                        attrs={"class": "input input-bordered w-full", "data-password-field": "true", **ro},
                     ),
                 )
             case "datetime":
@@ -126,7 +122,7 @@ class DynamicInventoryForm(forms.Form):
                             "type": "datetime-local",
                             "step": "1",  # autorise les secondes
                             "class": "input input-bordered w-full",
-                            **ro
+                            **ro,
                         },
                         format="%Y-%m-%dT%H:%M:%S",
                     ),
