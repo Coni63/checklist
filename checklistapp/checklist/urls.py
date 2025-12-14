@@ -16,31 +16,6 @@ urlpatterns = [
         views.ListProjectStepView.as_view(),
         name="checklist_setup",
     ),
-    path(
-        "<int:step_id>/edit/",
-        views.EditProjectStepsView.as_view(),
-        name="step_edit",
-    ),
-    path(
-        "<int:step_id>/edit_step_title_form/",
-        views.edit_step_title_form,
-        name="edit_step_title_form",
-    ),
-    path(
-        "<int:step_id>/edit_step_description_form/",
-        views.edit_step_description_form,
-        name="edit_step_description_form",
-    ),
-    path(
-        "<int:step_id>/get_step_title_display/",
-        views.get_step_title_display,
-        name="get_step_title_display",
-    ),
-    path(
-        "<int:step_id>/get_step_description_displa/y",
-        views.get_step_description_display,
-        name="get_step_description_display",
-    ),
     path("list/", views.ListStepView.as_view(), name="list_steps"),
     path(
         "",
@@ -105,4 +80,7 @@ urlpatterns = [
         views.toggle_task_form,
         name="toggle_task_form",
     ),
+
+
+    path("<int:step_id>/header/", views.StepHeaderEditView.as_view(), name="step_header_edit"),
 ]

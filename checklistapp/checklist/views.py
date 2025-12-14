@@ -1,4 +1,6 @@
+from django.urls import reverse
 from accounts.models import UserProjectPermissions
+from common.views import editable_header_view
 from core.mixins import (
     CommonContextMixin,
     OwnerOrAdminMixin,
@@ -68,9 +70,12 @@ class ProjectStepDetailView(ProjectReadRequiredMixin, CommonContextMixin, Detail
         context["steps"] = self.object.steps.prefetch_related("tasks")
         context["completion"] = self.object.get_completion_percentage()
 
+
         # Si un step_id est dans l'URL, on charge ce step
         step_id = context.get("step_id")
         if step_id:
+            context["edit_endpoint_base"] = reverse("projects:checklist:step_header_edit", kwargs={"project_id": context["project_id"], "step_id": step_id})
+            context["can_edit"] = "edit" in context["roles"]
             step = get_object_or_404(
                 ProjectStep.objects.prefetch_related("tasks"),
                 id=step_id,
@@ -176,30 +181,6 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
         except Exception:
             messages.error(request, "Something went wrong when adding the step to the project.")
             return reswap(HttpResponse(status=200), "none")
-
-
-class EditProjectStepsView(ProjectAdminRequiredMixin, View):
-    def post(self, request, project_id, step_id):
-        step = get_object_or_404(ProjectStep, pk=step_id)
-
-        if step.project.id != project_id:
-            messages.error("Invalid project ID")
-            return reswap(HttpResponse(status=200), "none")
-
-        new_title = request.POST.get("title", "").strip()
-        if new_title:
-            step.title = new_title
-            step.save()
-            return render(request, "checklist/partials/tasks_page.html#step_title_display", {"step": step})
-
-        new_description = request.POST.get("description")
-        if new_description is not None:
-            step.description = new_description
-            step.save()
-            return render(request, "checklist/partials/tasks_page.html#step_description_display", {"step": step})
-
-        return reswap(HttpResponse(status=200), "none")
-
 
 class ReorderProjectStepsView(ProjectAdminRequiredMixin, View):
     """
@@ -530,53 +511,33 @@ class TaskCommentDeleteView(ProjectEditRequiredMixin, DeleteView):
         return HttpResponse("")
 
 
-# View to return inline form
-def edit_step_description_form(request, project_id, step_id):
-    step = ProjectStep.objects.filter(pk=step_id, project__id=project_id).first()
+class StepHeaderEditView(
+    ProjectReadRequiredMixin,
+    CommonContextMixin,
+    ContextMixin,
+    View,
+):
+    def post(self, request, *args, **kwargs):
+        return self._inner(request, *args, **kwargs)
+    
+    def get(self, request, *args, **kwargs):
+        return self._inner(request, *args, **kwargs)
+    
+    def _inner(self, request, *args, **kwargs):
+        context = self.get_context_data()
 
-    if not step:
-        messages.error(request, "Task or Project not found.")
-        return reswap(HttpResponse(status=200), "none")
+        project_id = context["project_id"]
+        step_id = context["step_id"]
+        can_edit = "edit" in context["roles"]
 
-    return render(request, "checklist/partials/tasks_page.html#step_description_form", context={"step": step})
+        edit_endpoint_base = reverse("projects:checklist:step_header_edit", kwargs={"project_id": project_id, "step_id": step_id})
 
-
-def edit_step_title_form(request, project_id, step_id):
-    step = ProjectStep.objects.filter(pk=step_id, project__id=project_id).first()
-
-    if not step:
-        messages.error(request, "Task or Project not found.")
-        return reswap(HttpResponse(status=200), "none")
-
-    return render(request, "checklist/partials/tasks_page.html#step_title_form", context={"step": step})
-
-
-def get_step_title_display(request, project_id, step_id):
-    step = ProjectStep.objects.filter(pk=step_id, project__id=project_id).first()
-
-    if not step:
-        messages.error(request, "Task or Project not found.")
-        return reswap(HttpResponse(status=200), "none")
-
-    return render(request, "checklist/partials/tasks_page.html#step_title_display", context={"step": step})
-
-
-def get_step_description_display(request, project_id, step_id):
-    step = ProjectStep.objects.filter(pk=step_id, project__id=project_id).first()
-
-    if not step:
-        messages.error(request, "Task or Project not found.")
-        return reswap(HttpResponse(status=200), "none")
-
-    return render(request, "checklist/partials/tasks_page.html#step_description_display", context={"step": step})
-
-
-
-
-
-
-
-
-
-
-
+        return editable_header_view(
+            request=request,
+            model_class=ProjectStep,
+            template_path="common/partials/editable_header.html",
+            can_edit=can_edit,
+            extra_context={"project_id": project_id, "step_id": step_id},
+            filter_kwargs={"project__id": project_id, "pk": step_id},
+            edit_endpoint_base=edit_endpoint_base,
+        )

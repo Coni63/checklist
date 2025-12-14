@@ -9,7 +9,6 @@ def editable_header_view(
     request,
     model_class,
     template_path,
-    field_prefix="object",
     can_edit=None,
     extra_context=None,
     filter_kwargs=None,
@@ -21,7 +20,6 @@ def editable_header_view(
     Args:
         model_class: Le modèle Django (ex: ProjectStep)
         template_path: Chemin vers le template contenant les partials
-        field_prefix: Préfixe pour les IDs HTML (ex: 'step', 'task')
         can_edit: Boolean based on access rights
         extra_context: Dict de contexte supplémentaire
         filter_kwargs: Dict de filtres pour la requête
@@ -56,7 +54,6 @@ def editable_header_view(
     # Préparer le contexte
     context = {
         "object": obj,
-        "field_prefix": field_prefix,
         "can_edit": can_edit,
         "edit_endpoint_base": edit_endpoint_base,
     }

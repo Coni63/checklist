@@ -356,17 +356,38 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
         return redirect(request.path)
 
 
-def inventory_header_edit(request, project_id, inventory_id):
-    """Endpoint unifié pour l'édition du header de l'inventory"""
-    edit_endpoint_base = reverse("projects:inventory:inventory_header_edit", kwargs={"project_id": project_id, "inventory_id": inventory_id})
+class InventoryHeaderEditView(
+    ProjectReadRequiredMixin,
+    CommonContextMixin,
+    ContextMixin,
+    View,
+):
+    def post(self, request, *args, **kwargs):
+        return self._inner(request, *args, **kwargs)
+    
+    def get(self, request, *args, **kwargs):
+        return self._inner(request, *args, **kwargs)
+    
+    def _inner(self, request, *args, **kwargs):
+        context = self.get_context_data()
 
-    return editable_header_view(
-        request=request,
-        model_class=ProjectInventory,
-        template_path="common/partials/editable_header.html",
-        field_prefix="inventory",
-        can_edit=True,
-        extra_context={"project_id": project_id, "inventory_id": inventory_id},
-        filter_kwargs={"project__id": project_id, "pk": inventory_id},
-        edit_endpoint_base=edit_endpoint_base,
-    )
+        project_id = context["project_id"]
+        inventory_id = context["inventory_id"]
+        can_edit = "edit" in context["roles"]
+
+        print(project_id, inventory_id, can_edit)
+
+        edit_endpoint_base = reverse("projects:inventory:inventory_header_edit", kwargs={"project_id": project_id, "inventory_id": inventory_id})
+
+        return editable_header_view(
+            request=request,
+            model_class=ProjectInventory,
+            template_path="common/partials/editable_header.html",
+            can_edit=can_edit,
+            extra_context={
+                "project_id": project_id, 
+                "inventory_id": inventory_id
+            },
+            filter_kwargs={"project__id": project_id, "pk": inventory_id},
+            edit_endpoint_base=edit_endpoint_base,
+        )
