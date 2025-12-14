@@ -1,18 +1,11 @@
 from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import render
-from django.urls import reverse
 from django_htmx.http import reswap
 
 
 def editable_header_view(
-    request,
-    model_class,
-    template_path,
-    can_edit=None,
-    extra_context=None,
-    filter_kwargs=None,
-    edit_endpoint_base=None
+    request, model_class, template_path, can_edit=None, extra_context=None, filter_kwargs=None, edit_endpoint_base=None
 ):
     """
     Vue générique pour gérer l'édition de titre et description

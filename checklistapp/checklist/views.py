@@ -1,4 +1,3 @@
-from django.urls import reverse
 from accounts.models import UserProjectPermissions
 from common.views import editable_header_view
 from core.mixins import (
@@ -14,6 +13,7 @@ from django.db.models import Count, Max
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.views import View
 from django.views.generic import (
     CreateView,
@@ -70,11 +70,12 @@ class ProjectStepDetailView(ProjectReadRequiredMixin, CommonContextMixin, Detail
         context["steps"] = self.object.steps.prefetch_related("tasks")
         context["completion"] = self.object.get_completion_percentage()
 
-
         # Si un step_id est dans l'URL, on charge ce step
         step_id = context.get("step_id")
         if step_id:
-            context["edit_endpoint_base"] = reverse("projects:checklist:step_header_edit", kwargs={"project_id": context["project_id"], "step_id": step_id})
+            context["edit_endpoint_base"] = reverse(
+                "projects:checklist:step_header_edit", kwargs={"project_id": context["project_id"], "step_id": step_id}
+            )
             context["can_edit"] = "edit" in context["roles"]
             step = get_object_or_404(
                 ProjectStep.objects.prefetch_related("tasks"),
@@ -181,6 +182,7 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
         except Exception:
             messages.error(request, "Something went wrong when adding the step to the project.")
             return reswap(HttpResponse(status=200), "none")
+
 
 class ReorderProjectStepsView(ProjectAdminRequiredMixin, View):
     """
@@ -519,10 +521,10 @@ class StepHeaderEditView(
 ):
     def post(self, request, *args, **kwargs):
         return self._inner(request, *args, **kwargs)
-    
+
     def get(self, request, *args, **kwargs):
         return self._inner(request, *args, **kwargs)
-    
+
     def _inner(self, request, *args, **kwargs):
         context = self.get_context_data()
 
@@ -530,7 +532,9 @@ class StepHeaderEditView(
         step_id = context["step_id"]
         can_edit = "edit" in context["roles"]
 
-        edit_endpoint_base = reverse("projects:checklist:step_header_edit", kwargs={"project_id": project_id, "step_id": step_id})
+        edit_endpoint_base = reverse(
+            "projects:checklist:step_header_edit", kwargs={"project_id": project_id, "step_id": step_id}
+        )
 
         return editable_header_view(
             request=request,

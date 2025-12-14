@@ -1,7 +1,6 @@
 from datetime import timedelta
 
 from django import template
-from django.urls import reverse
 from django.utils import timezone
 
 register = template.Library()
@@ -49,6 +48,6 @@ def url_with_query(base_url, query_string):
     """
     if query_string:
         # Vérifie si l'URL contient déjà des paramètres
-        separator = '&' if '?' in base_url else '?'
+        separator = "&" if "?" in base_url else "?"
         return f"{base_url}{separator}{query_string}"
     return base_url

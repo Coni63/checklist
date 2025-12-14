@@ -80,7 +80,5 @@ urlpatterns = [
         views.toggle_task_form,
         name="toggle_task_form",
     ),
-
-
     path("<int:step_id>/header/", views.StepHeaderEditView.as_view(), name="step_header_edit"),
 ]

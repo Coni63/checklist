@@ -1,7 +1,5 @@
 import base64
 
-from django.urls import reverse
-
 from common.views import editable_header_view
 from core.mixins import (
     CommonContextMixin,
@@ -14,6 +12,7 @@ from django.db.models import Count, Max
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, ListView
 from django.views.generic.base import ContextMixin
@@ -109,8 +108,7 @@ class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
             )
             return HttpResponse(step_counter + step_content)
 
-        except Exception as e:
-            print(e)
+        except Exception:
             messages.error(request, "Something went wrong when adding the inventory to the project.")
             return reswap(HttpResponse(status=200), "none")
 
@@ -299,7 +297,10 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
         context["form"] = form
         context["groups"] = InventoryDetail.group_fields_by_group(form)
 
-        context["edit_endpoint_base"] = reverse("projects:inventory:inventory_header_edit", kwargs={"project_id": context["project_id"], "inventory_id": context["inventory_id"]})
+        context["edit_endpoint_base"] = reverse(
+            "projects:inventory:inventory_header_edit",
+            kwargs={"project_id": context["project_id"], "inventory_id": context["inventory_id"]},
+        )
         context["can_edit"] = "edit" in context["roles"]
 
         return render(request, self.template_name, context)
@@ -364,10 +365,10 @@ class InventoryHeaderEditView(
 ):
     def post(self, request, *args, **kwargs):
         return self._inner(request, *args, **kwargs)
-    
+
     def get(self, request, *args, **kwargs):
         return self._inner(request, *args, **kwargs)
-    
+
     def _inner(self, request, *args, **kwargs):
         context = self.get_context_data()
 
@@ -375,19 +376,16 @@ class InventoryHeaderEditView(
         inventory_id = context["inventory_id"]
         can_edit = "edit" in context["roles"]
 
-        print(project_id, inventory_id, can_edit)
-
-        edit_endpoint_base = reverse("projects:inventory:inventory_header_edit", kwargs={"project_id": project_id, "inventory_id": inventory_id})
+        edit_endpoint_base = reverse(
+            "projects:inventory:inventory_header_edit", kwargs={"project_id": project_id, "inventory_id": inventory_id}
+        )
 
         return editable_header_view(
             request=request,
             model_class=ProjectInventory,
             template_path="common/partials/editable_header.html",
             can_edit=can_edit,
-            extra_context={
-                "project_id": project_id, 
-                "inventory_id": inventory_id
-            },
+            extra_context={"project_id": project_id, "inventory_id": inventory_id},
             filter_kwargs={"project__id": project_id, "pk": inventory_id},
             edit_endpoint_base=edit_endpoint_base,
         )
