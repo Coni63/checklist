@@ -19,7 +19,12 @@
         id="step-card-{{step.id}}">
             <div class="card-body">
                 <div class="flex items-start justify-between gap-2">
-                    <h3 class="font-semibold text-base-content">{{step.to_str}}</h3>
+                    <h3 class="font-semibold text-base-content">
+                        {% if step.icon %}
+                            <span class='inline-flex w-6 justify-start'>{{ step.icon }}</span>
+                        {% endif %}
+                        <span class='inline-flex'>{{ step.title }}</span>
+                    </h3>
                     <div class="badge badge-sm
                         {% if status == 'Not Started' %}badge-error
                         {% elif status == 'In Progress' %}badge-warning
