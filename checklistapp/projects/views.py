@@ -1,3 +1,5 @@
+import logging
+
 from accounts.models import UserProjectPermissions
 from checklist.models import ProjectStep
 from core.mixins import ProjectAdminRequiredMixin
@@ -11,6 +13,8 @@ from templates_management.models import InventoryTemplate, StepTemplate
 
 from .forms import ProjectCreationForm
 from .models import Project
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectListView(LoginRequiredMixin, ListView):
@@ -164,7 +168,8 @@ class ProjectDeleteView(ProjectAdminRequiredMixin, DeleteView):
             self.object.delete()
             messages.success(request, "Project deleted successfully.")
 
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             messages.error(request, "Something went wrong deleting the project.")
 
         return redirect(self.success_url)

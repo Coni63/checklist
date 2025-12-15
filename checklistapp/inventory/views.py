@@ -1,4 +1,5 @@
 import base64
+import logging
 
 from common.views import editable_header_view
 from core.mixins import (
@@ -23,7 +24,7 @@ from templates_management.models import InventoryTemplate
 from .forms import DynamicInventoryForm
 from .models import InventoryField, ProjectInventory
 
-# ViewProjectInventoryView
+logger = logging.getLogger(__name__)
 
 
 class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
@@ -62,7 +63,7 @@ class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
             inventory = ProjectInventory.objects.create(
                 project=project,
                 inventory_template=inventory_template,
-                name=name,
+                title=name,
                 description=inventory_template.description,
                 icon=inventory_template.icon,
                 order=current_max_order + 1,
@@ -80,7 +81,6 @@ class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
                     field_order=field_template.field_order,
                     field_type=field_template.field_type,
                 )
-            messages.success(request, "Inventory added successfully.")
 
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
@@ -106,9 +106,13 @@ class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
                 {"inventory": inventory, "project": project},
                 request=request,
             )
+
+            messages.success(request, "Inventory added successfully.")
+
             return HttpResponse(step_counter + step_content)
 
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             messages.error(request, "Something went wrong when adding the inventory to the project.")
             return reswap(HttpResponse(status=200), "none")
 
@@ -174,7 +178,8 @@ class RemoveProjectInventoryView(ProjectAdminRequiredMixin, View):
                 # Return empty response (card will be removed by HTMX)
                 return HttpResponse(step_counter)
 
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             messages.error(request, "Something went wrong when deleting the step from the project.")
             return reswap(HttpResponse(status=200), "none")
 

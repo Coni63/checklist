@@ -26,8 +26,10 @@ class TaskTemplate(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     info_text = models.TextField(null=True, blank=True)
-    help_url = models.URLField(null=True, help_text="Link to documentation support to perform the task")
-    work_url = models.URLField(null=True, help_text="Link to the source where the action must be applied (git, jira, ...)")
+    help_url = models.URLField(null=True, blank=True, help_text="Link to documentation support to perform the task")
+    work_url = models.URLField(
+        null=True, blank=True, help_text="Link to the source where the action must be applied (git, jira, ...)"
+    )
 
     class Meta:
         ordering = ["order"]

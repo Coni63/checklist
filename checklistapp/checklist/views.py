@@ -1,3 +1,5 @@
+import logging
+
 from accounts.models import UserProjectPermissions
 from common.views import editable_header_view
 from core.mixins import (
@@ -28,6 +30,8 @@ from projects.models import Project
 from templates_management.models import StepTemplate
 
 from .models import ProjectStep, ProjectTask, TaskComment
+
+logger = logging.getLogger(__name__)
 
 
 class ListProjectStepView(ProjectAdminRequiredMixin, CommonContextMixin, DetailView):
@@ -179,7 +183,8 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
             )
             return HttpResponse(step_counter + step_content)
 
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             messages.error(request, "Something went wrong when adding the step to the project.")
             return reswap(HttpResponse(status=200), "none")
 
@@ -245,7 +250,8 @@ class RemoveProjectStepView(ProjectAdminRequiredMixin, View):
                 # Return empty response (card will be removed by HTMX)
                 return HttpResponse(step_counter)
 
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             messages.error(request, "Something went wrong when deleting the step from the project.")
             return reswap(HttpResponse(status=200), "none")
 
@@ -287,7 +293,8 @@ class AddProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMi
                 context,
             )
 
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             messages.error(request, "Something went wrong when adding the task to the step.")
             return reswap(HttpResponse(status=200), "none")
 
@@ -332,7 +339,8 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
             elif new_status == "na":
                 project_task.mark_na(request.user)
         except Exception as e:
-            messages.error(request, str(e))
+            logger.error(e)
+            messages.error(request, "Error when updating task status")
             return reswap(HttpResponse(status=200), "none")
 
         row_html = render_to_string("checklist/partials/task_row.html", context)
@@ -382,7 +390,8 @@ class DeleteProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
             project_task.delete()
             return HttpResponse("")
 
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             messages.error(request, "Something went wrong when deleting the task from the step.")
             return reswap(HttpResponse(status=200), "none")
 
