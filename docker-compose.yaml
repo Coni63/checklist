@@ -26,13 +26,16 @@ services:
       DEBUG: off
       SECRET_KEY: "django-insecure-al3p#@*zbfe(z4vap+p70h^0x!4+*=)=w4r8jzg$4^*rt9p4@k"
       DATABASE_URL: postgres://admin:password@db:5432/checklist
+      FERNET_KEY: "my_secret_key"
+      TIME_ZONE: "Europe/Paris"
     volumes:
       # Extract the static files to be served by NGINX
       - static_volume:/app/checklistapp/staticfiles
     command: >
       sh -c "
       python3 manage.py migrate --noinput && 
-      python3 manage.py collectstatic --noinput
+      python3 manage.py collectstatic --noinput &&
+      chmod -R 777 /app/checklistapp/staticfiles
       "
     
   app:
@@ -45,6 +48,8 @@ services:
       SECRET_KEY: "django-insecure-al3p#@*zbfe(z4vap+p70h^0x!4+*=)=w4r8jzg$4^*rt9p4@k"
       DATABASE_URL: postgres://admin:password@db:5432/checklist
       DJANGO_ALLOWED_HOSTS: "127.0.0.1,localhost,0.0.0.0"
+      FERNET_KEY: "my_secret_key"
+      TIME_ZONE: "Europe/Paris"
     ports:
       - 8000:8000
     # if you want to run it without gunicorn for example for dev
