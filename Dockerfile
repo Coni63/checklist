@@ -1,6 +1,6 @@
 
 # Use the official Python runtime image
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Create a specific user and the app directory
 RUN useradd -m -r python && \

@@ -1,89 +1,84 @@
-{% load partials %}
-
 <form method="POST" enctype="multipart/form-data" class="space-y-8">
-    {% csrf_token %}
+  {% csrf_token %}
 
-    <input type="hidden" name="inventory_id" value="{{ inventory_id }}">
+  <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
 
-    <div class="border border-gray-200 rounded-xl p-6 shadow-sm bg-white flex flex-col space-y-10">
-        {% for group_name, fields in groups.items %}
-            <h3 class="text-lg font-semibold mb-4">{{ group_name }}</h3>
+  <div
+    class="border border-gray-200 rounded-xl p-6 shadow-sm bg-white flex flex-col space-y-10"
+  >
+    {% for group_name, fields in groups.items %}
+    <h3 class="text-lg font-semibold mb-4">{{ group_name }}</h3>
 
-            <div class="grid gap-2">
-                {% for field_name, field in fields %}
-                    <div class="grid grid-cols-[200px_1fr] items-center">
-                        <label for="{{ field.id_for_label }}" class="font-semibold text-gray-700">
-                            {{ field.label }}:
-                        </label>
+    <div class="grid gap-2">
+      {% for field_name, field in fields %}
+      <div class="grid grid-cols-[200px_1fr] items-center">
+        <label
+          for="{{ field.id_for_label }}"
+          class="font-semibold text-gray-700"
+        >
+          {{ field.label }}:
+        </label>
 
-                        {% if field.field.is_password %}
-                            <div class="relative">
+        {% if field.field.is_password %}
+        <div class="relative">
+          {{ field }}
 
-                                {{ field }}
+          <button
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+            onclick="togglePassword(this)"
+          >
+            <i data-lucide="eye" style="width: 16px; height: 16px"></i>
+          </button>
+        </div>
 
-                                <button type="button"
-                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-                                        onclick="togglePassword(this)">
-                                    <i data-lucide="eye" style="width:16px;height:16px;"></i>
-                                </button>
+        {% if field.errors %}
+        <p class="text-red-500 text-sm mt-1">{{ field.errors }}</p>
+        {% endif %} {% else %}
 
-                            </div>
+        <div>
+          {{ field }} {% if field.help_text %}
+          <label class="label">
+            <span class="label-text-alt text-xs">
+              {{ field.help_text|safe }}
+            </span>
+          </label>
+          {% endif %} {% if field.errors %}
+          <p class="text-red-500 text-sm mt-1">{{ field.errors }}</p>
+          {% endif %}
+        </div>
 
-                            {% if field.errors %}
-                                <p class="text-red-500 text-sm mt-1">
-                                    {{ field.errors }}
-                                </p>
-                            {% endif %}
-
-                        {% else %}
-
-                            <div>
-                                {{ field }}
-
-                                 {% if field.help_text %}
-                                    <label class="label">
-                                    <span class="label-text-alt text-xs">
-                                        {{ field.help_text|safe }}
-                                    </span>
-                                    </label>
-                                {% endif %}
-
-                                {% if field.errors %}
-                                    <p class="text-red-500 text-sm mt-1">
-                                        {{ field.errors }}
-                                    </p>
-                                {% endif %}
-                            </div>
-
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endfor %}
-        {% if 'edit' in roles %}
-        <button type="submit"
-                class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            Save
-        </button>
         {% endif %}
+      </div>
+      {% endfor %}
     </div>
-
+    {% endfor %} {% if 'edit' in roles %}
+    <button
+      type="submit"
+      class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+    >
+      Save
+    </button>
+    {% endif %}
+  </div>
 </form>
 
 {% block extra_js %}
 <script>
-    function togglePassword(btn) {
-        const input = btn.parentElement.querySelector("input[data-password-field]");
-        if (!input) return;
+  function togglePassword(btn) {
+    const input = btn.parentElement.querySelector("input[data-password-field]");
+    if (!input) return;
 
-        if (input.type === "password") {
-            input.type = "text";
-            btn.innerHTML = '<i data-lucide="eye-closed" style="width:16px;height:16px;"></i>';
-        } else {
-            input.type = "password";
-            btn.innerHTML = '<i data-lucide="eye" style="width:16px;height:16px;"></i>';
-        }
-        lucide.createIcons();
+    if (input.type === "password") {
+      input.type = "text";
+      btn.innerHTML =
+        '<i data-lucide="eye-closed" style="width:16px;height:16px;"></i>';
+    } else {
+      input.type = "password";
+      btn.innerHTML =
+        '<i data-lucide="eye" style="width:16px;height:16px;"></i>';
     }
+    lucide.createIcons();
+  }
 </script>
 {% endblock %}

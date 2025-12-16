@@ -54,7 +54,6 @@ INSTALLED_APPS = [
     "crispy_tailwind",
     "widget_tweaks",
     "django_htmx",
-    "template_partials",
     "home",
     "core",
     "projects",
