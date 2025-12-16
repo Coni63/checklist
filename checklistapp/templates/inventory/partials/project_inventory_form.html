@@ -27,9 +27,7 @@
   <div class="card-body p-4">
     <div class="flex items-center gap-4">
       {# Drag Handle #}
-      <div
-        class="cursor-grab active:cursor-grabbing text-base-content/40 hover:text-base-content"
-      >
+      <div class="cursor-grab active:cursor-grabbing text-base-content/40 hover:text-base-content">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="h-6 w-6"
@@ -46,10 +44,9 @@
         </svg>
       </div>
 
-      {# Inventory Icon & Info #}
       <span class="text-3xl w-10 text-center">{{ inventory.icon }}</span>
       <div class="flex-1 min-w-0">
-        <h3 class="font-semibold text-base">{{ inventory.name }}</h3>
+        <h3 class="font-semibold text-base">{{ inventory.title }}</h3>
         {% with count=inventory.fields.count %}
           {% partial fields_counter %}
         {%  endwith %}
@@ -129,9 +126,7 @@
                 />
 
                 {# Inventory Icon #}
-                <span class="text-3xl w-10 text-center"
-                  >{{ template.icon }}</span
-                >
+                <span class="text-3xl w-10 text-center">{{ template.icon }}</span>
 
                 {# Inventory Name Input & Info #}
                 <div class="flex-1 min-w-0">
@@ -142,8 +137,9 @@
                     placeholder="Step name..."
                     value="{{ template.name }}"
                   />
-                  {% with count=template.fields.count %} {% partial
-                  fields_counter %} {% endwith %}
+                  {% with count=template.fields.count %}
+                    {% partial fields_counter %}
+                  {% endwith %}
                 </div>
 
                 {# Add Button #}
@@ -159,7 +155,9 @@
               </form>
             </div>
           </div>
-          {% empty %} {% partial inventory_empty %} {% endfor %}
+          {% empty %}
+            {% partial inventory_empty %}
+          {% endfor %}
         </div>
       </div>
 
@@ -170,12 +168,14 @@
             <i data-lucide="clipboard-list"></i>
             Project Inventory
           </h2>
-          {% with count=project_inventory|length %} {% partial counter_inventory
-          %} {% endwith %}
+          {% with count=project_inventory|length %} 
+            {% partial counter_inventory %}
+          {% endwith %}
         </div>
 
         <div class="space-y-3" id="projectInventoryList">
-          {% for inventory in project_inventory %} {% partial inventory_row %}
+          {% for inventory in project_inventory %}
+            {% partial inventory_row %}
           {% empty %}
           <div
             class="flex flex-col items-center justify-center py-16 text-center"
