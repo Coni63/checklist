@@ -1,15 +1,20 @@
+import logging
+
 from accounts.models import UserProjectPermissions
 from checklist.models import ProjectStep
-from core.mixins import CommonContextMixin, ProjectAdminRequiredMixin, ProjectReadRequiredMixin
+from core.mixins import ProjectAdminRequiredMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
-from templates_management.models import StepTemplate
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+from inventory.models import ProjectInventory
+from templates_management.models import InventoryTemplate, StepTemplate
 
 from .forms import ProjectCreationForm
 from .models import Project
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectListView(LoginRequiredMixin, ListView):
@@ -125,6 +130,7 @@ class ProjectEditView(ProjectAdminRequiredMixin, UpdateView):
 
         # Get all available step templates
         context["available_templates"] = StepTemplate.objects.filter(is_active=True).order_by("default_order")
+        context["inventory_templates"] = InventoryTemplate.objects.filter(is_active=True).order_by("default_order")
 
         # Get current project steps
         context["project_steps"] = (
@@ -133,51 +139,18 @@ class ProjectEditView(ProjectAdminRequiredMixin, UpdateView):
             .prefetch_related("tasks")
             .order_by("order")
         )
+        context["project_inventory"] = (
+            ProjectInventory.objects.filter(project=self.object)
+            .select_related("inventory_template")
+            .prefetch_related("fields")
+            .order_by("order")
+        )
 
         return context
 
     def get_success_url(self):
         messages.success(self.request, f'Project "{self.object.name}" updated successfully!')
         return reverse_lazy("projects:project_edit", kwargs={"project_id": self.object.pk})
-
-
-class ProjectDetailView(ProjectReadRequiredMixin, CommonContextMixin, DetailView):
-    """
-    View to display project details, including steps and tasks.
-    Supports HTMX requests to load tasks for a specific step.
-    """
-
-    model = Project
-    template_name = "projects/project_detail.html"
-    context_object_name = "project"
-    pk_url_kwarg = "project_id"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["steps"] = self.object.steps.prefetch_related("tasks")
-        context["completion"] = self.object.get_completion_percentage()
-
-        # Si un step_id est dans l'URL, on charge ce step
-        step_id = context.get("step_id")
-        if step_id:
-            step = get_object_or_404(
-                ProjectStep.objects.prefetch_related("tasks"),
-                id=step_id,
-                project=self.object,
-            )
-            context["active_step"] = step
-            context["active_step_id"] = step_id
-            context["tasks"] = step.tasks.all()
-
-        return context
-
-    def render_to_response(self, context, **response_kwargs):
-        # Si c'est une requête HTMX, retourne seulement le partial des tâches
-        if self.request.headers.get("HX-Request"):
-            return render(self.request, "checklist/partials/tasks_page.html", context)
-
-        # Sinon retourne la page complète
-        return super().render_to_response(context, **response_kwargs)
 
 
 class ProjectDeleteView(ProjectAdminRequiredMixin, DeleteView):
@@ -195,11 +168,8 @@ class ProjectDeleteView(ProjectAdminRequiredMixin, DeleteView):
             self.object.delete()
             messages.success(request, "Project deleted successfully.")
 
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             messages.error(request, "Something went wrong deleting the project.")
 
         return redirect(self.success_url)
-
-    # Optional: allow "GET" request to delete (dangerous but sometimes needed for a simple link)
-    def get(self, request, *args, **kwargs):
-        return self.delete(request, *args, **kwargs)

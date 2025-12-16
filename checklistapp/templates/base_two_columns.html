@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex flex-row w-full h-full">
+    {# Sidebar with Steps #}
+    <div class="w-1/4 min-w-80 border-r border-base-300 overflow-y-auto p-6">
+        <div>
+            <!-- Project header -->
+            <div class="bg-base-100 rounded-xl shadow-sm p-6 mb-4">
+                <div class="flex flex-col gap-2">
+                    <h1 class="text-2xl font-bold text-base-content">
+                        {{ project.name }}
+                    </h1>
+
+                    {% if project.description %}
+                        <p class="text-sm text-base-content/70 max-w-3xl">
+                            {{ project.description|truncatechars:160 }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="bg-base-100 rounded-xl shadow-sm px-4">
+                <div role="tablist" class="tabs tabs-bordered">
+                    <a
+                        role="tab"
+                        class="tab {% if request.resolver_match.url_name == 'step_detail_default' %}tab-active{% endif %}"
+                        href="{% url 'projects:checklist:step_detail_default' project_id=project.id %}"
+                    >
+                        <i data-lucide="list-checks" style="width: 16px; height: 16px;"></i>&nbsp;Checklist
+                    </a>
+
+                    <a
+                        role="tab"
+                        class="tab {% if request.resolver_match.url_name == 'inventory_page' %}tab-active{% endif %}"
+                        href="{% url 'projects:inventory:inventory_page' project_id=project.id %}"
+                    >
+                        <i data-lucide="hard-drive" style="width: 16px; height: 16px;"></i>&nbsp;Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider mb-2 mt-2"></div>
+
+        <div class="space-y-2" id="sidebar">
+            {% block sidebar %}{% endblock %}
+        </div>
+
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-8" id="content-block">
+        {% block detail_block %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

@@ -38,3 +38,16 @@ def smart_timesince(value):
         # Affiche la date et l'heure complètes pour les durées de moins de 1 jour
         # Vous pouvez ajuster le format de la date ici :
         return value.strftime("%Y-%m-%d %H:%M:%S")
+
+
+@register.simple_tag
+def url_with_query(base_url, query_string):
+    """
+    Ajoute une chaîne de paramètres de requête à une URL de base existante.
+    Usage: {% add_query_params edit_endpoint_base 'mode=edit&field=title' %}
+    """
+    if query_string:
+        # Vérifie si l'URL contient déjà des paramètres
+        separator = "&" if "?" in base_url else "?"
+        return f"{base_url}{separator}{query_string}"
+    return base_url

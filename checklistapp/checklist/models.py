@@ -40,11 +40,6 @@ class ProjectStep(models.Model):
     def __repr__(self):
         return f"ProjectStep(id={self.id}, title={self.title})"
 
-    def to_str(self):
-        if self.icon:
-            return f"{self.icon} {self.title}"
-        return self.title
-
     def get_status(self) -> str:
         """
         Determine step status based on task completion

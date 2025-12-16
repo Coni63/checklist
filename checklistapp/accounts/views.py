@@ -93,7 +93,7 @@ class ListUserForm(ProjectAdminRequiredMixin, View):
             "other_users": all_users_without_permissions,
         }
 
-        return render(request, "projects/partials/permission_table.html", context)
+        return render(request, "accounts/partials/permission_table.html", context)
 
 
 class UpdateUserPermissionForm(ProjectAdminRequiredMixin, View):
@@ -139,7 +139,7 @@ class UpdateUserPermissionForm(ProjectAdminRequiredMixin, View):
         # 3. Update
         permission.save()
 
-        return render(request, "projects/partials/permission_table.html#user_row", {"index": index, "permission": permission})
+        return render(request, "accounts/partials/permission_table.html#user_row", {"index": index, "permission": permission})
 
     def delete(self, request, project_id, permission_id):
         # 1. Fetch existing permission if exist
@@ -199,4 +199,4 @@ class AddUserPermissionForm(ProjectAdminRequiredMixin, View):
             is_admin=False,
         )
 
-        return render(request, "projects/partials/permission_table.html#user_row", {"index": index, "permission": permission})
+        return render(request, "accounts/partials/permission_table.html#user_row", {"index": index, "permission": permission})

@@ -3,6 +3,17 @@
 setlocal
 
 echo.
+echo Running ruff
+echo.
+
+uv run ruff format .
+uv run ruff check --fix .
+
+echo.
+echo Ruff run
+echo.
+
+echo.
 echo Building requirements.txt
 echo.
 

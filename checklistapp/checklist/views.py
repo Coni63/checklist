@@ -1,4 +1,7 @@
+import logging
+
 from accounts.models import UserProjectPermissions
+from common.views import editable_header_view
 from core.mixins import (
     CommonContextMixin,
     OwnerOrAdminMixin,
@@ -12,10 +15,12 @@ from django.db.models import Count, Max
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.views import View
 from django.views.generic import (
     CreateView,
     DeleteView,
+    DetailView,
     ListView,
     UpdateView,
 )
@@ -25,6 +30,75 @@ from projects.models import Project
 from templates_management.models import StepTemplate
 
 from .models import ProjectStep, ProjectTask, TaskComment
+
+logger = logging.getLogger(__name__)
+
+
+class ListProjectStepView(ProjectAdminRequiredMixin, CommonContextMixin, DetailView):
+    """
+    View to display project details, including steps and tasks.
+    Supports HTMX requests to load tasks for a specific step.
+    """
+
+    model = Project
+    template_name = "checklist/partials/project_step_form.html"
+    context_object_name = "project"
+    pk_url_kwarg = "project_id"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["available_templates"] = StepTemplate.objects.filter(is_active=True).order_by("default_order")
+        context["project_steps"] = (
+            ProjectStep.objects.filter(project=self.object)
+            .select_related("step_template")
+            .prefetch_related("tasks")
+            .order_by("order")
+        )
+        return context
+
+
+class ProjectStepDetailView(ProjectReadRequiredMixin, CommonContextMixin, DetailView):
+    """
+    View to display project details, including steps and tasks.
+    Supports HTMX requests to load tasks for a specific step.
+    """
+
+    model = Project
+    template_name = "checklist/checklist_detail.html"
+    context_object_name = "project"
+    pk_url_kwarg = "project_id"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["steps"] = self.object.steps.prefetch_related("tasks")
+        context["completion"] = self.object.get_completion_percentage()
+
+        # Si un step_id est dans l'URL, on charge ce step
+        step_id = context.get("step_id")
+        if step_id:
+            context["edit_endpoint_base"] = reverse(
+                "projects:checklist:step_header_edit", kwargs={"project_id": context["project_id"], "step_id": step_id}
+            )
+            context["can_edit"] = "edit" in context["roles"]
+            step = get_object_or_404(
+                ProjectStep.objects.prefetch_related("tasks"),
+                id=step_id,
+                project=self.object,
+            )
+            context["active_step"] = step
+            context["active_step_id"] = step_id
+            context["tasks"] = step.tasks.all()
+
+        return context
+
+    def render_to_response(self, context, **response_kwargs):
+        # Si c'est une requête HTMX, retourne seulement le partial des tâches
+        if self.request.headers.get("HX-Request"):
+            return render(self.request, "checklist/partials/tasks_page.html", context)
+
+        # Sinon retourne la page complète
+        return super().render_to_response(context, **response_kwargs)
 
 
 class AddProjectStepView(ProjectAdminRequiredMixin, View):
@@ -85,7 +159,7 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
 
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
-                "projects/partials/project_step_form.html#counter_step",
+                "checklist/partials/project_step_form.html#counter_step",
                 {
                     "count": count_step + 1,
                 },
@@ -94,7 +168,7 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
             # If it's the first step, change the hx-swap to replace the empty state div
             if current_max_order == 0:
                 step_content = render_to_string(
-                    "projects/partials/project_step_form.html#step_row",
+                    "checklist/partials/project_step_form.html#step_row",
                     {"step": project_step, "project": project},
                     request=request,
                 )
@@ -103,38 +177,16 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
 
             # Return HTML fragment for the new step card
             step_content = render_to_string(
-                "projects/partials/project_step_form.html#step_row",
+                "checklist/partials/project_step_form.html#step_row",
                 {"step": project_step, "project": project},
                 request=request,
             )
             return HttpResponse(step_counter + step_content)
 
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             messages.error(request, "Something went wrong when adding the step to the project.")
             return reswap(HttpResponse(status=200), "none")
-
-
-class EditProjectStepsView(ProjectAdminRequiredMixin, View):
-    def post(self, request, project_id, step_id):
-        step = get_object_or_404(ProjectStep, pk=step_id)
-
-        if step.project.id != project_id:
-            messages.error("Invalid project ID")
-            return reswap(HttpResponse(status=200), "none")
-
-        new_title = request.POST.get("title", "").strip()
-        if new_title:
-            step.title = new_title
-            step.save()
-            return render(request, "checklist/partials/tasks_page.html#step_title_display", {"step": step})
-
-        new_description = request.POST.get("description")
-        if new_description is not None:
-            step.description = new_description
-            step.save()
-            return render(request, "checklist/partials/tasks_page.html#step_description_display", {"step": step})
-
-        return reswap(HttpResponse(status=200), "none")
 
 
 class ReorderProjectStepsView(ProjectAdminRequiredMixin, View):
@@ -183,7 +235,7 @@ class RemoveProjectStepView(ProjectAdminRequiredMixin, View):
 
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
-                "projects/partials/project_step_form.html#counter_step",
+                "checklist/partials/project_step_form.html#counter_step",
                 {
                     "count": remaining_steps,
                 },
@@ -192,13 +244,14 @@ class RemoveProjectStepView(ProjectAdminRequiredMixin, View):
             messages.success(request, "Step deleted successfully.")
             if not remaining_steps:
                 # Return empty state HTML
-                empty_html = render_to_string("projects/partials/project_step_form.html#step_empty")
+                empty_html = render_to_string("checklist/partials/project_step_form.html#step_empty")
                 return HttpResponse(step_counter + empty_html)
             else:
                 # Return empty response (card will be removed by HTMX)
                 return HttpResponse(step_counter)
 
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             messages.error(request, "Something went wrong when deleting the step from the project.")
             return reswap(HttpResponse(status=200), "none")
 
@@ -240,7 +293,8 @@ class AddProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMi
                 context,
             )
 
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             messages.error(request, "Something went wrong when adding the task to the step.")
             return reswap(HttpResponse(status=200), "none")
 
@@ -285,13 +339,14 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
             elif new_status == "na":
                 project_task.mark_na(request.user)
         except Exception as e:
-            messages.error(request, str(e))
+            logger.error(e)
+            messages.error(request, "Error when updating task status")
             return reswap(HttpResponse(status=200), "none")
 
         row_html = render_to_string("checklist/partials/task_row.html", context)
 
         step_html = render_to_string(
-            "checklist/partials/project_content.html#step_item",
+            "checklist/partials/step_cards.html#step_item",
             {
                 **context,
                 "oob": True,
@@ -335,7 +390,8 @@ class DeleteProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
             project_task.delete()
             return HttpResponse("")
 
-        except Exception:
+        except Exception as e:
+            logger.error(e)
             messages.error(request, "Something went wrong when deleting the task from the step.")
             return reswap(HttpResponse(status=200), "none")
 
@@ -352,6 +408,22 @@ def toggle_task_form(request, project_id, step_id):
         "checklist/partials/tasks_page.html#new_task_toggle",
         {"project_id": project_id, "step_id": step_id, "show_form": show_form},
     )
+
+
+class ListStepView(ProjectReadRequiredMixin, CommonContextMixin, ListView):
+    """
+    View to display project details, including steps and tasks.
+    Supports HTMX requests to load tasks for a specific step.
+    """
+
+    model = ProjectStep
+    template_name = "checklist/partials/step_cards.html"
+    context_object_name = "steps"
+    pk_url_kwarg = "project_id"
+
+    def get_queryset(self):
+        project_id = self.kwargs.get(self.pk_url_kwarg)
+        return self.model.objects.filter(project_id=project_id)
 
 
 class TaskCommentListView(ProjectReadRequiredMixin, CommonContextMixin, ListView):
@@ -450,42 +522,35 @@ class TaskCommentDeleteView(ProjectEditRequiredMixin, DeleteView):
         return HttpResponse("")
 
 
-# View to return inline form
-def edit_step_description_form(request, project_id, step_id):
-    step = ProjectStep.objects.filter(pk=step_id, project__id=project_id).first()
+class StepHeaderEditView(
+    ProjectReadRequiredMixin,
+    CommonContextMixin,
+    ContextMixin,
+    View,
+):
+    def post(self, request, *args, **kwargs):
+        return self._inner(request, *args, **kwargs)
 
-    if not step:
-        messages.error(request, "Task or Project not found.")
-        return reswap(HttpResponse(status=200), "none")
+    def get(self, request, *args, **kwargs):
+        return self._inner(request, *args, **kwargs)
 
-    return render(request, "checklist/partials/tasks_page.html#step_description_form", context={"step": step})
+    def _inner(self, request, *args, **kwargs):
+        context = self.get_context_data()
 
+        project_id = context["project_id"]
+        step_id = context["step_id"]
+        can_edit = "edit" in context["roles"]
 
-def edit_step_title_form(request, project_id, step_id):
-    step = ProjectStep.objects.filter(pk=step_id, project__id=project_id).first()
+        edit_endpoint_base = reverse(
+            "projects:checklist:step_header_edit", kwargs={"project_id": project_id, "step_id": step_id}
+        )
 
-    if not step:
-        messages.error(request, "Task or Project not found.")
-        return reswap(HttpResponse(status=200), "none")
-
-    return render(request, "checklist/partials/tasks_page.html#step_title_form", context={"step": step})
-
-
-def get_step_title_display(request, project_id, step_id):
-    step = ProjectStep.objects.filter(pk=step_id, project__id=project_id).first()
-
-    if not step:
-        messages.error(request, "Task or Project not found.")
-        return reswap(HttpResponse(status=200), "none")
-
-    return render(request, "checklist/partials/tasks_page.html#step_title_display", context={"step": step})
-
-
-def get_step_description_display(request, project_id, step_id):
-    step = ProjectStep.objects.filter(pk=step_id, project__id=project_id).first()
-
-    if not step:
-        messages.error(request, "Task or Project not found.")
-        return reswap(HttpResponse(status=200), "none")
-
-    return render(request, "checklist/partials/tasks_page.html#step_description_display", context={"step": step})
+        return editable_header_view(
+            request=request,
+            model_class=ProjectStep,
+            template_path="common/partials/editable_header.html",
+            can_edit=can_edit,
+            extra_context={"project_id": project_id, "step_id": step_id},
+            filter_kwargs={"project__id": project_id, "pk": step_id},
+            edit_endpoint_base=edit_endpoint_base,
+        )
