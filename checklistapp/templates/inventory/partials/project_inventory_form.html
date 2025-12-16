@@ -1,5 +1,4 @@
-{# This page render the project edit page in which you can either edit the
-project or the attached inventory #} {% partialdef counter_inventory %}
+{% partialdef counter_inventory %}
 <div
   class="badge badge-primary badge-lg"
   id="counter-inventory"
@@ -7,14 +6,18 @@ project or the attached inventory #} {% partialdef counter_inventory %}
 >
   {{ count }} item{{ count|pluralize }}
 </div>
-{% endpartialdef %} {% partialdef fields_counter %}
+{% endpartialdef %}
+
+{% partialdef fields_counter %}
 <div class="flex items-center gap-3 mt-1">
   <span class="text-xs text-base-content/60 flex items-center gap-1">
     <i data-lucide="clipboard-check" style="width: 12px; height: 12px"></i>
     {{ count }} field{{ count|pluralize }}
   </span>
 </div>
-{% endpartialdef %} {% partialdef inventory_row %}
+{% endpartialdef %}
+
+{% partialdef inventory_row %}
 <div
   class="card bg-base-200 shadow-md hover:shadow-lg transition-shadow cursor-move"
   id="inventory-{{ inventory.id }}"
@@ -47,8 +50,9 @@ project or the attached inventory #} {% partialdef counter_inventory %}
       <span class="text-3xl w-10 text-center">{{ inventory.icon }}</span>
       <div class="flex-1 min-w-0">
         <h3 class="font-semibold text-base">{{ inventory.name }}</h3>
-        {% with count=inventory.fields.count %} {% partial fields_counter %} {%
-        endwith %}
+        {% with count=inventory.fields.count %}
+          {% partial fields_counter %}
+        {%  endwith %}
       </div>
 
       {# Actions #}
@@ -67,7 +71,9 @@ project or the attached inventory #} {% partialdef counter_inventory %}
     </div>
   </div>
 </div>
-{% endpartialdef %} {% partialdef inventory_empty %}
+{% endpartialdef %}
+
+{% partialdef inventory_empty %}
 <div
   class="flex flex-col items-center justify-center py-16 text-center"
   id="emptyState"

@@ -1,16 +1,19 @@
-{# This page render the project edit page in which you can either edit the
-project or the attached steps #} {% partialdef counter_step %}
+{% partialdef counter_step %}
 <div class="badge badge-primary badge-lg" id="counter-step" hx-swap-oob="true">
   {{ count }} step{{ count|pluralize }}
 </div>
-{% endpartialdef %} {% partialdef task_counter %}
+{% endpartialdef %}
+
+{% partialdef task_counter %}
 <div class="flex items-center gap-3 mt-1">
   <span class="text-xs text-base-content/60 flex items-center gap-1">
     <i data-lucide="clipboard-check" style="width: 12px; height: 12px"></i>
     {{ count }} task{{ count|pluralize }}
   </span>
 </div>
-{% endpartialdef %} {% partialdef step_row %}
+{% endpartialdef %}
+
+{% partialdef step_row %}
 <div
   class="card bg-base-200 shadow-md hover:shadow-lg transition-shadow cursor-move"
   id="step-{{ step.id }}"
@@ -19,7 +22,6 @@ project or the attached steps #} {% partialdef counter_step %}
 >
   <div class="card-body p-4">
     <div class="flex items-center gap-4">
-      {# Drag Handle #}
       <div
         class="cursor-grab active:cursor-grabbing text-base-content/40 hover:text-base-content"
       >
@@ -39,15 +41,14 @@ project or the attached steps #} {% partialdef counter_step %}
         </svg>
       </div>
 
-      {# Step Icon & Info #}
       <span class="text-3xl w-10 text-center">{{ step.icon }}</span>
       <div class="flex-1 min-w-0">
         <h3 class="font-semibold text-base">{{ step.title }}</h3>
-        {% with count=step.tasks.count %} {% partial task_counter %} {% endwith
-        %}
+        {% with count=step.tasks.count %}
+          {% partial task_counter %}
+        {% endwith  %}
       </div>
 
-      {# Actions #}
       <div class="flex gap-2">
         <button
           class="btn btn-sm btn-ghost btn-square text-error hover:bg-error hover:text-error-content"
@@ -63,7 +64,9 @@ project or the attached steps #} {% partialdef counter_step %}
     </div>
   </div>
 </div>
-{% endpartialdef %} {% partialdef step_empty %}
+{% endpartialdef %}
+
+{% partialdef step_empty %}
 <div
   class="flex flex-col items-center justify-center py-16 text-center"
   id="emptyState"
@@ -132,8 +135,9 @@ project or the attached steps #} {% partialdef counter_step %}
                     placeholder="Step name..."
                     value="{{ template.name }}"
                   />
-                  {% with count=template.tasks.count %} {% partial task_counter
-                  %} {% endwith %}
+                  {% with count=template.tasks.count %}
+                    {% partial task_counter %}
+                  {% endwith %}
                 </div>
 
                 {# Add Button #}
@@ -160,12 +164,15 @@ project or the attached steps #} {% partialdef counter_step %}
             <i data-lucide="clipboard-list"></i>
             Project Steps
           </h2>
-          {% with count=project_steps|length %} {% partial counter_step %} {%
-          endwith %}
+          {% with count=project_steps|length %}
+            {% partial counter_step %}
+          {% endwith %}
         </div>
 
         <div class="space-y-3" id="projectStepsList">
-          {% for step in project_steps %} {% partial step_row %} {% empty %}
+          {% for step in project_steps %} 
+            {% partial step_row %}
+          {% empty %}
           <div
             class="flex flex-col items-center justify-center py-16 text-center"
             id="emptyState"
