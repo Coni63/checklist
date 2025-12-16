@@ -1,7 +1,5 @@
 {% load custom_filters %}
 
-{# This page render the card of a single task on the project detail page #}
-
 <div id="task-{{task.id}}" class="card bg-base-100 shadow-md border-l-4
     {% if task.status == 'done' %}border-success
     {% elif task.status == 'na' %}border-warning

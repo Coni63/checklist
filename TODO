@@ -3,6 +3,5 @@ Write unittest
 Use ProjectService when possible
 Allow to manage templates on the UI -- Maybe requires tenants
 Review SQL, Cachcing, optimisations
-Migrate to django v6 + CPS self & nonce
+Setup CPS self & nonce
 Multiple settings.py
-Loader components ?

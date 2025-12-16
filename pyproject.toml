@@ -3,7 +3,7 @@ name = "checklist"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "cookiecutter>=2.6.0",
     "crispy-tailwind>=1.0.3",
@@ -12,7 +12,6 @@ dependencies = [
     "django-fernet-encrypted-fields>=0.3.1",
     "django-htmx>=1.27.0",
     "django-tailwind[cookiecutter,honcho,reload]>=4.2.0",
-    "django-template-partials>=25.3",
     "django-widget-tweaks>=1.5.0",
     "gunicorn>=23.0.0",
     "psycopg2-binary>=2.9.11",
