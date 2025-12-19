@@ -23,6 +23,7 @@ dev = [
     "beautifulsoup4>=4.14.3",
     "django-debug-toolbar>=6.1.0",
     "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
     "pytest-django>=4.11.1",
     "ruff>=0.14.6",
 ]
@@ -60,4 +61,10 @@ fix = true
 # Réordonner les imports pour qu'ils respectent le style 'pyproject' (équivalent à Black)
 # Par défaut, isort est déjà très bien intégré avec Ruff
 # Si vous utilisez Black, il n'y a généralement pas besoin d'options supplémentaires ici.
-known-first-party = ["mon_projet"] # Remplacez par le nom de votre package
+known-first-party = ["checklistapp"] # Remplacez par le nom de votre package
+
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "checklistapp.settings"
+python_files = ["test_*.py", "*_test.py", "testing/python/*.py", "tests.py"]
+addopts = "--cov=. --cov-report=xml --cov-report=term --cov-report=term:skip-covered"

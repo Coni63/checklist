@@ -59,6 +59,19 @@ Support iterative processes (multiple instances of same step)
    ```
 1. Open `localhost`, Register an account or login with the superadmin account (not recommended in Production obviously)
 
+## Testing
+
+1. Go to `checklistapp` folder
+   ```
+   cd checklistapp
+   ```
+1. run tests with coverage
+   ```
+   uv run pytest
+   ```
+
+> Pytest options are set in `pyproject.toml`
+
 ## Deployment
 
 1. Refer to `docker-compose.yaml`. It is highly not recommended to use a database in Production in the docker-compose.
