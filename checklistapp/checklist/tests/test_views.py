@@ -10,7 +10,7 @@ from checklist.models import ProjectStep, ProjectTask, TaskComment
 def step_template(db):
     """Fixture for a step template"""
     return StepTemplate.objects.create(
-        name="Test Step Template", description="Test description", icon="📝", default_order=1, is_active=True
+        title="Test Step Template", description="Test description", icon="📝", default_order=1, is_active=True
     )
 
 
