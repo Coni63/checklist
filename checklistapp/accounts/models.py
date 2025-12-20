@@ -31,7 +31,7 @@ class UserProjectPermissionsManager(models.Manager):
             qs = qs.filter(can_view=True)
         else:
             # If we don't want any role, don't return anything
-            return []
+            qs = self.none()
 
         return qs.values_list("project_id", flat=True)
 

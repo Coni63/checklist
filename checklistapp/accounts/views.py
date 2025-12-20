@@ -34,6 +34,9 @@ def login_view(request):
 
 
 def register_view(request):
+    if request.user.is_authenticated:
+        return redirect("projects:project_list")
+
     if request.method == "POST":
         form = BasicRegisterForm(request.POST)
         if form.is_valid():
@@ -43,9 +46,6 @@ def register_view(request):
         else:
             return render(request, "accounts/register.html", {"form": form})
     else:
-        if request.user.is_authenticated:
-            return redirect("projects:project_list")
-
         form = BasicRegisterForm()
         return render(request, "accounts/register.html", {"form": form})
 
@@ -125,16 +125,25 @@ class UpdateUserPermissionForm(ProjectAdminRequiredMixin, View):
                 permission.is_admin = False
             else:
                 permission.can_view = True
+                permission.can_edit = False
+                permission.is_admin = False
 
         elif field_name == "can_edit":  # If we remove the edit access, the user should lose admin access
             if permission.can_edit:
                 permission.can_edit = False
                 permission.is_admin = False
             else:
+                permission.can_view = True
                 permission.can_edit = True
+                permission.is_admin = False
 
         elif field_name == "is_admin":
-            permission.is_admin = not permission.is_admin
+            if permission.is_admin:
+                permission.is_admin = False
+            else:
+                permission.can_view = True
+                permission.can_edit = True
+                permission.is_admin = True
 
         # 3. Update
         permission.save()

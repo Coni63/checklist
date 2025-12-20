@@ -2,6 +2,7 @@ import pytest
 
 from accounts.forms import BasicRegisterForm, UserEditForm
 
+
 @pytest.mark.django_db
 def test_register_form_valid():
     form = BasicRegisterForm(

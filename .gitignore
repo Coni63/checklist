@@ -16,4 +16,4 @@ staticfiles/
 .env
 
 .coverage
-checklistapp/coverage.xml
+coverage.xml

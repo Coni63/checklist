@@ -11,6 +11,7 @@ def test_get_user_permissions_single_project(permission):
     )
     assert perms == permission
 
+
 @pytest.mark.django_db
 def test_get_user_permissions_list_projects(user, project, project2):
     UserProjectPermissions.objects.create(user=user, project=project)
@@ -23,6 +24,7 @@ def test_get_user_permissions_list_projects(user, project, project2):
 
     assert perms.count() == 2
 
+
 @pytest.mark.django_db
 def test_get_user_permissions_not_found(user, project):
     perms = UserProjectPermissions.objects.get_user_permissions(
@@ -30,6 +32,7 @@ def test_get_user_permissions_not_found(user, project):
         project_id=project.id,
     )
     assert perms is None
+
 
 @pytest.mark.django_db
 def test_get_projects_for_user_read(user, project):
@@ -44,6 +47,7 @@ def test_get_projects_for_user_read(user, project):
     projects = UserProjectPermissions.objects.get_projects_for_user(user)
     assert list(projects) == [project.id]
 
+
 @pytest.mark.django_db
 def test_get_projects_for_user_write(user, project):
     UserProjectPermissions.objects.create(
@@ -56,6 +60,7 @@ def test_get_projects_for_user_write(user, project):
 
     projects = UserProjectPermissions.objects.get_projects_for_user(user, write=True)
     assert project.id in projects
+
 
 @pytest.mark.django_db
 def test_get_projects_for_user_admin_only(user, project):

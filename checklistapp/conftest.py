@@ -1,7 +1,6 @@
 import pytest
-
+from accounts.models import User, UserProjectPermissions
 from projects.models import Project
-from accounts.models import UserProjectPermissions, User
 
 
 @pytest.fixture
@@ -43,10 +42,4 @@ def permission(user, project):
 
 @pytest.fixture
 def admin_permission(db, admin_user, project):
-    return UserProjectPermissions.objects.create(
-        user=admin_user,
-        project=project,
-        can_view=True,
-        can_edit=True,
-        is_admin=True
-    )
+    return UserProjectPermissions.objects.create(user=admin_user, project=project, can_view=True, can_edit=True, is_admin=True)

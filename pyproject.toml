@@ -68,3 +68,22 @@ known-first-party = ["checklistapp"] # Remplacez par le nom de votre package
 DJANGO_SETTINGS_MODULE = "checklistapp.settings"
 python_files = ["test_*.py", "*_test.py", "testing/python/*.py", "tests.py"]
 addopts = "--cov=. --cov-report=xml --cov-report=term --cov-report=term:skip-covered"
+
+
+[tool.coverage.run]
+# On définit ici les fichiers à ne pas analyser du tout
+omit = [
+    "*tests*",        # Ignore les dossiers nommés 'tests'
+    "*/test_*.py",    # Ignore les fichiers commençant par test_
+    "manage.py",      # Souvent inutile dans le rapport
+    "*/migrations/*", # Ignore les fichiers de migration Django
+    "*/asgi.py",
+    "*/wsgi.py",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
