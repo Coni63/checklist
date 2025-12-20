@@ -3,8 +3,6 @@ name: Django Tests
 on:
   pull_request:
     branches: ["master"]
-  push:
-    branches: ["*"]
 
 jobs:
   test:
@@ -40,14 +38,10 @@ jobs:
         run: uv python install
 
       - name: Install dependencies
-        # uv install cherche par défaut pyproject.toml ou uv.lock
-        # Si vous n'avez que les libs de dev dans un fichier spécifique,
-        # uv les installera s'ils sont listés dans votre projet.
-        run: uv sync --all-groups # --all-groups inclut les libs de dev si configurées
+        run: uv sync --all-groups
 
       - name: Run Tests
         env:
-          # On passe les infos de connexion via variables d'environnement
           DATABASE_URL: postgres://admin:password@localhost:5432/checklist
           SECRET_KEY: "ci-secret-key"
           DEBUG: off
@@ -56,3 +50,9 @@ jobs:
         run: |
           cd checklistapp
           uv run pytest
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v6
+        if: success() || failure() # always run even if the previous step fails
+        with:
+          report_paths: "**/pytest.xml"

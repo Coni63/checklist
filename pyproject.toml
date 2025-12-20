@@ -68,7 +68,7 @@ known-first-party = ["checklistapp"] # Remplacez par le nom de votre package
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "checklistapp.settings"
 python_files = ["test_*.py", "*_test.py", "testing/python/*.py", "tests.py"]
-addopts = "--cov=. --cov-report=xml --cov-report=term --cov-report=term:skip-covered"
+addopts = "--cov=. --cov-report=xml --cov-report=term --cov-report=term:skip-covered --junitxml=pytest.xml"
 
 
 [tool.coverage.run]
