@@ -20,9 +20,8 @@ class ProjectQuerySet(models.QuerySet):
         return self.order_by("-created_at")
 
 
-class ProjectManager(models.Manager):
-    def get_queryset(self):
-        return ProjectQuerySet(self.model, using=self._db)
+class ProjectManager(models.Manager.from_queryset(ProjectQuerySet)):
+    pass
 
 
 class Project(models.Model):

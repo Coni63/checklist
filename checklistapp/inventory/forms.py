@@ -1,4 +1,4 @@
-from core.b64_field import Base64FileField
+from core.forms import Base64FileField
 from django import forms
 from django.conf import settings
 from django.urls import reverse
@@ -165,11 +165,10 @@ class DynamicInventoryForm(forms.Form):
                 case "number":
                     inst_field.number_value = new_value
                 case "file":
-                    if new_value:
-                        inst_field.file_value = new_value
+                    inst_field.file_value = new_value
 
-                        if hasattr(field, "uploaded_filename") and field.uploaded_filename:
-                            inst_field.text_value = field.uploaded_filename
+                    if hasattr(field, "uploaded_filename") and field.uploaded_filename:
+                        inst_field.text_value = field.uploaded_filename
                 case "password":
                     # Stored encrypted
                     inst_field.password_value = new_value

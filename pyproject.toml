@@ -19,7 +19,15 @@ dependencies = [
 
 
 [dependency-groups]
-dev = ["django-debug-toolbar>=6.1.0", "ruff>=0.14.6"]
+dev = [
+    "beautifulsoup4>=4.14.3",
+    "django-debug-toolbar>=6.1.0",
+    "freezegun>=1.5.5",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "pytest-django>=4.11.1",
+    "ruff>=0.14.6",
+]
 
 [tool.ruff]
 # Liste des codes d'erreur à activer (checkers)
@@ -54,4 +62,36 @@ fix = true
 # Réordonner les imports pour qu'ils respectent le style 'pyproject' (équivalent à Black)
 # Par défaut, isort est déjà très bien intégré avec Ruff
 # Si vous utilisez Black, il n'y a généralement pas besoin d'options supplémentaires ici.
-known-first-party = ["mon_projet"] # Remplacez par le nom de votre package
+known-first-party = ["checklistapp"] # Remplacez par le nom de votre package
+
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "checklistapp.settings"
+python_files = ["test_*.py", "*_test.py", "testing/python/*.py", "tests.py"]
+addopts = "--cov=. --cov-report=xml --cov-report=term --cov-report=term:skip-covered --junitxml=pytest.xml"
+
+
+[tool.coverage.run]
+# On définit ici les fichiers à ne pas analyser du tout
+omit = [
+    "*/tests/*",
+    "*/tests.py",
+    "*/test_*.py",
+    "*/*test*.py",
+    "*/migrations/*",
+    "*/asgi.py",
+    "*/wsgi.py",
+    "manage.py",
+    "*/settings.py",
+    "*/apps.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/env/*",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]

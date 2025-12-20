@@ -16,7 +16,11 @@ class UserProjectPermissionsManager(models.Manager):
         except UserProjectPermissions.DoesNotExist:
             return None
 
-    def get_projects_for_user(self, user, read=True, write=False, admin=False):
+    def get_projects_for_user(self, user, read=True, write=False, admin=False) -> list[int]:
+        """
+        Return all project IDs where the user has read, edit or admin roles.
+        In DB, admin has read & edit, edit has read
+        """
         qs = self.filter(user=user)
 
         if admin:
@@ -25,6 +29,9 @@ class UserProjectPermissionsManager(models.Manager):
             qs = qs.filter(can_edit=True)
         elif read:
             qs = qs.filter(can_view=True)
+        else:
+            # If we don't want any role, don't return anything
+            qs = self.none()
 
         return qs.values_list("project_id", flat=True)
 

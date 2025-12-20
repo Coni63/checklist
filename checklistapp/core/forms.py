@@ -27,7 +27,7 @@ class Base64FileField(forms.FileField):
         if f.size > MAX_FILE_SIZE:
             # Utilisez un format lisible pour l'erreur
             max_size_kb = MAX_FILE_SIZE / 1024
-            raise ValidationError(f"Le fichier est trop volumineux. La taille maximale autorisée est de {max_size_kb:.0f} KB.")
+            raise ValidationError(f"File is too large, Maximum: {max_size_kb:.0f} KB.")
 
         self.uploaded_filename = f.name
 

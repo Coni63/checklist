@@ -90,16 +90,6 @@ class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
                 },
             )
 
-            # If it's the first step, change the hx-swap to replace the empty state div
-            if current_max_order == 0:
-                step_content = render_to_string(
-                    "inventory/partials/project_inventory_form.html#inventory_row",
-                    {"inventory": inventory, "project": project},
-                    request=request,
-                )
-                response = HttpResponse(step_counter + step_content)
-                return reswap(response, "innerHTML")
-
             # Return HTML fragment for the new step card
             step_content = render_to_string(
                 "inventory/partials/project_inventory_form.html#inventory_row",
@@ -108,8 +98,10 @@ class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
             )
 
             messages.success(request, "Inventory added successfully.")
+            response = HttpResponse(step_counter + step_content)
 
-            return HttpResponse(step_counter + step_content)
+            # If it's the first step, change the hx-swap to replace the empty state div
+            return reswap(response, "innerHTML") if current_max_order == 0 else response
 
         except Exception as e:
             logger.error(e)
@@ -350,14 +342,14 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
                 # return freshly rendered partial
                 context["form"] = DynamicInventoryForm(inventory, context)
                 context["groups"] = InventoryDetail.group_fields_by_group(context["form"])
-                return render(request, "inventory/partials/fields_form.html", context)
+                return render(request, "inventory/partials/inventory_form.html", context)
             return redirect(request.path)
 
         context["form"] = form
         context["groups"] = InventoryDetail.group_fields_by_group(form)
 
         if request.headers.get("HX-Request"):
-            return render(request, "inventory/partials/fields_form.html", context)
+            return render(request, "inventory/partials/inventory_form.html", context)
 
         return redirect(request.path)
 

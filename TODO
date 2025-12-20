@@ -1,7 +1,10 @@
 V3 (optimisation - industrialisation)
-Write unittest
 Use ProjectService when possible
-Allow to manage templates on the UI -- Maybe requires tenants
 Review SQL, Cachcing, optimisations
 Setup CPS self & nonce
+align field name and size
+github actions tests
+
+To scope:
+Allow to manage templates on the UI -- Maybe requires tenants
 Multiple settings.py

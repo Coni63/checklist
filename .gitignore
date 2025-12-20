@@ -14,3 +14,6 @@ staticfiles/
 
 # local configuration file
 .env
+
+.coverage
+coverage.xml
