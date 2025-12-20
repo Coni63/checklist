@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 import sys
 from pathlib import Path
+from django.utils.csp import CSP
 
 import environ
 
@@ -69,6 +70,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -88,6 +90,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.csp",
             ],
         },
     },
@@ -178,3 +181,14 @@ INTERNAL_IPS = [
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/projets/"  # Redirection après connexion réussie
 LOGOUT_REDIRECT_URL = "/"  # Redirection après déconnexion réussie
+
+
+# To enforce a CSP policy:
+SECURE_CSP = {
+    "default-src": [CSP.SELF],
+    # Allow self-hosted scripts and script tags with matching `nonce` attr.
+    "script-src": [CSP.SELF, CSP.NONCE],
+    "style-src": [CSP.SELF, CSP.NONCE],
+    "img-src": [CSP.SELF, "data:"],  # data: for base64 images
+    "font-src": [CSP.SELF],
+}

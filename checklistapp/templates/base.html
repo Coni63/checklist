@@ -28,7 +28,7 @@
     <meta name="description" content="{% block meta_description %}Manage your projects with multi-step checklists{% endblock %}">
 
     {# CSRF Token for AJAX requests #}
-    <script>
+    <script nonce="{{ csp_nonce }}">
         window.CSRF_TOKEN = '{{ csrf_token }}';
     </script>
 </head>

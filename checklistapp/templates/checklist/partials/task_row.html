@@ -139,7 +139,7 @@
 </div>
 
 {% block extra_js %}
-<script>
+<script nonce="{{ csp_nonce }}">
     function toggleComment(taskId) {
         const el = document.getElementById("comment-area-" + taskId);
         el.classList.toggle("hidden");

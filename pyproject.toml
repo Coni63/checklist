@@ -49,7 +49,7 @@ lint.ignore = [
 ]
 
 # Exclure des fichiers ou dossiers
-exclude = [".git", "__pycache__", "build", "dist", "venv"]
+exclude = [".git", "__pycache__", "build", "dist", "venv", "templates/**"]
 
 # Définir la longueur de ligne (doit correspondre à celle de votre formateur, ex: Black)
 line-length = 128

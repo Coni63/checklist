@@ -64,7 +64,7 @@
 </form>
 
 {% block extra_js %}
-<script>
+<script nonce="{{ csp_nonce }}">
   function togglePassword(btn) {
     const input = btn.parentElement.querySelector("input[data-password-field]");
     if (!input) return;
