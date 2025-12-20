@@ -131,7 +131,7 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
             count_step = result["total"]
 
             # Use override name or default template name
-            step_title = override_name if override_name else step_template.title
+            step_title = override_name if override_name else step_template.name
 
             # Create the project step
             project_step = ProjectStep.objects.create(
