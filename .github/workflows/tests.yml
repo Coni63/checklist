@@ -1,0 +1,58 @@
+name: Django Tests
+
+on:
+  pull_request:
+    branches: ["master"]
+  push:
+    branches: ["*"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Configuration de PostgreSQL
+    services:
+      postgres:
+        image: postgres:18.1-bookworm
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: checklist
+        ports:
+          - 5432:5432
+        # On attend que postgres soit prêt avant de lancer le job
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true # Active le cache automatique pour uv
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        # uv install cherche par défaut pyproject.toml ou uv.lock
+        # Si vous n'avez que les libs de dev dans un fichier spécifique,
+        # uv les installera s'ils sont listés dans votre projet.
+        run: uv sync --all-groups # --all-groups inclut les libs de dev si configurées
+
+      - name: Run Tests
+        env:
+          # On passe les infos de connexion via variables d'environnement
+          DATABASE_URL: postgres://admin:password@localhost:5432/checklist
+          SECRET_KEY: "ci-secret-key"
+          DEBUG: off
+          FERNET_KEY: "my_secret_key"
+          TIME_ZONE: "Europe/Paris"
+        run: |
+          cd checklistapp
+          uv run pytest
