@@ -207,6 +207,7 @@
   </div>
 </div>
 
+{% block extra_js %}
 <script>
   // Drag and Drop functionality - HTMX compatible
   (function () {
@@ -264,13 +265,6 @@
             swap: "none",
           }
         );
-
-        // OR using a hidden form with hx-trigger:
-        // const orderInput = document.getElementById('step-order-input');
-        // if (orderInput) {
-        //     orderInput.value = JSON.stringify(stepIds);
-        //     htmx.trigger(orderInput.closest('form'), 'submit');
-        // }
       }
 
       // Handle drag start (using event delegation)
@@ -348,3 +342,4 @@
     });
   })();
 </script>
+{% endblock %}

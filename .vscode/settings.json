@@ -3,5 +3,10 @@
         "checklistapp"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "ruff.format.enable": true,
+    "ruff.lint.enable": true,
+    "ruff.exclude": ["templates/**"]
 }
