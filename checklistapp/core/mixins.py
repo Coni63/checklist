@@ -9,6 +9,9 @@ class AbstractProjectAccessMixin(LoginRequiredMixin):
     required_permission = None
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)  # Redirige vers login
+
         project_id = kwargs.get("project_id") or kwargs.get("pk")
 
         if not project_id:

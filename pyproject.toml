@@ -22,6 +22,7 @@ dependencies = [
 dev = [
     "beautifulsoup4>=4.14.3",
     "django-debug-toolbar>=6.1.0",
+    "freezegun>=1.5.5",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "pytest-django>=4.11.1",

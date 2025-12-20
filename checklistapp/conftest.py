@@ -1,5 +1,6 @@
 import pytest
 from accounts.models import User, UserProjectPermissions
+from freezegun import freeze_time
 from inventory.models import InventoryField, ProjectInventory
 from projects.models import Project
 from templates_management.models import InventoryTemplate, TemplateField
@@ -30,7 +31,8 @@ def project(db):
 
 @pytest.fixture
 def project2(db):
-    return Project.objects.create(name="Test Project 2")
+    with freeze_time("2023-01-01"):
+        return Project.objects.create(name="Test Project 2")
 
 
 @pytest.fixture
