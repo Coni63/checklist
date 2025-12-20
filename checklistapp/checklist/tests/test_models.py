@@ -13,7 +13,7 @@ def test_project_step_creation(project):
     assert step.icon == "📝"
     assert step.order == 1
     assert step.project == project
-    assert step.description == ""
+    assert step.description is None
 
 
 @pytest.mark.django_db

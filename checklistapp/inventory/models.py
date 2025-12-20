@@ -13,7 +13,7 @@ class ProjectInventory(models.Model):
         help_text="Template this step was created from",
     )
     title = models.CharField(max_length=200, help_text="Custom title, overrides template name")
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True, null=True)
     icon = models.CharField(max_length=10)
     order = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)

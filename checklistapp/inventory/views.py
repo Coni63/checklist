@@ -57,7 +57,7 @@ class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
             count_step = result["total"]
 
             # Use override name or default template name
-            name = override_name if override_name else inventory_template.name
+            name = override_name if override_name else inventory_template.title
 
             # Create the project inventory
             inventory = ProjectInventory.objects.create(

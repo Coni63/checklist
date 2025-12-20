@@ -52,7 +52,7 @@ def admin_permission(db, admin_user, project):
 @pytest.fixture
 def inventory_template(db):
     return InventoryTemplate.objects.create(
-        name="Test Inventory Template",
+        title="Test Inventory Template",
         icon="📦",
         description="Test description",
         default_order=1,

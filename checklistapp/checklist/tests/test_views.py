@@ -143,7 +143,7 @@ def test_add_project_step_success(client, admin_user, project, admin_permission,
 
     # Check step was created
     step = ProjectStep.objects.get(project=project, step_template=step_template)
-    assert step.title == step_template.name
+    assert step.title == step_template.title
     assert step.icon == step_template.icon
 
     # Check tasks were created from template

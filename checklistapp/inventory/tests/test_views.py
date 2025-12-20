@@ -61,7 +61,7 @@ def test_add_inventory_uses_template_name_when_no_override(client, admin_user, a
     assert response.status_code == 200
 
     new_inventory = ProjectInventory.objects.latest("created_at")
-    assert new_inventory.title == inventory_template.name
+    assert new_inventory.title == inventory_template.title
 
 
 @pytest.mark.django_db
