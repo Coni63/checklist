@@ -1,4 +1,4 @@
-from core.b64_field import Base64FileField
+from core.forms import Base64FileField
 from django import forms
 from django.conf import settings
 from django.urls import reverse
