@@ -14,3 +14,6 @@ Multiple settings.py
 
 # Blocked (branch)
 Setup CPS self & nonce
+
+# BUG
+Cannot reupload document over document in inventory

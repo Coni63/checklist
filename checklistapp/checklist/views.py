@@ -160,9 +160,7 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
                 "checklist/partials/project_step_form.html#counter_step",
-                {
-                    "count": count_step + 1,
-                },
+                {"count": count_step + 1, "oob": True},
             )
 
             # If it's the first step, change the hx-swap to replace the empty state div
@@ -236,9 +234,7 @@ class RemoveProjectStepView(ProjectAdminRequiredMixin, View):
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
                 "checklist/partials/project_step_form.html#counter_step",
-                {
-                    "count": remaining_steps,
-                },
+                {"count": remaining_steps, "oob": True},
             )
 
             messages.success(request, "Step deleted successfully.")

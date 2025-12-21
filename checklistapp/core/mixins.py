@@ -69,7 +69,7 @@ class OwnerOrAdminMixin(LoginRequiredMixin):
         if not object_id or not project_id:
             raise ImproperlyConfigured("Le mixin nécessite 'pk' (ID de l'objet) ET 'project_id' dans les kwargs de l'URL.")
 
-        # Check forst if it's the author
+        # Check first if it's the author
         try:
             # 2. Fetch the objects
             current_object = self.object_model.objects.get(pk=object_id)
