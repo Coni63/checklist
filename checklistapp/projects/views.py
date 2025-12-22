@@ -2,6 +2,9 @@ import logging
 
 from accounts.models import UserProjectPermissions
 from checklist.models import ProjectStep
+from accounts.services import AccountService
+from inventory.services import InventoryService
+from projects.services import ProjectService
 from core.mixins import ProjectAdminRequiredMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -28,17 +31,9 @@ class ProjectListView(LoginRequiredMixin, ListView):
     context_object_name = "projects"
 
     def get_queryset(self):
-        status = self.request.GET.get("status", "active")
+        status = self.request.GET.get("status", "active")  # context is computed afterward so we duplicate
 
-        qs = (
-            Project.objects.get_queryset()
-            .for_user(user=self.request.user, read=True, write=False, admin=False)
-            .with_status(status)
-        )
-
-        if status and status != "all":
-            qs = qs.filter(status=status)
-        return qs
+        return ProjectService.get_projects_for_user(self.request.user, status)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -53,15 +48,9 @@ class ProjectListView(LoginRequiredMixin, ListView):
             2: ["read"]
         }
         """
+        permissions = AccountService.get_all_permissions_for_user(user, True, False, False)
+
         project_roles = {}
-
-        if not user.is_authenticated:
-            return project_roles
-
-        project_ids = [str(project.id) for project in self.object_list]
-
-        permissions = UserProjectPermissions.objects.get_user_permissions(user=user, project_id=project_ids)
-
         for permission in permissions:
             # Priority : admin > edit > read
             roles = []
@@ -95,13 +84,7 @@ class ProjectCreateView(LoginRequiredMixin, CreateView):
         response = super().form_valid(form)
 
         # 2. Create UserProjectPermissions for the creator
-        UserProjectPermissions.objects.create(
-            user=self.request.user,
-            project=self.object,
-            is_admin=True,
-            can_edit=True,
-            can_view=True,
-        )
+        AccountService.create_permission(self.object, self.request.user, True, True, True)
 
         # 3. Response with success message
         messages.success(self.request, f'Project "{self.object.name}" created successfully!')
@@ -128,9 +111,11 @@ class ProjectEditView(ProjectAdminRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # TODO: refactor after checklistService
+
         # Get all available step templates
         context["available_templates"] = StepTemplate.objects.filter(is_active=True).order_by("default_order")
-        context["inventory_templates"] = InventoryTemplate.objects.filter(is_active=True).order_by("default_order")
+        context["inventory_templates"] = InventoryService.get_template()
 
         # Get current project steps
         context["project_steps"] = (
@@ -139,12 +124,7 @@ class ProjectEditView(ProjectAdminRequiredMixin, UpdateView):
             .prefetch_related("tasks")
             .order_by("order")
         )
-        context["project_inventory"] = (
-            ProjectInventory.objects.filter(project=self.object)
-            .select_related("inventory_template")
-            .prefetch_related("fields")
-            .order_by("order")
-        )
+        context["project_inventory"] = InventoryService.get_inventory_for_project(self.object)
 
         return context
 

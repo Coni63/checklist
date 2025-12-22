@@ -3,27 +3,6 @@ from checklist.models import ProjectTask
 from django.db import models
 
 
-class ProjectQuerySet(models.QuerySet):
-    def with_status(self, status: str):
-        if status != "all":
-            return self.filter(status=status)
-        return self
-
-    def for_user(self, user, read=True, write=False, admin=False):
-        # La logique de permission reste la même
-        project_ids = UserProjectPermissions.objects.get_projects_for_user(user, read, write, admin)
-
-        # Le QuerySet actuel (self) est filtré par les IDs autorisés
-        return self.filter(id__in=project_ids)
-
-    def sorted(self):
-        return self.order_by("-created_at")
-
-
-class ProjectManager(models.Manager.from_queryset(ProjectQuerySet)):
-    pass
-
-
 class Project(models.Model):
     STATUS_CHOICES = [
         ("active", "Active"),
@@ -36,8 +15,6 @@ class Project(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    objects = ProjectManager()
 
     class Meta:
         ordering = ["-created_at"]

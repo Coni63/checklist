@@ -1,3 +1,4 @@
+from projects.models import Project
 from core.exceptions import RecordNotFoundError
 from django.db import transaction
 from .models import UserProjectPermissions, User
@@ -29,8 +30,24 @@ class AccountService:
             raise RecordNotFoundError("Permission not found.")
 
     @staticmethod
-    def get_all_permissions_for_project(project):
+    def get_all_permissions_for_project(project: list[int] | Project):
         return UserProjectPermissions.objects.filter(project=project)
+
+    @staticmethod
+    def get_all_permissions_for_user(user, read=True, write=False, admin=False):
+        qs = UserProjectPermissions.objects.filter(user=user)
+
+        if admin:
+            qs = qs.filter(is_admin=True)
+        elif write:
+            qs = qs.filter(can_edit=True)
+        elif read:
+            qs = qs.filter(can_view=True)
+        else:
+            # If we don't want any role, don't return anything
+            qs = UserProjectPermissions.objects.none()
+
+        return qs
 
     @staticmethod
     @transaction.atomic
