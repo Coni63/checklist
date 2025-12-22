@@ -1,18 +1,17 @@
 import logging
 
-from accounts.models import UserProjectPermissions
-from checklist.models import ProjectStep
 from accounts.services import AccountService
-from inventory.services import InventoryService
-from projects.services import ProjectService
+from checklist.models import ProjectStep
 from core.mixins import ProjectAdminRequiredMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
-from inventory.models import ProjectInventory
-from templates_management.models import InventoryTemplate, StepTemplate
+from inventory.services import InventoryService
+from templates_management.models import StepTemplate
+
+from projects.services import ProjectService
 
 from .forms import ProjectCreationForm
 from .models import Project

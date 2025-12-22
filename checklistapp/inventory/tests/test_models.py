@@ -26,14 +26,14 @@ def test_project_inventory_repr(project_inventory):
 
 @pytest.mark.django_db
 def test_project_inventory_ordering(project, inventory_template):
-    inventory1 = ProjectInventory.objects.create(
+    _ = ProjectInventory.objects.create(
         project=project,
         inventory_template=inventory_template,
         title="First Inventory",
         icon="📦",
         order=2,
     )
-    inventory2 = ProjectInventory.objects.create(
+    _ = ProjectInventory.objects.create(
         project=project,
         inventory_template=inventory_template,
         title="Second Inventory",

@@ -499,7 +499,7 @@ def test_task_comment_list_excludes_deleted(client, user, project, project_step,
     """Test that deleted comments are excluded from list"""
     UserProjectPermissions.objects.create(user=user, project=project, can_view=True)
 
-    comment1 = TaskComment.objects.create(project_task=project_task, user=user, comment_text="Active comment")
+    _ = TaskComment.objects.create(project_task=project_task, user=user, comment_text="Active comment")
     comment2 = TaskComment.objects.create(project_task=project_task, user=user, comment_text="Deleted comment")
     comment2.soft_delete()
 

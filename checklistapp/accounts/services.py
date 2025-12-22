@@ -1,7 +1,8 @@
-from projects.models import Project
 from core.exceptions import RecordNotFoundError
 from django.db import transaction
-from .models import UserProjectPermissions, User
+from projects.models import Project
+
+from .models import User, UserProjectPermissions
 
 
 class AccountService:

@@ -73,7 +73,7 @@ def test_project_step_get_status_in_progress(project, user):
     step = ProjectStep.objects.create(project=project, title="Test Step", icon="📝", order=1)
 
     task1 = ProjectTask.objects.create(project_step=step, title="Task 1", order=1, status="pending")
-    task2 = ProjectTask.objects.create(project_step=step, title="Task 2", order=2, status="pending")
+    _ = ProjectTask.objects.create(project_step=step, title="Task 2", order=2, status="pending")
 
     # Mark one task as done
     task1.mark_done(user)

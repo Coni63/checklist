@@ -1,8 +1,6 @@
-from accounts.models import UserProjectPermissions
+from accounts.services import AccountService
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
-
-from accounts.services import AccountService
 
 
 class AbstractProjectAccessMixin(LoginRequiredMixin):

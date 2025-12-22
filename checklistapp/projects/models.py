@@ -1,4 +1,3 @@
-from accounts.models import UserProjectPermissions
 from checklist.models import ProjectTask
 from django.db import models
 
