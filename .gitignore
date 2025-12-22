@@ -17,3 +17,5 @@ staticfiles/
 
 .coverage
 coverage.xml
+*.sqlite3
+pytest.xml

@@ -1,10 +1,10 @@
 import base64
 
 import pytest
+from accounts.models import UserProjectPermissions
 from django.urls import reverse
 
 from inventory.models import InventoryField, ProjectInventory
-from accounts.models import UserProjectPermissions
 
 
 @pytest.mark.django_db

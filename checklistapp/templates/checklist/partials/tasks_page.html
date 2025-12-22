@@ -45,11 +45,7 @@
 {% endpartialdef %}
 
 {% partialdef progress_bar %}
-    {% if oob %}
-        <div class="mb-6" id="tasks-area-progress" hx-swap-oob="true" hx-swap="outerHTML">
-    {% else %}
-        <div class="mb-6" id="tasks-area-progress">
-    {% endif %}
+    <div class="mb-6" id="tasks-area-progress" {% if oob %}hx-swap-oob="true"{% endif %} hx-swap="outerHTML">
         <div class="flex justify-between items-center mb-2">
             <span class="text-sm font-medium text-base-content">Progress</span>
             <span class="text-sm font-semibold text-base-content">{{ text }}</span>

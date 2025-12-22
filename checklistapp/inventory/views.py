@@ -152,7 +152,7 @@ class ListProjectInventoryView(ProjectAdminRequiredMixin, CommonContextMixin, De
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context["inventory_templates"] = InventoryService.get_template(load_fields=False)
+        context["inventory_templates"] = InventoryService.get_template(load_fields=True)
         context["project_inventory"] = InventoryService.get_inventory_for_project(self.object)
         return context
 
@@ -188,9 +188,6 @@ def download_inventory_file(request, project_id, inventory_id, field_id):
 
         return response
     except Exception as e:
-        import traceback
-
-        print(traceback.print_exc())
         logger.error(e)
         if hasattr(e, "custom"):
             return HttpResponse(str(e), status=500)
@@ -281,7 +278,7 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
         try:
             context = self.get_context_data()
 
-            if not "edit" in context["roles"]:
+            if "edit" not in context["roles"]:
                 raise PermissionError("You are not allowed to edit fields")
 
             inventory_id = request.POST.get("inventory_id")
