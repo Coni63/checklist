@@ -52,16 +52,7 @@ class ProjectListView(LoginRequiredMixin, ListView):
 
         project_roles = {}
         for permission in permissions:
-            # Priority : admin > edit > read
-            roles = []
-            if permission.is_admin:
-                roles = ["admin", "edit", "read"]
-            elif permission.can_edit:
-                roles = ["edit", "read"]
-            elif permission.can_view:
-                roles = ["read"]
-
-            project_roles[permission.project_id] = roles
+            project_roles[permission.project_id] = AccountService.permission_to_list(permission)
 
         return project_roles
 

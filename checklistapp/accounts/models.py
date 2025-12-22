@@ -7,6 +7,7 @@ class User(AbstractUser):
 
 
 class UserProjectPermissionsManager(models.Manager):
+    # TODO: Cleanup avec checklist service
     def get_user_permissions(self, user, project_id: str | list[str]):
         try:
             if isinstance(project_id, list):

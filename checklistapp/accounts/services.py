@@ -50,6 +50,10 @@ class AccountService:
         return qs
 
     @staticmethod
+    def get_permission_for_user_project(user, project_id):
+        return UserProjectPermissions.objects.filter(user=user, project_id=project_id).first()
+
+    @staticmethod
     @transaction.atomic
     def create_permission(
         project, user, can_view: bool = False, can_edit: bool = False, is_admin: bool = False
@@ -99,3 +103,16 @@ class AccountService:
 
         permission.save()
         return permission
+
+    @staticmethod
+    def permission_to_list(permission) -> list[str]:
+        if not permission:
+            return []
+
+        if permission.is_admin:
+            return ["admin", "edit", "read"]
+        elif permission.can_edit:
+            return ["edit", "read"]
+        elif permission.can_view:
+            return ["read"]
+        return []
