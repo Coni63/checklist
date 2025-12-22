@@ -281,6 +281,9 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
         try:
             context = self.get_context_data()
 
+            if not "edit" in context["roles"]:
+                raise PermissionError("You are not allowed to edit fields")
+
             inventory_id = request.POST.get("inventory_id")
             inventory = InventoryService.get_inventory(context["project_id"], inventory_id, prefetch_related=["fields"])
 

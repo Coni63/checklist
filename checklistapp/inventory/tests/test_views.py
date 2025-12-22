@@ -4,6 +4,7 @@ import pytest
 from django.urls import reverse
 
 from inventory.models import InventoryField, ProjectInventory
+from accounts.models import UserProjectPermissions
 
 
 @pytest.mark.django_db
@@ -269,14 +270,12 @@ def test_inventory_detail_post_requires_edit(client, user, permission, project, 
     # User has view permission but not edit, so the field should not be updated
     assert response.status_code == 200
     inventory_field_text.refresh_from_db()
-    assert inventory_field_text.text_value == "Updated Value"
+    assert inventory_field_text.text_value == "Test Value"
 
 
 @pytest.mark.django_db
 def test_inventory_detail_post_with_edit_permission(client, user, project, project_inventory, inventory_field_text):
     # Give user edit permission
-    from accounts.models import UserProjectPermissions
-
     UserProjectPermissions.objects.create(
         user=user,
         project=project,
