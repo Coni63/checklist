@@ -2,6 +2,7 @@ import base64
 
 import pytest
 from accounts.models import UserProjectPermissions
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from inventory.models import InventoryField, ProjectInventory
@@ -434,3 +435,72 @@ def test_inventory_page_without_htmx_shows_full_page(client, user, permission, p
     assert "project" in response.context
     assert "inventories" in response.context
     assert response.context["project"] == project
+
+
+@pytest.mark.django_db
+def test_upload_document_override_previous(client, user, project, project_inventory, inventory_field_file):
+    """Test que le re-upload d'un fichier remplace bien le précédent."""
+
+    # Give user edit permission
+    UserProjectPermissions.objects.create(
+        user=user,
+        project=project,
+        can_view=True,
+        can_edit=True,
+    )
+    client.login(username=user.username, password="password")
+
+    url = reverse(
+        "projects:inventory:inventory_detail",
+        kwargs={
+            "project_id": project.id,
+            "inventory_id": project_inventory.id,
+        },
+    )
+
+    # ---- 1️⃣ Premier upload ----
+    content_1 = b"first file content"
+    file_1 = SimpleUploadedFile(
+        "first.txt",
+        content_1,
+        content_type="text/plain",
+    )
+
+    response_1 = client.post(
+        url,
+        {
+            "inventory_id": project_inventory.id,
+            f"field_{inventory_field_file.id}": file_1,
+        },
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response_1.status_code == 200
+
+    inventory_field_file.refresh_from_db()
+    assert inventory_field_file.text_value == "first.txt"
+    assert inventory_field_file.file_value == base64.b64encode(content_1).decode()
+
+    # ---- 2️⃣ Second upload (override attendu) ----
+    content_2 = b"second file content - this should replace the first"
+    file_2 = SimpleUploadedFile(
+        "second.txt",
+        content_2,
+        content_type="text/plain",
+    )
+
+    response_2 = client.post(
+        url,
+        {
+            "inventory_id": project_inventory.id,
+            f"field_{inventory_field_file.id}": file_2,
+        },
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response_2.status_code == 200
+
+    inventory_field_file.refresh_from_db()
+
+    assert inventory_field_file.text_value == "second.txt"
+    assert inventory_field_file.file_value == base64.b64encode(content_2).decode()

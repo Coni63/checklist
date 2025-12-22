@@ -22,6 +22,7 @@ class DynamicInventoryForm(forms.Form):
 
             existing_value = inst_field.get_value()
 
+            # hide fields if it's secret for non admin roles
             hide_value = (
                 inst_field.field_template
                 and getattr(inst_field.field_template, "is_secret", False)

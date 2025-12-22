@@ -5,6 +5,7 @@
 
 # V5
 Attach inventory to checklist steps
+Delete attachment in checklist
 
 # To scope:
 Allow to manage templates on the UI -- Maybe requires tenants
@@ -15,4 +16,3 @@ Review SQL, Caching, optimisations
 Setup CPS self & nonce
 
 # BUG
-Cannot reupload document over document in inventory

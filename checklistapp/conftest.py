@@ -124,3 +124,15 @@ def inventory_field_number(project_inventory):
         field_type="number",
         number_value=42,
     )
+
+
+@pytest.fixture
+def inventory_field_file(project_inventory):
+    return InventoryField.objects.create(
+        inventory=project_inventory,
+        group_name="General",
+        group_order=1,
+        field_name="Test Number Field",
+        field_order=1,
+        field_type="file",
+    )

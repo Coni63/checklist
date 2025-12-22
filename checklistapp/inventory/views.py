@@ -281,12 +281,31 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             if "edit" not in context["roles"]:
                 raise PermissionError("You are not allowed to edit fields")
 
+            # print("DATA: ", request.POST, request.FILES)
+            # DATA:
+            # <QueryDict: {
+            #     'csrfmiddlewaretoken': ['Fd5PDL8LPQy3LdL4FJI4jDjKafC52fPgVyilb4ChbUFajo8UZmWj8VZgV2HfDvRp'],
+            #     'inventory_id': ['12'],
+            #     'field_47': ['example'],
+            #     'field_48': ['42'],
+            #     'field_49': ['http://localhost:8000/projects/1/inventory/12/'],
+            #     'field_51': ['2025-12-12T00:00'],
+            #     'field_52': ['password'],
+            #     'field_53': ['password2']
+            # }>
+            # <MultiValueDict: {
+            #     'field_50': [<InMemoryUploadedFile: Capture2.PNG (image/png)>]
+            # }>
+
             inventory_id = request.POST.get("inventory_id")
+            if not inventory_id:
+                raise InvalidParameterError("You need to provide an inventory ID in the data.")
             inventory = InventoryService.get_inventory(context["project_id"], inventory_id, prefetch_related=["fields"])
 
             form = DynamicInventoryForm(inventory, context, request.POST, request.FILES)
             if form.is_valid():
                 form.save(is_admin="admin" in context["roles"])
+                messages.success(request, "Form saved successfully !")
 
                 if request.htmx:
                     # return freshly rendered partial
@@ -294,6 +313,10 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
                     context["groups"] = InventoryDetail._group_fields_by_group(context["form"])
                     return render(request, "inventory/partials/inventory_form.html", context)
                 return redirect(request.path)
+            else:
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f"{field}: {error}")
 
             context["form"] = form
             context["groups"] = InventoryDetail._group_fields_by_group(form)
