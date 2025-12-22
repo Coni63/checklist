@@ -1,4 +1,3 @@
-
 from core.exceptions import RecordNotFoundError
 
 from .models import Project

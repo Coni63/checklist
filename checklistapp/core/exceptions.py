@@ -8,3 +8,7 @@ class RecordNotFoundError(CustomExceptionError):
 
 class InvalidParameterError(CustomExceptionError):
     pass
+
+
+class PermissionError(CustomExceptionError):
+    pass
