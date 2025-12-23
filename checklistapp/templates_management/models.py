@@ -2,9 +2,9 @@ from django.db import models
 
 
 class StepTemplate(models.Model):
-    name = models.CharField(max_length=200)
+    title = models.CharField(max_length=200)
     icon = models.CharField(max_length=10)
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True, null=True)
     default_order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -16,7 +16,7 @@ class StepTemplate(models.Model):
         verbose_name_plural = "Step Templates"
 
     def __str__(self):
-        return f"{self.icon} {self.name}"
+        return f"{self.icon} {self.title}"
 
 
 class TaskTemplate(models.Model):
@@ -41,7 +41,7 @@ class TaskTemplate(models.Model):
 
 
 class InventoryTemplate(models.Model):
-    name = models.CharField(max_length=200)
+    title = models.CharField(max_length=200)
     icon = models.CharField(max_length=10)
     description = models.TextField(blank=True, null=True)
     default_order = models.IntegerField(default=0)
@@ -55,7 +55,7 @@ class InventoryTemplate(models.Model):
         ordering = ["default_order"]
 
     def __str__(self):
-        return self.name
+        return self.title
 
 
 class TemplateField(models.Model):

@@ -1,10 +1,18 @@
-V3 (optimisation - industrialisation)
-Use ProjectService when possible
-Review SQL, Cachcing, optimisations
-Setup CPS self & nonce
-align field name and size
-github actions tests
+# V3 (optimisation - industrialisation)
 
-To scope:
+# V4 Diagram
+
+
+# V5
+Attach inventory to checklist steps
+Delete attachment in checklist
+
+# To scope:
 Allow to manage templates on the UI -- Maybe requires tenants
 Multiple settings.py
+
+# Blocked (branch)
+Review SQL, Caching, optimisations
+Setup CPS self & nonce
+
+# BUG

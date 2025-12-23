@@ -10,7 +10,7 @@ from checklist.models import ProjectStep, ProjectTask, TaskComment
 def step_template(db):
     """Fixture for a step template"""
     return StepTemplate.objects.create(
-        name="Test Step Template", description="Test description", icon="📝", default_order=1, is_active=True
+        title="Test Step Template", description="Test description", icon="📝", default_order=1, is_active=True
     )
 
 
@@ -143,7 +143,7 @@ def test_add_project_step_success(client, admin_user, project, admin_permission,
 
     # Check step was created
     step = ProjectStep.objects.get(project=project, step_template=step_template)
-    assert step.title == step_template.name
+    assert step.title == step_template.title
     assert step.icon == step_template.icon
 
     # Check tasks were created from template
@@ -499,7 +499,7 @@ def test_task_comment_list_excludes_deleted(client, user, project, project_step,
     """Test that deleted comments are excluded from list"""
     UserProjectPermissions.objects.create(user=user, project=project, can_view=True)
 
-    comment1 = TaskComment.objects.create(project_task=project_task, user=user, comment_text="Active comment")
+    _ = TaskComment.objects.create(project_task=project_task, user=user, comment_text="Active comment")
     comment2 = TaskComment.objects.create(project_task=project_task, user=user, comment_text="Deleted comment")
     comment2.soft_delete()
 

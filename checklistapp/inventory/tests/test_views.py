@@ -1,6 +1,8 @@
 import base64
 
 import pytest
+from accounts.models import UserProjectPermissions
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from inventory.models import InventoryField, ProjectInventory
@@ -61,7 +63,7 @@ def test_add_inventory_uses_template_name_when_no_override(client, admin_user, a
     assert response.status_code == 200
 
     new_inventory = ProjectInventory.objects.latest("created_at")
-    assert new_inventory.title == inventory_template.name
+    assert new_inventory.title == inventory_template.title
 
 
 @pytest.mark.django_db
@@ -269,14 +271,12 @@ def test_inventory_detail_post_requires_edit(client, user, permission, project, 
     # User has view permission but not edit, so the field should not be updated
     assert response.status_code == 200
     inventory_field_text.refresh_from_db()
-    assert inventory_field_text.text_value == "Updated Value"
+    assert inventory_field_text.text_value == "Test Value"
 
 
 @pytest.mark.django_db
 def test_inventory_detail_post_with_edit_permission(client, user, project, project_inventory, inventory_field_text):
     # Give user edit permission
-    from accounts.models import UserProjectPermissions
-
     UserProjectPermissions.objects.create(
         user=user,
         project=project,
@@ -435,3 +435,72 @@ def test_inventory_page_without_htmx_shows_full_page(client, user, permission, p
     assert "project" in response.context
     assert "inventories" in response.context
     assert response.context["project"] == project
+
+
+@pytest.mark.django_db
+def test_upload_document_override_previous(client, user, project, project_inventory, inventory_field_file):
+    """Test que le re-upload d'un fichier remplace bien le précédent."""
+
+    # Give user edit permission
+    UserProjectPermissions.objects.create(
+        user=user,
+        project=project,
+        can_view=True,
+        can_edit=True,
+    )
+    client.login(username=user.username, password="password")
+
+    url = reverse(
+        "projects:inventory:inventory_detail",
+        kwargs={
+            "project_id": project.id,
+            "inventory_id": project_inventory.id,
+        },
+    )
+
+    # ---- 1️⃣ Premier upload ----
+    content_1 = b"first file content"
+    file_1 = SimpleUploadedFile(
+        "first.txt",
+        content_1,
+        content_type="text/plain",
+    )
+
+    response_1 = client.post(
+        url,
+        {
+            "inventory_id": project_inventory.id,
+            f"field_{inventory_field_file.id}": file_1,
+        },
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response_1.status_code == 200
+
+    inventory_field_file.refresh_from_db()
+    assert inventory_field_file.text_value == "first.txt"
+    assert inventory_field_file.file_value == base64.b64encode(content_1).decode()
+
+    # ---- 2️⃣ Second upload (override attendu) ----
+    content_2 = b"second file content - this should replace the first"
+    file_2 = SimpleUploadedFile(
+        "second.txt",
+        content_2,
+        content_type="text/plain",
+    )
+
+    response_2 = client.post(
+        url,
+        {
+            "inventory_id": project_inventory.id,
+            f"field_{inventory_field_file.id}": file_2,
+        },
+        HTTP_HX_REQUEST="true",
+    )
+
+    assert response_2.status_code == 200
+
+    inventory_field_file.refresh_from_db()
+
+    assert inventory_field_file.text_value == "second.txt"
+    assert inventory_field_file.file_value == base64.b64encode(content_2).decode()

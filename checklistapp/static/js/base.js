@@ -43,6 +43,11 @@ function autoCloseAlerts() {
 document.addEventListener('DOMContentLoaded', function() {
     autoCloseAlerts();
     lucide.createIcons();
+
+    // htmx.logAll();
+    // document.body.addEventListener("htmx:oobErrorNoTarget", e => {
+    //     console.log("OOB FAIL →", e.detail.content.outerHTML);
+    // });
 });
 
 document.addEventListener('htmx:afterSwap', function(event) {

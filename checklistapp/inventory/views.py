@@ -2,16 +2,15 @@ import base64
 import logging
 
 from common.views import editable_header_view
+from core.exceptions import InvalidParameterError
 from core.mixins import (
     CommonContextMixin,
     ProjectAdminRequiredMixin,
     ProjectReadRequiredMixin,
 )
 from django.contrib import messages
-from django.db import transaction
-from django.db.models import Count, Max
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views import View
@@ -19,10 +18,11 @@ from django.views.generic import DetailView, ListView
 from django.views.generic.base import ContextMixin
 from django_htmx.http import reswap
 from projects.models import Project
-from templates_management.models import InventoryTemplate
+from projects.services import ProjectService
 
 from .forms import DynamicInventoryForm
-from .models import InventoryField, ProjectInventory
+from .models import ProjectInventory
+from .services import InventoryService
 
 logger = logging.getLogger(__name__)
 
@@ -36,58 +36,23 @@ class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
     """
 
     def post(self, request, project_id):
-        project = Project.objects.get(pk=project_id)
-        if not project:
-            messages.error(request, "Project not found.")
-            return reswap(HttpResponse(status=200), "none")
-
-        inventory_template_id = request.POST.get("inventory_template_id")
-        override_name = request.POST.get("override_name", "").strip()
-
         try:
-            inventory_template = InventoryTemplate.objects.get(id=inventory_template_id, is_active=True)
-            if not inventory_template:
-                messages.error(request, "Inventory not found.")
-                return reswap(HttpResponse(status=200), "none")
+            project = ProjectService.get(project_id)
 
-            # Determine inventory order and count
-            result = ProjectInventory.objects.filter(project=project).aggregate(max_order=Max("order"), total=Count("id"))
+            inventory_template_id = request.POST.get("inventory_template_id")
+            override_name = request.POST.get("override_name", "").strip()
 
-            current_max_order = result["max_order"] or 0
-            count_step = result["total"]
-
-            # Use override name or default template name
-            name = override_name if override_name else inventory_template.name
-
-            # Create the project inventory
-            inventory = ProjectInventory.objects.create(
-                project=project,
-                inventory_template=inventory_template,
-                title=name,
-                description=inventory_template.description,
-                icon=inventory_template.icon,
-                order=current_max_order + 1,
+            result = InventoryService.add_inventory_to_project(
+                project=project, template_id=inventory_template_id, custom_title=override_name
             )
 
-            # Create fields from template
-            field_templates = inventory_template.fields.filter(is_active=True).order_by("group_order", "field_order")
-            for field_template in field_templates:
-                InventoryField.objects.create(
-                    inventory=inventory,
-                    field_template=field_template,
-                    group_name=field_template.group_name,
-                    group_order=field_template.group_order,
-                    field_name=field_template.field_name,
-                    field_order=field_template.field_order,
-                    field_type=field_template.field_type,
-                )
+            inventory = result["inventory"]
+            count_step = result["count_step"]
 
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
                 "inventory/partials/project_inventory_form.html#counter_inventory",
-                {
-                    "count": count_step + 1,
-                },
+                {"count": count_step + 1, "oob": True},
             )
 
             # Return HTML fragment for the new step card
@@ -101,11 +66,13 @@ class AddProjectInventoryView(ProjectAdminRequiredMixin, View):
             response = HttpResponse(step_counter + step_content)
 
             # If it's the first step, change the hx-swap to replace the empty state div
-            return reswap(response, "innerHTML") if current_max_order == 0 else response
-
+            return reswap(response, "innerHTML") if count_step == 0 else response
         except Exception as e:
             logger.error(e)
-            messages.error(request, "Something went wrong when adding the inventory to the project.")
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when adding the inventory to the project.")
             return reswap(HttpResponse(status=200), "none")
 
 
@@ -116,49 +83,41 @@ class ReorderProjectInventoryView(ProjectAdminRequiredMixin, View):
     """
 
     def post(self, request, project_id):
-        project = get_object_or_404(Project, pk=project_id)
+        try:
+            project = ProjectService.get(project_id)
+            try:
+                order = request.POST.getlist("inventory_order", [])
+                order = [int(s) for s in order]  # Ensure int
+            except Exception:
+                raise InvalidParameterError("Invalid 'order' input provided")
 
-        order = request.POST.getlist("inventory_order", [])
-        order = [int(s) for s in order]  # Ensure int
+            InventoryService.reorder_inventory(project, order)
 
-        with transaction.atomic():
-            # Fetch all steps in one query
-            steps = ProjectInventory.objects.filter(project=project, pk__in=order).in_bulk(field_name="pk")
+            return HttpResponse("")
 
-            # Phase 1 : temporary order to avoid unique collision
-            for tmp_idx, step in enumerate(steps.values(), start=10000):
-                step.order = tmp_idx
-
-            ProjectInventory.objects.bulk_update(steps.values(), ["order"])
-
-            # Phase 2 : assign final order
-            for index, step_id in enumerate(order, start=1):
-                steps[step_id].order = index
-
-            ProjectInventory.objects.bulk_update(steps.values(), ["order"])
-
-        return HttpResponse("")
+        except Exception as e:
+            logger.error(e)
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when reordering the inventory.")
+            return reswap(HttpResponse(status=200), "none")
 
 
 class RemoveProjectInventoryView(ProjectAdminRequiredMixin, View):
     """Handle removing a step from a project via HTMX"""
 
     def delete(self, request, project_id, inventory_id):
-        project = get_object_or_404(Project, pk=project_id)
-        project_step = get_object_or_404(ProjectInventory, id=inventory_id, project=project)
-
         try:
-            project_step.delete()
+            InventoryService.delete_inventory(project_id, inventory_id)
 
             # Check if there are any steps left
-            remaining_steps = ProjectInventory.objects.filter(project=project).count()
+            remaining_steps = InventoryService.get_inventory(project_id).count()
 
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
                 "inventory/partials/project_inventory_form.html#counter_inventory",
-                {
-                    "count": remaining_steps,
-                },
+                {"count": remaining_steps, "oob": True},
             )
 
             messages.success(request, "Step deleted successfully.")
@@ -172,7 +131,10 @@ class RemoveProjectInventoryView(ProjectAdminRequiredMixin, View):
 
         except Exception as e:
             logger.error(e)
-            messages.error(request, "Something went wrong when deleting the step from the project.")
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when removing the inventory from the project.")
             return reswap(HttpResponse(status=200), "none")
 
 
@@ -190,13 +152,8 @@ class ListProjectInventoryView(ProjectAdminRequiredMixin, CommonContextMixin, De
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context["inventory_templates"] = InventoryTemplate.objects.filter(is_active=True).order_by("default_order")
-        context["project_inventory"] = (
-            ProjectInventory.objects.filter(project=self.object)  # i need the project Id that is in url
-            .select_related("inventory_template")
-            .prefetch_related("fields")
-            .order_by("order")
-        )
+        context["inventory_templates"] = InventoryService.get_template(load_fields=True)
+        context["project_inventory"] = InventoryService.get_inventory_for_project(self.object)
         return context
 
 
@@ -206,42 +163,36 @@ Detail page
 
 
 def download_inventory_file(request, project_id, inventory_id, field_id):
-    # 1. Récupérer l'instance du champ
-    inventory_field = get_object_or_404(
-        InventoryField,
-        id=field_id,
-        # Vous pouvez ajouter ici une vérification de l'utilisateur/permissions
-    )
-
-    # Sécurité : vérifier que c'est bien un champ de type 'file'
-    if inventory_field.field_type != "file":
-        return HttpResponse("Type de champ non supporté pour le téléchargement.", status=400)
-
-    # Récupérer la chaîne B64 stockée
-    b64_data = inventory_field.file_value
-    filename = inventory_field.text_value or "attachement.txt"
-
-    if not b64_data:
-        return HttpResponse("Le fichier est vide ou n'a pas été défini.", status=404)
-
     try:
-        # 2. Décoder la chaîne Base64 en données binaires
-        file_content = base64.b64decode(b64_data)
+        # 1. Récupérer l'instance du champ
+        inventory_field = InventoryService.get_fields(project_id, inventory_id, field_id)
 
-    except (TypeError, ValueError):
-        # Cela peut arriver si la B64 est mal formée (corruption de données)
-        return HttpResponse("Erreur lors du décodage Base64.", status=500)
+        # Sécurité : vérifier que c'est bien un champ de type 'file'
+        if inventory_field.field_type != "file":
+            return HttpResponse("Filetype not supported", status=400)
 
-    # 3. Préparer la réponse HTTP pour le téléchargement
-    # Si vous avez stocké l'extension ou le nom original, utilisez-le ici.
+        # Récupérer la chaîne B64 stockée
+        b64_data = inventory_field.file_value
+        filename = inventory_field.text_value or "attachement.txt"
 
-    # B. Créer la réponse
-    response = HttpResponse(file_content, content_type="application/octet-stream")
+        if not b64_data:
+            return HttpResponse("File is empty.", status=404)
 
-    # C. Définir l'en-tête Content-Disposition pour forcer le téléchargement
-    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        try:
+            file_content = base64.b64decode(b64_data)
+        except (TypeError, ValueError):
+            return HttpResponse("File is corrupted.", status=500)
 
-    return response
+        response = HttpResponse(file_content, content_type="application/octet-stream")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+        return response
+    except Exception as e:
+        logger.error(e)
+        if hasattr(e, "custom"):
+            return HttpResponse(str(e), status=500)
+        else:
+            return HttpResponse("Something went wrong when downloading the file.", status=500)
 
 
 class InventoryList(ProjectReadRequiredMixin, CommonContextMixin, ListView):
@@ -254,8 +205,7 @@ class InventoryList(ProjectReadRequiredMixin, CommonContextMixin, ListView):
         # Retrieve the project_id from the URL keyword arguments
         project_id = self.kwargs.get(self.pk_url_kwarg)
 
-        # Filter ProjectInventory objects where the 'project' field matches the ID
-        return ProjectInventory.objects.filter(project_id=project_id)
+        return InventoryService.get_inventory(project_id)
 
 
 class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin, View):
@@ -267,43 +217,46 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
     template_name = "inventory/partials/inventory_right_side.html"
 
     def get(self, request, *args, **kwargs):
-        context = self.get_context_data()
+        try:
+            context = self.get_context_data()
 
-        if not request.htmx:
-            project = get_object_or_404(
-                Project,
-                id=context["project_id"],
+            if not request.htmx:
+                project = ProjectService.get(context["project_id"], prefetch_related=["inventories"])
+
+                context["project"] = project
+                context["inventories"] = project.inventories.all()
+                self.template_name = "inventory/inventory_detail.html"
+                return render(request, self.template_name, context)
+
+            inventory_id = context.get("inventory_id")
+            if not inventory_id:
+                return render(request, self.template_name, context)
+
+            inventory = InventoryService.get_inventory(context["project_id"], inventory_id, prefetch_related=["fields"])
+            context["tasks"] = inventory.fields.all()
+            context["inventory"] = inventory
+
+            form = DynamicInventoryForm(inventory, context)
+            context["form"] = form
+            context["groups"] = InventoryDetail._group_fields_by_group(form)
+
+            context["edit_endpoint_base"] = reverse(
+                "projects:inventory:inventory_header_edit",
+                kwargs={"project_id": context["project_id"], "inventory_id": context["inventory_id"]},
             )
-            context["project"] = project
-            context["inventories"] = project.inventories.all()
-            self.template_name = "inventory/inventory_detail.html"
+            context["can_edit"] = "edit" in context["roles"]
+
             return render(request, self.template_name, context)
-
-        inventory_id = context.get("inventory_id")
-        if not inventory_id:
+        except Exception as e:
+            logger.error(e)
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when listing the inventory.")
             return render(request, self.template_name, context)
-
-        inventory = get_object_or_404(
-            ProjectInventory.objects.prefetch_related("fields"),
-            id=inventory_id,
-        )
-        context["tasks"] = inventory.fields.all()
-        context["inventory"] = inventory
-
-        form = DynamicInventoryForm(inventory, context)
-        context["form"] = form
-        context["groups"] = InventoryDetail.group_fields_by_group(form)
-
-        context["edit_endpoint_base"] = reverse(
-            "projects:inventory:inventory_header_edit",
-            kwargs={"project_id": context["project_id"], "inventory_id": context["inventory_id"]},
-        )
-        context["can_edit"] = "edit" in context["roles"]
-
-        return render(request, self.template_name, context)
 
     @staticmethod
-    def group_fields_by_group(form):
+    def _group_fields_by_group(form):
         groups = {}
 
         # Copy metadata for sorting
@@ -322,36 +275,66 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
         return sorted_groups
 
     def post(self, request, *args, **kwargs):
-        inventory_id = request.POST.get("inventory_id")
+        try:
+            context = self.get_context_data()
 
-        inventory = get_object_or_404(
-            ProjectInventory.objects.prefetch_related("fields"),
-            id=inventory_id,
-        )
+            if "edit" not in context["roles"]:
+                raise PermissionError("You are not allowed to edit fields")
 
-        context = self.get_context_data()
+            # print("DATA: ", request.POST, request.FILES)
+            # DATA:
+            # <QueryDict: {
+            #     'csrfmiddlewaretoken': ['Fd5PDL8LPQy3LdL4FJI4jDjKafC52fPgVyilb4ChbUFajo8UZmWj8VZgV2HfDvRp'],
+            #     'inventory_id': ['12'],
+            #     'field_47': ['example'],
+            #     'field_48': ['42'],
+            #     'field_49': ['http://localhost:8000/projects/1/inventory/12/'],
+            #     'field_51': ['2025-12-12T00:00'],
+            #     'field_52': ['password'],
+            #     'field_53': ['password2']
+            # }>
+            # <MultiValueDict: {
+            #     'field_50': [<InMemoryUploadedFile: Capture2.PNG (image/png)>]
+            # }>
 
-        is_admin = "admin" in context["roles"]
+            inventory_id = request.POST.get("inventory_id")
+            if not inventory_id:
+                raise InvalidParameterError("You need to provide an inventory ID in the data.")
+            inventory = InventoryService.get_inventory(context["project_id"], inventory_id, prefetch_related=["fields"])
 
-        form = DynamicInventoryForm(inventory, context, request.POST, request.FILES)
+            form = DynamicInventoryForm(inventory, context, request.POST, request.FILES)
+            if form.is_valid():
+                form.save(is_admin="admin" in context["roles"])
+                messages.success(request, "Form saved successfully !")
 
-        if form.is_valid():
-            form.save(is_admin=is_admin)
+                if request.htmx:
+                    # return freshly rendered partial
+                    context["form"] = DynamicInventoryForm(inventory, context)
+                    context["groups"] = InventoryDetail._group_fields_by_group(context["form"])
+                    return render(request, "inventory/partials/inventory_form.html", context)
+                return redirect(request.path)
+            else:
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f"{field}: {error}")
 
-            if request.headers.get("HX-Request"):
-                # return freshly rendered partial
-                context["form"] = DynamicInventoryForm(inventory, context)
-                context["groups"] = InventoryDetail.group_fields_by_group(context["form"])
+            context["form"] = form
+            context["groups"] = InventoryDetail._group_fields_by_group(form)
+
+            if request.htmx:
                 return render(request, "inventory/partials/inventory_form.html", context)
+
             return redirect(request.path)
-
-        context["form"] = form
-        context["groups"] = InventoryDetail.group_fields_by_group(form)
-
-        if request.headers.get("HX-Request"):
-            return render(request, "inventory/partials/inventory_form.html", context)
-
-        return redirect(request.path)
+        except Exception as e:
+            logger.error(e)
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when listing the inventory.")
+            if request.htmx:
+                return reswap(HttpResponse(status=200), "none")
+            else:
+                return redirect(request.path)
 
 
 class InventoryHeaderEditView(
@@ -367,22 +350,27 @@ class InventoryHeaderEditView(
         return self._inner(request, *args, **kwargs)
 
     def _inner(self, request, *args, **kwargs):
-        context = self.get_context_data()
+        try:
+            context = self.get_context_data()
 
-        project_id = context["project_id"]
-        inventory_id = context["inventory_id"]
-        can_edit = "edit" in context["roles"]
+            project_id = context["project_id"]
+            inventory_id = context["inventory_id"]
+            can_edit = "edit" in context["roles"]
 
-        edit_endpoint_base = reverse(
-            "projects:inventory:inventory_header_edit", kwargs={"project_id": project_id, "inventory_id": inventory_id}
-        )
+            edit_endpoint_base = reverse(
+                "projects:inventory:inventory_header_edit", kwargs={"project_id": project_id, "inventory_id": inventory_id}
+            )
 
-        return editable_header_view(
-            request=request,
-            model_class=ProjectInventory,
-            template_path="common/partials/editable_header.html",
-            can_edit=can_edit,
-            extra_context={"project_id": project_id, "inventory_id": inventory_id},
-            filter_kwargs={"project__id": project_id, "pk": inventory_id},
-            edit_endpoint_base=edit_endpoint_base,
-        )
+            return editable_header_view(
+                request=request,
+                model_class=ProjectInventory,
+                template_path="common/partials/editable_header.html",
+                can_edit=can_edit,
+                extra_context={"project_id": project_id, "inventory_id": inventory_id},
+                filter_kwargs={"project__id": project_id, "pk": inventory_id},
+                edit_endpoint_base=edit_endpoint_base,
+            )
+        except Exception as e:
+            logger.error(e)
+            messages.error(request, "Something went wrong.")
+            return redirect(request.path)

@@ -52,7 +52,7 @@ def admin_permission(db, admin_user, project):
 @pytest.fixture
 def inventory_template(db):
     return InventoryTemplate.objects.create(
-        name="Test Inventory Template",
+        title="Test Inventory Template",
         icon="📦",
         description="Test description",
         default_order=1,
@@ -123,4 +123,16 @@ def inventory_field_number(project_inventory):
         field_order=2,
         field_type="number",
         number_value=42,
+    )
+
+
+@pytest.fixture
+def inventory_field_file(project_inventory):
+    return InventoryField.objects.create(
+        inventory=project_inventory,
+        group_name="General",
+        group_order=1,
+        field_name="Test Number Field",
+        field_order=1,
+        field_type="file",
     )

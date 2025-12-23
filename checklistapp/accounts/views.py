@@ -1,19 +1,22 @@
+import logging
+
+from core.exceptions import InvalidParameterError, RecordNotFoundError
 from core.mixins import ProjectAdminRequiredMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.views.generic.base import View
 from django_htmx.http import reswap
-from projects.models import Project
-
-from accounts.models import UserProjectPermissions
+from projects.services import ProjectService
 
 from .forms import BasicRegisterForm, UserEditForm
+from .services import AccountService
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 def login_view(request):
@@ -78,13 +81,11 @@ class ListUserForm(ProjectAdminRequiredMixin, View):
     template_name = "accounts/user_list.html"
 
     def get(self, request, project_id, *args, **kwargs):
-        current_permissions = (
-            UserProjectPermissions.objects.filter(project_id=project_id).select_related("user").order_by("user__username")
-        )
+        current_permissions = AccountService.get_all_users_having_permissions(project_id)
 
         users_with_permissions = current_permissions.values_list("user_id", flat=True)
-        all_users_without_permissions = User.objects.all().exclude(id__in=users_with_permissions)
-        project = get_object_or_404(Project, pk=project_id)
+        all_users_without_permissions = AccountService.get_users().exclude(id__in=users_with_permissions)
+        project = ProjectService.get(project_id)
 
         context = {
             "project": project,
@@ -104,69 +105,40 @@ class UpdateUserPermissionForm(ProjectAdminRequiredMixin, View):
     def post(self, request, project_id, permission_id):
         # 1. Fetch existing permission if exist
         try:
-            permission = UserProjectPermissions.objects.get(pk=permission_id, project__id=project_id)
-        except UserProjectPermissions.DoesNotExist:
-            # If not exist, don't change something
-            messages.error(request, "The permission does not exist.")
+            field_name = request.POST.get("field_name")
+            index = request.POST.get("index", "#")
+
+            permission = AccountService.update_permission(project_id, permission_id, field_name, request.user)
+
+            return render(
+                request, "accounts/partials/permission_table.html#user_row", {"index": index, "permission": permission}
+            )
+
+        except Exception as e:
+            logger.error(e)
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when updating user permissions.")
             return reswap(HttpResponse(status=200), "none")
-
-        if permission.user == request.user:
-            messages.error(request, "You cannot delete yourself")
-            return reswap(HttpResponse(status=200), "none")
-
-        # 2. Get data
-        field_name = request.POST.get("field_name")
-        index = request.POST.get("index", "#")
-
-        if field_name == "can_view":
-            if permission.can_view:  # If we remove the read access, the user should lose all access
-                permission.can_view = False
-                permission.can_edit = False
-                permission.is_admin = False
-            else:
-                permission.can_view = True
-                permission.can_edit = False
-                permission.is_admin = False
-
-        elif field_name == "can_edit":  # If we remove the edit access, the user should lose admin access
-            if permission.can_edit:
-                permission.can_edit = False
-                permission.is_admin = False
-            else:
-                permission.can_view = True
-                permission.can_edit = True
-                permission.is_admin = False
-
-        elif field_name == "is_admin":
-            if permission.is_admin:
-                permission.is_admin = False
-            else:
-                permission.can_view = True
-                permission.can_edit = True
-                permission.is_admin = True
-
-        # 3. Update
-        permission.save()
-
-        return render(request, "accounts/partials/permission_table.html#user_row", {"index": index, "permission": permission})
 
     def delete(self, request, project_id, permission_id):
-        # 1. Fetch existing permission if exist
         try:
-            permission = UserProjectPermissions.objects.get(pk=permission_id, project__id=project_id)
-        except UserProjectPermissions.DoesNotExist:
-            # If not exist, don't change something
-            messages.error(request, "The permission does not exist.")
+            permission = AccountService.get_permission(project_id, permission_id)
+
+            if permission.user == request.user:
+                raise PermissionError("You cannot delete yourself")
+
+            permission.delete()
+
+            return HttpResponse(status=200)
+        except Exception as e:
+            logger.error(e)
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when deleting user permissions.")
             return reswap(HttpResponse(status=200), "none")
-
-        if permission.user == request.user:
-            messages.error(request, "You cannot delete yourself")
-            return reswap(HttpResponse(status=200), "none")
-
-        # 2. Delete the permission
-        permission.delete()
-
-        return HttpResponse(status=200)
 
 
 class AddUserPermissionForm(ProjectAdminRequiredMixin, View):
@@ -175,37 +147,33 @@ class AddUserPermissionForm(ProjectAdminRequiredMixin, View):
     """
 
     def post(self, request, project_id):
-        # 1. Fetch existing project if exist
-        project = Project.objects.get(pk=project_id)
-        if not project:
-            messages.error(request, "Project not found.")
+        try:
+            # 1. Fetch existing project if exist
+            project = ProjectService.get(project_id)
+
+            user_id = request.POST.get("user_id")
+            if not user_id:
+                raise InvalidParameterError("Please select a user.")
+
+            user_to_add = AccountService.get_user(user_id)
+
+            # 3. Create the permission with no access, user will adjust afterward
+            permissions = AccountService.get_all_permissions_for_project(project)
+            index = permissions.count() + 1
+
+            if permissions.filter(user=user_to_add).exists():
+                raise RecordNotFoundError(f"Permission for {user_to_add.username} already exists.")
+
+            permission = AccountService.create_permission(project=project, user=user_to_add)
+
+            return render(
+                request, "accounts/partials/permission_table.html#user_row", {"index": index, "permission": permission}
+            )
+
+        except Exception as e:
+            logger.error(e)
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when deleting user permissions.")
             return reswap(HttpResponse(status=200), "none")
-
-        # 2. Fetch user
-        user_id = request.POST.get("user_id")
-        if not user_id:
-            messages.error(request, "Please select a user.")
-            return reswap(HttpResponse(status=200), "none")
-
-        user_to_add = User.objects.get(pk=user_id)
-        if not user_to_add:
-            messages.error(request, "User not found.")
-            return reswap(HttpResponse(status=200), "none")
-
-        # 3. Create the permission with no access, user will adjust afterward
-        qs = UserProjectPermissions.objects.filter(project=project)
-        index = qs.count() + 1
-
-        if qs.filter(user=user_to_add).exists():
-            messages.error(request, f"Permission for {user_to_add.username} already exists.")
-            return reswap(HttpResponse(status=200), "none")
-
-        permission = UserProjectPermissions.objects.create(
-            project=project,
-            user=user_to_add,
-            can_view=False,
-            can_edit=False,
-            is_admin=False,
-        )
-
-        return render(request, "accounts/partials/permission_table.html#user_row", {"index": index, "permission": permission})

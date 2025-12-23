@@ -23,6 +23,8 @@ echo.
 echo requirements.txt created
 echo.
 
+pause
+
 :: --- Copy file but currently django tailwind does it ---
 exit 0
 

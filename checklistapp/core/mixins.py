@@ -1,4 +1,4 @@
-from accounts.models import UserProjectPermissions
+from accounts.services import AccountService
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 
@@ -18,7 +18,7 @@ class AbstractProjectAccessMixin(LoginRequiredMixin):
             raise AttributeError("Le mixin ProjectAccessMixin requires a 'project_id' or 'pk' in URL parameters")
 
         # 1. Fetch permission
-        user_permission = UserProjectPermissions.objects.get_user_permissions(request.user, project_id)
+        user_permission = AccountService.get_permission_for_user_project(request.user, project_id)
 
         if not user_permission:
             raise PermissionDenied("Access denied.")
@@ -69,7 +69,7 @@ class OwnerOrAdminMixin(LoginRequiredMixin):
         if not object_id or not project_id:
             raise ImproperlyConfigured("Le mixin nécessite 'pk' (ID de l'objet) ET 'project_id' dans les kwargs de l'URL.")
 
-        # Check forst if it's the author
+        # Check first if it's the author
         try:
             # 2. Fetch the objects
             current_object = self.object_model.objects.get(pk=object_id)
@@ -82,7 +82,7 @@ class OwnerOrAdminMixin(LoginRequiredMixin):
 
         # 4. Check user permissions if it's not the author
         if not has_permission:
-            user_permission = UserProjectPermissions.objects.get_user_permissions(request.user, project_id)
+            user_permission = AccountService.get_permission_for_user_project(request.user, project_id)
 
             if user_permission:
                 has_permission = user_permission.is_admin
@@ -117,14 +117,6 @@ class CommonContextMixin:
         if not user.is_authenticated or not project_id:
             return []
 
-        permissions = UserProjectPermissions.objects.get_user_permissions(user=user, project_id=project_id)
+        permission = AccountService.get_permission_for_user_project(user=user, project_id=project_id)
 
-        if permissions:
-            if permissions.is_admin:
-                return ["admin", "edit", "read"]
-            elif permissions.can_edit:
-                return ["edit", "read"]
-            elif permissions.can_view:
-                return ["read"]
-
-        return []
+        return AccountService.permission_to_list(permission)

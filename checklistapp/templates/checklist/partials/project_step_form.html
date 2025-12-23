@@ -1,5 +1,5 @@
 {% partialdef counter_step %}
-<div class="badge badge-primary badge-lg" id="counter-step" hx-swap-oob="true">
+<div class="badge badge-primary badge-lg" id="counter-step" {% if oob %}hx-swap-oob="true"{% endif %}>
   {{ count }} step{{ count|pluralize }}
 </div>
 {% endpartialdef %}
@@ -68,9 +68,7 @@
 
 {% partialdef step_empty %}
 <div
-  class="flex flex-col items-center justify-center py-16 text-center"
-  id="emptyState"
->
+  class="flex flex-col items-center justify-center py-16 text-center">
   <svg
     xmlns="http://www.w3.org/2000/svg"
     class="h-16 w-16 text-base-content/20 mb-4"
@@ -133,7 +131,7 @@
                     name="override_name"
                     class="input input-sm input-bordered w-full font-semibold"
                     placeholder="Step name..."
-                    value="{{ template.name }}"
+                    value="{{ template.title }}"
                   />
                   {% with count=template.tasks.count %}
                     {% partial task_counter %}
@@ -166,7 +164,7 @@
             <i data-lucide="clipboard-list"></i>
             Project Steps
           </h2>
-          {% with count=project_steps|length %}
+          {% with count=project_steps|length oob=false %}
             {% partial counter_step %}
           {% endwith %}
         </div>
@@ -175,10 +173,7 @@
           {% for step in project_steps %} 
             {% partial step_row %}
           {% empty %}
-          <div
-            class="flex flex-col items-center justify-center py-16 text-center"
-            id="emptyState"
-          >
+          <div class="flex flex-col items-center justify-center py-16 text-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               class="h-16 w-16 text-base-content/20 mb-4"
@@ -207,6 +202,7 @@
   </div>
 </div>
 
+{% block extra_js %}
 <script>
   // Drag and Drop functionality - HTMX compatible
   (function () {
@@ -264,13 +260,6 @@
             swap: "none",
           }
         );
-
-        // OR using a hidden form with hx-trigger:
-        // const orderInput = document.getElementById('step-order-input');
-        // if (orderInput) {
-        //     orderInput.value = JSON.stringify(stepIds);
-        //     htmx.trigger(orderInput.closest('form'), 'submit');
-        // }
       }
 
       // Handle drag start (using event delegation)
@@ -348,3 +337,4 @@
     });
   })();
 </script>
+{% endblock %}

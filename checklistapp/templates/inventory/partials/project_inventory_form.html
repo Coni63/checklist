@@ -2,7 +2,7 @@
 <div
   class="badge badge-primary badge-lg"
   id="counter-inventory"
-  hx-swap-oob="true"
+  {% if oob %}hx-swap-oob="true"{% endif %}
 >
   {{ count }} item{{ count|pluralize }}
 </div>
@@ -72,9 +72,7 @@
 
 {% partialdef inventory_empty %}
 <div
-  class="flex flex-col items-center justify-center py-16 text-center"
-  id="emptyState"
->
+  class="flex flex-col items-center justify-center py-16 text-center">
   <svg
     xmlns="http://www.w3.org/2000/svg"
     class="h-16 w-16 text-base-content/20 mb-4"
@@ -135,7 +133,7 @@
                     name="override_name"
                     class="input input-sm input-bordered w-full font-semibold"
                     placeholder="Step name..."
-                    value="{{ template.name }}"
+                    value="{{ template.title }}"
                   />
                   {% with count=template.fields.count %}
                     {% partial fields_counter %}
@@ -168,7 +166,7 @@
             <i data-lucide="clipboard-list"></i>
             Project Inventory
           </h2>
-          {% with count=project_inventory|length %} 
+          {% with count=project_inventory|length oob=false %} 
             {% partial counter_inventory %}
           {% endwith %}
         </div>
@@ -178,9 +176,7 @@
             {% partial inventory_row %}
           {% empty %}
           <div
-            class="flex flex-col items-center justify-center py-16 text-center"
-            id="emptyState"
-          >
+            class="flex flex-col items-center justify-center py-16 text-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               class="h-16 w-16 text-base-content/20 mb-4"
@@ -209,6 +205,7 @@
   </div>
 </div>
 
+{% block extra_js %}
 <script>
   // Drag and Drop functionality - HTMX compatible
   (function () {
@@ -252,7 +249,7 @@
 
       // Update step order (placeholder for htmx call)
       function updateInventoryOrder() {
-        const inventories = inventoryList.querySelectorAll(
+        const inventories = inventoriesList.querySelectorAll(
           "[data-inventory-id]"
         );
         const inventoryIds = Array.from(inventories).map(
@@ -266,7 +263,7 @@
           "POST",
           "{% url 'projects:inventory:inventory_reorder' project_id=project.pk %}",
           {
-            values: { inventory_order: stepinventoryIdsIds },
+            values: { inventory_order: inventoryIds },
             swap: "none",
           }
         );
@@ -313,7 +310,7 @@
           }
 
           // Send new order to server
-          updateStepOrder();
+          updateInventoryOrder();
 
           draggedElement = null;
           placeholder = null;
@@ -332,7 +329,7 @@
     // Initialize on page load
     initDragAndDrop();
 
-    // Re-initialize after htmx swaps content into #projectStepsList
+    // Re-initialize after htmx swaps content into #projectInventoryList
     document.body.addEventListener("htmx:afterSwap", (event) => {
       // Only reinitialize if the swap affected our steps list
       if (
@@ -347,3 +344,4 @@
     });
   })();
 </script>
+{% endblock %}

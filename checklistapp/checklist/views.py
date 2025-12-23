@@ -1,7 +1,8 @@
 import logging
 
-from accounts.models import UserProjectPermissions
+from accounts.services import AccountService
 from common.views import editable_header_view
+from core.exceptions import InvalidParameterError
 from core.mixins import (
     CommonContextMixin,
     OwnerOrAdminMixin,
@@ -10,10 +11,8 @@ from core.mixins import (
     ProjectReadRequiredMixin,
 )
 from django.contrib import messages
-from django.db import models, transaction
-from django.db.models import Count, Max
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views import View
@@ -27,9 +26,10 @@ from django.views.generic import (
 from django.views.generic.base import ContextMixin
 from django_htmx.http import reswap
 from projects.models import Project
-from templates_management.models import StepTemplate
+from projects.services import ProjectService
 
-from .models import ProjectStep, ProjectTask, TaskComment
+from .models import ProjectStep, TaskComment
+from .services import ChecklistService, CommentService, TaskService
 
 logger = logging.getLogger(__name__)
 
@@ -48,13 +48,8 @@ class ListProjectStepView(ProjectAdminRequiredMixin, CommonContextMixin, DetailV
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context["available_templates"] = StepTemplate.objects.filter(is_active=True).order_by("default_order")
-        context["project_steps"] = (
-            ProjectStep.objects.filter(project=self.object)
-            .select_related("step_template")
-            .prefetch_related("tasks")
-            .order_by("order")
-        )
+        context["available_templates"] = ChecklistService.get_template(load_tasks=True)
+        context["project_steps"] = ChecklistService.get_steps_for_project(self.object)
         return context
 
 
@@ -71,7 +66,7 @@ class ProjectStepDetailView(ProjectReadRequiredMixin, CommonContextMixin, Detail
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["steps"] = self.object.steps.prefetch_related("tasks")
+        context["steps"] = ChecklistService.get_steps_for_project(self.object)
         context["completion"] = self.object.get_completion_percentage()
 
         # Si un step_id est dans l'URL, on charge ce step
@@ -81,11 +76,7 @@ class ProjectStepDetailView(ProjectReadRequiredMixin, CommonContextMixin, Detail
                 "projects:checklist:step_header_edit", kwargs={"project_id": context["project_id"], "step_id": step_id}
             )
             context["can_edit"] = "edit" in context["roles"]
-            step = get_object_or_404(
-                ProjectStep.objects.prefetch_related("tasks"),
-                id=step_id,
-                project=self.object,
-            )
+            step = ChecklistService.get_step(self.object.id, step_id, prefetch_related=["tasks"])
             context["active_step"] = step
             context["active_step_id"] = step_id
             context["tasks"] = step.tasks.all()
@@ -110,82 +101,45 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
     """
 
     def post(self, request, project_id):
-        project = Project.objects.get(pk=project_id)
-        if not project:
-            messages.error(request, "Project not found.")
-            return reswap(HttpResponse(status=200), "none")
-
-        step_template_id = request.POST.get("step_template_id")
-        override_name = request.POST.get("override_name", "").strip()
-
         try:
-            step_template = StepTemplate.objects.get(id=step_template_id, is_active=True)
-            if not step_template:
-                messages.error(request, "Step not found.")
-                return reswap(HttpResponse(status=200), "none")
+            project = ProjectService.get(project_id)
 
-            # Determine step order and count
-            result = ProjectStep.objects.filter(project=project).aggregate(max_order=Max("order"), total=Count("id"))
+            step_template_id = request.POST.get("step_template_id")
+            override_name = request.POST.get("override_name", "").strip()
 
-            current_max_order = result["max_order"] or 0
-            count_step = result["total"]
-
-            # Use override name or default template name
-            step_title = override_name if override_name else step_template.name
-
-            # Create the project step
-            project_step = ProjectStep.objects.create(
-                project=project,
-                description=step_template.description,
-                step_template=step_template,
-                title=step_title,
-                icon=getattr(step_template, "icon", "📋"),
-                order=current_max_order + 1,
+            result = ChecklistService.add_step_to_project(
+                project=project, template_id=step_template_id, custom_title=override_name
             )
 
-            # Create tasks from template
-            task_templates = step_template.tasks.filter(is_active=True).order_by("order")
-            for j, task_template in enumerate(task_templates, start=1):
-                ProjectTask.objects.create(
-                    project_step=project_step,
-                    task_template=task_template,
-                    title=task_template.title,
-                    info_text=task_template.info_text,
-                    help_url=task_template.help_url,
-                    work_url=task_template.work_url,
-                    order=j,
-                )
-            messages.success(request, "Step added successfully.")
+            project_step = result["step"]
+            count_step = result["count_step"]
 
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
                 "checklist/partials/project_step_form.html#counter_step",
-                {
-                    "count": count_step + 1,
-                },
+                {"count": count_step + 1, "oob": True},
             )
 
             # If it's the first step, change the hx-swap to replace the empty state div
-            if current_max_order == 0:
-                step_content = render_to_string(
-                    "checklist/partials/project_step_form.html#step_row",
-                    {"step": project_step, "project": project},
-                    request=request,
-                )
-                response = HttpResponse(step_counter + step_content)
-                return reswap(response, "innerHTML")
-
-            # Return HTML fragment for the new step card
             step_content = render_to_string(
                 "checklist/partials/project_step_form.html#step_row",
                 {"step": project_step, "project": project},
                 request=request,
             )
-            return HttpResponse(step_counter + step_content)
+
+            messages.success(request, "Step added successfully.")
+
+            response = HttpResponse(step_counter + step_content)
+
+            # If it's the first step, change the hx-swap to replace the empty state div
+            return reswap(response, "innerHTML") if count_step == 0 else response
 
         except Exception as e:
             logger.error(e)
-            messages.error(request, "Something went wrong when adding the step to the project.")
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when adding the step to the project.")
             return reswap(HttpResponse(status=200), "none")
 
 
@@ -196,49 +150,41 @@ class ReorderProjectStepsView(ProjectAdminRequiredMixin, View):
     """
 
     def post(self, request, project_id):
-        project = get_object_or_404(Project, pk=project_id)
+        try:
+            project = ProjectService.get(project_id)
+            try:
+                order = request.POST.getlist("step_order", [])
+                order = [int(s) for s in order]  # Ensure int
+            except Exception:
+                raise InvalidParameterError("Invalid 'order' input provided")
 
-        step_order = request.POST.getlist("step_order", [])
-        step_order = [int(s) for s in step_order]  # Ensure int
+            ChecklistService.reorder_inventory(project, order)
 
-        with transaction.atomic():
-            # Fetch all steps in one query
-            steps = ProjectStep.objects.filter(project=project, pk__in=step_order).in_bulk(field_name="pk")
+            return HttpResponse("")
 
-            # Phase 1 : temporary order to avoid unique collision
-            for tmp_idx, step in enumerate(steps.values(), start=10000):
-                step.order = tmp_idx
-
-            ProjectStep.objects.bulk_update(steps.values(), ["order"])
-
-            # Phase 2 : assign final order
-            for index, step_id in enumerate(step_order, start=1):
-                steps[step_id].order = index
-
-            ProjectStep.objects.bulk_update(steps.values(), ["order"])
-
-        return HttpResponse("")
+        except Exception as e:
+            logger.error(e)
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when reordering the inventory.")
+            return reswap(HttpResponse(status=200), "none")
 
 
 class RemoveProjectStepView(ProjectAdminRequiredMixin, View):
     """Handle removing a step from a project via HTMX"""
 
     def delete(self, request, project_id, step_id):
-        project = get_object_or_404(Project, pk=project_id)
-        project_step = get_object_or_404(ProjectStep, id=step_id, project=project)
-
         try:
-            project_step.delete()
+            ChecklistService.delete_step(project_id, step_id)
 
             # Check if there are any steps left
-            remaining_steps = ProjectStep.objects.filter(project=project).count()
+            remaining_steps = ChecklistService.get_step(project_id).count()
 
             # Compute new step counter HTML that will be updated OOB
             step_counter = render_to_string(
                 "checklist/partials/project_step_form.html#counter_step",
-                {
-                    "count": remaining_steps,
-                },
+                {"count": remaining_steps, "oob": True},
             )
 
             messages.success(request, "Step deleted successfully.")
@@ -252,7 +198,10 @@ class RemoveProjectStepView(ProjectAdminRequiredMixin, View):
 
         except Exception as e:
             logger.error(e)
-            messages.error(request, "Something went wrong when deleting the step from the project.")
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when removing the step from the project.")
             return reswap(HttpResponse(status=200), "none")
 
 
@@ -260,29 +209,13 @@ class AddProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMi
     """Handle adding a task to a project step via HTMX"""
 
     def post(self, request, project_id, step_id):
-        project_step = get_object_or_404(ProjectStep, id=step_id)
-        title = request.POST.get("title", "").strip()
-
-        if not title:
-            messages.error(request, "Task title cannot be empty.")
-            return reswap(HttpResponse(status=200), "none")
-
         try:
+            title = request.POST.get("title", "").strip()
+            if not title:
+                raise InvalidParameterError("Task title cannot be empty")
+
             context = self.get_context_data()
-
-            # Determine task order
-            current_max_order = (
-                ProjectTask.objects.filter(project_step=project_step).aggregate(models.Max("order"))["order__max"] or 0
-            )
-
-            # Create the project task
-            project_task = ProjectTask.objects.create(
-                project_step=project_step,
-                title=title,
-                order=current_max_order + 1,
-                manually_created=True,
-            )
-            context["task"] = project_task
+            context["task"] = TaskService.add_task_to_step(project_id, step_id, title)
 
             messages.success(request, "Task added successfully.")
 
@@ -292,10 +225,12 @@ class AddProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMi
                 "checklist/partials/task_row.html",
                 context,
             )
-
         except Exception as e:
             logger.error(e)
-            messages.error(request, "Something went wrong when adding the task to the step.")
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when adding the task to the step.")
             return reswap(HttpResponse(status=200), "none")
 
 
@@ -303,96 +238,60 @@ class UpdateProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, Contex
     """Handle updating a task's status via HTMX"""
 
     def post(self, request, project_id, step_id, task_id):
-        project_task = ProjectTask.objects.get(
-            id=task_id,
-            project_step__id=step_id,
-            project_step__project__id=project_id,
-        )
-        step = ProjectStep.objects.get(id=step_id, project__id=project_id)
-
-        context = self.get_context_data()
-        context["task"] = project_task
-
-        if project_task is None:
-            messages.error(request, "Task not found.")
-            return render(
-                request,
-                "checklist/partials/task_row.html",
-                context,
-            )
-
-        new_status = request.POST.get("status", "").strip()
-
-        if new_status not in ["done", "na"]:
-            messages.error(request, "Invalid status value.")
-            return render(
-                request,
-                "checklist/partials/task_row.html",
-                context,
-            )
-
         try:
-            if new_status == project_task.status:
-                project_task.mark_pending()
-            elif new_status == "done":
-                project_task.mark_done(request.user)
-            elif new_status == "na":
-                project_task.mark_na(request.user)
+            context = self.get_context_data()
+            new_status = request.POST.get("status", "").strip()
+            if new_status not in ["done", "na"]:
+                raise InvalidParameterError("Invalid status value.")
+
+            context["task"] = TaskService.update_task_status(project_id, step_id, task_id, new_status, request.user)
+            step = ChecklistService.get_step(project_id, step_id)
+
+            row_html = render_to_string("checklist/partials/task_row.html", context)
+
+            step_html = render_to_string(
+                "checklist/partials/step_cards.html#step_item",
+                {
+                    **context,
+                    "oob": True,
+                    "project": step.project,
+                    "step": step,
+                    "active_step_id": step.id,
+                },
+            )
+            progress_html = render_to_string(
+                "checklist/partials/tasks_page.html#progress_bar",
+                {
+                    **context,
+                    "oob": True,
+                    "completion": step.get_completion_percentage(),
+                    "text": step.get_progress_text(),
+                },
+            )
+
+            return HttpResponse(row_html + step_html + progress_html)
         except Exception as e:
             logger.error(e)
-            messages.error(request, "Error when updating task status")
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when updating the task status.")
             return reswap(HttpResponse(status=200), "none")
-
-        row_html = render_to_string("checklist/partials/task_row.html", context)
-
-        step_html = render_to_string(
-            "checklist/partials/step_cards.html#step_item",
-            {
-                **context,
-                "oob": True,
-                "project": step.project,
-                "step": step,
-                "active_step_id": step.id,
-            },
-        )
-        progress_html = render_to_string(
-            "checklist/partials/tasks_page.html#progress_bar",
-            {
-                **context,
-                "oob": True,
-                "completion": step.get_completion_percentage(),
-                "text": step.get_progress_text(),
-            },
-        )
-
-        return HttpResponse(row_html + step_html + progress_html)
 
 
 class DeleteProjectTaskView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
     """Handle deleting a task from a project step via HTMX"""
 
     def delete(self, request, project_id, step_id, task_id):
-        context = self.get_context_data()
-
-        project_task = get_object_or_404(
-            ProjectTask,
-            id=task_id,
-            project_step__id=step_id,
-            project_step__project__id=project_id,
-        )
-        context["task"] = project_task
-
-        if not project_task.manually_created:
-            messages.error(request, "Only manually created tasks can be deleted.")
-            return reswap(HttpResponse(status=200), "none")
-
         try:
-            project_task.delete()
+            TaskService.delete_task(project_id, step_id, task_id, request.user)
             return HttpResponse("")
-
         except Exception as e:
             logger.error(e)
-            messages.error(request, "Something went wrong when deleting the task from the step.")
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Something went wrong when deleting the task.")
             return reswap(HttpResponse(status=200), "none")
 
 
@@ -423,7 +322,7 @@ class ListStepView(ProjectReadRequiredMixin, CommonContextMixin, ListView):
 
     def get_queryset(self):
         project_id = self.kwargs.get(self.pk_url_kwarg)
-        return self.model.objects.filter(project_id=project_id)
+        return ChecklistService.get_step(project_id)
 
 
 class TaskCommentListView(ProjectReadRequiredMixin, CommonContextMixin, ListView):
@@ -432,17 +331,16 @@ class TaskCommentListView(ProjectReadRequiredMixin, CommonContextMixin, ListView
     context_object_name = "comments"
 
     def get_queryset(self):
+        project_id = self.kwargs.get("project_id")
+        step_id = self.kwargs.get("step_id")
         task_id = self.kwargs.get("task_id")
-        result = TaskComment.objects.filter(
-            project_task_id=task_id,
-            deleted_at__isnull=True,
-        ).select_related("user", "project_task")
 
+        result = CommentService.get_comments_on_task(project_id, step_id, task_id)
         return result
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["task"] = get_object_or_404(ProjectTask, id=context.get("task_id"))
+        context["task"] = TaskService.get_task(context.get("project_id"), context.get("step_id"), context.get("task_id"))
         return context
 
 
@@ -508,8 +406,9 @@ class TaskCommentDeleteView(ProjectEditRequiredMixin, DeleteView):
         requestor = self.request.user
         project_id = self.kwargs.get("project_id")
 
-        user_permission = UserProjectPermissions.objects.get_user_permissions(requestor, project_id)
+        user_permission = AccountService.get_permission_for_user_project(requestor, project_id)
 
+        # Admin can delete any non deleted comment
         if user_permission.is_admin:
             return TaskComment.objects.filter(deleted_at__isnull=True)
 

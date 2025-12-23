@@ -93,7 +93,7 @@ def test_base64_file_field_too_large():
     with pytest.raises(ValidationError) as excinfo:
         field.clean(uploaded_file)
 
-    assert "File is too large, Maximum: 100 KB" in str(excinfo.value)
+    assert "File is too large. Maximum: 100 KB." in str(excinfo.value)
 
 
 def test_base64_file_field_empty():
