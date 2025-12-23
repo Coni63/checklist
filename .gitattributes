@@ -1,2 +1,4 @@
-/static/lucide.js linguist-vendored
+/static/js/lucide.js linguist-vendored
+/static/js/jsplumb.browser-ui.umd.min.js linguist-vendored
+/static/css/jsplumbtoolkit.css linguist-vendored
 /theme/static/** linguist-vendored

@@ -1,0 +1,26 @@
+{% extends 'base_two_columns.html' %}
+
+{% block title %}Status Project: {{ project.name }} - Checklist Manager{% endblock %}
+
+
+
+{% block sidebar %}
+    {% if not inventory_id %}
+        <div hx-get="{% url 'projects:inventory:list_inventory' project_id=project_id %}"
+            hx-trigger="load" 
+            hx-swap="outerHTML">
+            {% include "common/partials/loading-card.html" with text="Loading inventories..." %}
+        </div>
+    {% else %}
+        {% include "inventory/partials/inventory_cards.html" %}
+    {% endif %}
+    
+{% endblock %}
+
+{% block detail_block %}
+    <div hx-get="{% url 'projects:diagram:diagram_content' project_id=project_id %}"
+        hx-trigger="load" 
+        hx-swap="outerHTML">
+        {% include "common/partials/loading-card.html" with text="Loading inventories..." %}
+    </div>
+{% endblock %}

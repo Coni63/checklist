@@ -872,6 +872,15 @@
   .pointer-events-none {
     pointer-events: none;
   }
+  .invisible {
+    visibility: hidden;
+  }
+  .visible {
+    visibility: visible;
+  }
+  .visible\! {
+    visibility: visible !important;
+  }
   @layer daisyui.l1.l2.l3 {
     .list {
       display: flex;
@@ -2907,6 +2916,9 @@
   .items-stretch {
     align-items: stretch;
   }
+  .justify-around {
+    justify-content: space-around;
+  }
   .justify-between {
     justify-content: space-between;
   }
@@ -4303,6 +4315,9 @@
   .select-text {
     -webkit-user-select: text;
     user-select: text;
+  }
+  .\[diff\:\"\+Math\.abs\(t-e\)\+\"\] {
+    diff: "+Math.abs(t-e)+";
   }
   @media (hover: hover) {
     .hover\:bg-blue-700:hover {

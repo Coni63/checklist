@@ -16,4 +16,5 @@ urlpatterns = [
     ),
     path("<int:project_id>/steps/", include(("checklist.urls", "checklist"), namespace="checklist")),
     path("<int:project_id>/inventory/", include(("inventory.urls", "inventory"), namespace="inventory")),
+    path("<int:project_id>/diagram/", include(("diagram.urls", "diagram"), namespace="diagram")),
 ]
