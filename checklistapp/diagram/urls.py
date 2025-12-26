@@ -15,4 +15,9 @@ urlpatterns = [
         views.load_diagram,
         name="diagram_content",
     ),
+    path(
+        "save/<int:project_id>/",
+        views.save_diagram,
+        name="save_diagram",
+    ),
 ]
