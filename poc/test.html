@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagramme Butterfly</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+        
+        #canvas {
+            width: calc(100vw - 200px);
+            height: 100vh;
+            position: relative;
+            cursor: grab;
+        }
+        
+        #canvas.dragging {
+            cursor: grabbing;
+        }
+        
+        .box {
+            position: absolute;
+            padding: 15px 20px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            cursor: move;
+            min-width: 120px;
+            text-align: center;
+            user-select: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        
+        .box:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .box.selected {
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+        }
+        
+        .endpoint {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #2196F3;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: crosshair;
+            z-index: 15;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .endpoint:hover {
+            width: 16px;
+            height: 16px;
+            background: #1976D2;
+        }
+        
+        .endpoint.top_left {
+            top: -6px;
+            left: 33%;
+            transform: translateX(-50%);
+        }
+
+        .endpoint.top {
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .endpoint.top_right {
+            top: -6px;
+            left: 67%;
+            transform: translateX(-50%);
+        }
+
+        .endpoint.right_top {
+            top: 33%;
+            right: -6px;
+            transform: translateY(-50%);
+        }
+
+        .endpoint.right {
+            top: 50%;
+            right: -6px;
+            transform: translateY(-50%);
+        }
+
+        .endpoint.right_bottom {
+            top: 67%;
+            right: -6px;
+            transform: translateY(-50%);
+        }
+
+        .endpoint.bottom_left {
+            bottom: -6px;
+            left: 33%;
+            transform: translateX(-50%);
+        }
+
+        .endpoint.bottom {
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .endpoint.bottom_right {
+            bottom: -6px;
+            left: 67%;
+            transform: translateX(-50%);
+        }
+
+        .endpoint.left_top {
+            top: 33%;
+            left: -6px;
+            transform: translateY(-50%);
+        }
+
+        .endpoint.left {
+            top: 50%;
+            left: -6px;
+            transform: translateY(-50%);
+        }
+
+        .endpoint.left_bottom {
+            top: 67%;
+            left: -6px;
+            transform: translateY(-50%);
+        }
+        
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .connection {
+            stroke: #333;
+            stroke-width: 2;
+            fill: none;
+            pointer-events: stroke;
+            cursor: pointer;
+        }
+        
+        .connection:hover {
+            stroke: #2196F3;
+            stroke-width: 3;
+        }
+        
+        .connection.selected {
+            stroke: #f44336;
+            stroke-width: 3;
+        }
+        
+        .temp-connection {
+            stroke: #2196F3;
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 5, 5;
+            pointer-events: none;
+        }
+        
+        #toolbar {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+        
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #1976D2;
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        #info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            font-size: 13px;
+            max-width: 300px;
+        }
+        
+        #info p {
+            margin: 5px 0;
+        }
+
+        #sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 100vh;
+            background: white;
+            border-left: 2px solid #ddd;
+            box-shadow: -2px 0 12px rgba(0,0,0,0.1);
+            padding: 20px;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        #sidebar h3 {
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .shape-item {
+            width: 100%;
+            height: 80px;
+            margin-bottom: 15px;
+            background: #f0f0f0;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+
+        .shape-item:hover {
+            background: #e3f2fd;
+            border-color: #2196F3;
+            transform: scale(1.05);
+        }
+
+        .shape-item:active {
+            cursor: grabbing;
+        }
+
+        .shape-preview {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 5px;
+        }
+
+        .shape-preview.rectangle {
+            background: #2196F3;
+            border-radius: 4px;
+            width: 50px;
+            height: 30px;
+        }
+
+        .shape-preview.triangle {
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 35px solid #4CAF50;
+        }
+
+        .shape-preview.pipe {
+            width: 15px;
+            height: 40px;
+            background: #FF9800;
+            border-radius: 3px;
+        }
+
+        .shape-preview.square {
+            width: 35px;
+            height: 35px;
+            background: #9C27B0;
+            border-radius: 4px;
+        }
+
+        .shape-preview.circle {
+            width: 40px;
+            height: 40px;
+            background: #F44336;
+            border-radius: 50%;
+        }
+
+        .shape-item span {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* Shape styles for boxes */
+        .box.shape-rectangle {
+            border-radius: 8px;
+            background: #2196F3;
+            color: white;
+            min-width: 150px;
+            min-height: 80px;
+        }
+
+        .box.shape-triangle {
+            border-radius: 0;
+            background: transparent;
+            border: none;
+            min-width: 100px;
+            min-height: 100px;
+            /*position: relative;*/
+            padding: 0;
+        }
+
+        .box.shape-triangle::before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 50px solid transparent;
+            border-right: 50px solid transparent;
+            border-bottom: 85px solid #4CAF50;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .box.shape-triangle .endpoint {
+            z-index: 20;
+        }
+
+        .box.shape-pipe {
+            border-radius: 4px;
+            background: #FF9800;
+            color: white;
+            min-width: 60px;
+            min-height: 150px;
+        }
+
+        .box.shape-square {
+            border-radius: 4px;
+            background: #9C27B0;
+            color: white;
+            min-width: 120px;
+            min-height: 120px;
+        }
+
+        .box.shape-circle {
+            border-radius: 50%;
+            background: #F44336;
+            color: white;
+            min-width: 120px;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <!--
+    <div id="toolbar">
+        <button onclick="addBox()">Ajouter Box</button>
+        <button onclick="deleteSelected()">Supprimer Sélection</button>
+    </div>
+    -->
+    <!--
+    <div id="info">
+        <p><strong>Instructions:</strong></p>
+        <p>• Glisser les boxes pour déplacer</p>
+        <p>• Glisser un point bleu vers un autre pour connecter</p>
+        <p>• Cliquer une connexion pour la sélectionner</p>
+        <p>• Supprimer avec le bouton ou la touche Delete</p>
+    </div>
+    -->
+    <div id="sidebar">
+        <h3>Formes</h3>
+        <div class="shape-item" draggable="true" data-shape="rectangle">
+            <div class="shape-preview rectangle"></div>
+            <span>Rectangle</span>
+        </div>
+        <div class="shape-item" draggable="true" data-shape="triangle">
+            <div class="shape-preview triangle"></div>
+            <span>Triangle</span>
+        </div>
+        <div class="shape-item" draggable="true" data-shape="pipe">
+            <div class="shape-preview pipe"></div>
+            <span>Pipe</span>
+        </div>
+        <div class="shape-item" draggable="true" data-shape="square">
+            <div class="shape-preview square"></div>
+            <span>Carré</span>
+        </div>
+        <div class="shape-item" draggable="true" data-shape="circle">
+            <div class="shape-preview circle"></div>
+            <span>Cercle</span>
+        </div>
+    </div>
+
+    <div id="canvas">
+        <svg id="svg"></svg>
+    </div>
+
+    <script>
+        let boxes = [];
+        let connections = [];
+        let selectedBox = null;
+        let selectedConnection = null;
+        let draggedBox = null;
+        let draggedEndpoint = null;
+        let tempConnection = null;
+        let boxIdCounter = 0;
+        let offset = { x: 0, y: 0 };
+
+        const canvas = document.getElementById('canvas');
+        const svg = document.getElementById('svg');
+
+        // Add this when you create/initialize your SVG element
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+        marker.setAttribute('id', 'arrowhead');
+        marker.setAttribute('markerWidth', '10');
+        marker.setAttribute('markerHeight', '10');
+        marker.setAttribute('refX', '9');
+        marker.setAttribute('refY', '3');
+        marker.setAttribute('orient', 'auto');
+        marker.setAttribute('markerUnits', 'strokeWidth');
+
+        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polygon.setAttribute('points', '0 0, 10 3, 0 6');
+        polygon.setAttribute('fill', '#666'); // Same color as your line
+
+        marker.appendChild(polygon);
+        defs.appendChild(marker);
+        svg.appendChild(defs);
+
+        // Définition des normales pour chaque côté
+        const ENDPOINT_NORMALS = {
+            top_left: { x: 0, y: -1 },
+            top: { x: 0, y: -1 },
+            top_right: { x: 0, y: -1 },
+            right_top: { x: 1, y: 0 },
+            right: { x: 1, y: 0 },
+            right_bottom: { x: 1, y: 0 },
+            bottom_left: { x: 0, y: 1 },
+            bottom: { x: 0, y: 1 },
+            bottom_right: { x: 0, y: 1 },
+            left_top: { x: -1, y: 0 },
+            left: { x: -1, y: 0 },
+            left_bottom: { x: -1, y: 0 }
+        };
+
+        function createBox(x, y, text = 'Nouvelle Box', shape = null) {
+            const box = {
+                id: boxIdCounter++,
+                x: x,
+                y: y,
+                text: text,
+                shape: shape,
+                element: null,
+                endpoints: {}
+            };
+
+            const boxEl = document.createElement('div');
+            boxEl.className = 'box';
+            if (shape) {
+                boxEl.classList.add(`shape-${shape}`);
+            }
+            boxEl.innerHTML = `
+                <div contenteditable="true" style="outline: none;">${text}</div>
+            `;
+            boxEl.style.left = x + 'px';
+            boxEl.style.top = y + 'px';
+            
+            boxEl.addEventListener('mousedown', (e) => handleBoxMouseDown(e, box));
+            boxEl.addEventListener('click', (e) => handleBoxClick(e, box));
+            
+            const editableDiv = boxEl.querySelector('[contenteditable]');
+            editableDiv.addEventListener('input', (e) => {
+                box.text = e.target.innerText;
+            });
+            
+            // Créer les 12 endpoints (3 par côté)
+            ['top_left', 'top', 'top_right', 'right_top', 'right', 'right_bottom',
+             'bottom_left', 'bottom', 'bottom_right', 'left_top', 'left', 'left_bottom'].forEach(side => {
+                const endpoint = document.createElement('div');
+                endpoint.className = `endpoint ${side}`;
+                endpoint.addEventListener('mousedown', (e) => handleEndpointMouseDown(e, box, side));
+                boxEl.appendChild(endpoint);
+                box.endpoints[side] = endpoint;
+            });
+            
+            box.element = boxEl;
+            boxes.push(box);
+            canvas.appendChild(boxEl);
+            
+            return box;
+        }
+
+        function addBox() {
+            createBox(Math.random() * (window.innerWidth - 200) + 50, 
+                     Math.random() * (window.innerHeight - 200) + 50);
+        }
+
+        function handleBoxMouseDown(e, box) {
+            if (e.target.classList.contains('endpoint')) return;
+            if (e.target.hasAttribute('contenteditable')) return;
+            
+            e.stopPropagation();
+            draggedBox = box;
+            offset.x = e.clientX - box.x;
+            offset.y = e.clientY - box.y;
+            canvas.style.cursor = 'grabbing';
+        }
+
+        function handleEndpointMouseDown(e, box, side) {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            draggedEndpoint = { box, side };
+            
+            // Créer une connexion temporaire
+            tempConnection = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            tempConnection.classList.add('temp-connection');
+            svg.appendChild(tempConnection);
+            
+            updateTempConnection(e.clientX, e.clientY);
+        }
+
+        function getEndpointPosition(box, side) {
+            const rect = box.element.getBoundingClientRect();
+            let x, y;
+            
+            switch(side) {
+                case 'top_left':
+                    x = box.x + box.element.offsetWidth * 0.33;
+                    y = box.y;
+                    break;
+                case 'top':
+                    x = box.x + box.element.offsetWidth / 2;
+                    y = box.y;
+                    break;
+                case 'top_right':
+                    x = box.x + box.element.offsetWidth * 0.67;
+                    y = box.y;
+                    break;
+                case 'right_top':
+                    x = box.x + box.element.offsetWidth;
+                    y = box.y + box.element.offsetHeight * 0.33;
+                    break;
+                case 'right':
+                    x = box.x + box.element.offsetWidth;
+                    y = box.y + box.element.offsetHeight / 2;
+                    break;
+                case 'right_bottom':
+                    x = box.x + box.element.offsetWidth;
+                    y = box.y + box.element.offsetHeight * 0.67;
+                    break;
+                case 'bottom_left':
+                    x = box.x + box.element.offsetWidth * 0.33;
+                    y = box.y + box.element.offsetHeight;
+                    break;
+                case 'bottom':
+                    x = box.x + box.element.offsetWidth / 2;
+                    y = box.y + box.element.offsetHeight;
+                    break;
+                case 'bottom_right':
+                    x = box.x + box.element.offsetWidth * 0.67;
+                    y = box.y + box.element.offsetHeight;
+                    break;
+                case 'left_top':
+                    x = box.x;
+                    y = box.y + box.element.offsetHeight * 0.33;
+                    break;
+                case 'left':
+                    x = box.x;
+                    y = box.y + box.element.offsetHeight / 2;
+                    break;
+                case 'left_bottom':
+                    x = box.x;
+                    y = box.y + box.element.offsetHeight * 0.67;
+                    break;
+            }
+            
+            return { x, y };
+        }
+
+        function updateTempConnection(mouseX, mouseY) {
+            if (!draggedEndpoint || !tempConnection) return;
+            
+            const startPos = getEndpointPosition(draggedEndpoint.box, draggedEndpoint.side);
+            const normal1 = ENDPOINT_NORMALS[draggedEndpoint.side];
+            
+            const controlDistance = 100;
+            
+            const cx1 = startPos.x + normal1.x * controlDistance;
+            const cy1 = startPos.y + normal1.y * controlDistance;
+            
+            // Pour la fin temporaire, on utilise la direction vers la souris
+            const dx = mouseX - startPos.x;
+            const dy = mouseY - startPos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const nx2 = dist > 0 ? -dx / dist : 0;
+            const ny2 = dist > 0 ? -dy / dist : 0;
+            
+            const cx2 = mouseX + nx2 * controlDistance;
+            const cy2 = mouseY + ny2 * controlDistance;
+            
+            const d = `M ${startPos.x} ${startPos.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${mouseX} ${mouseY}`;
+            tempConnection.setAttribute('d', d);
+        }
+
+        function handleBoxClick(e, box) {
+            e.stopPropagation();
+            selectBox(box);
+        }
+
+        function selectBox(box) {
+            if (selectedBox) {
+                selectedBox.element.classList.remove('selected');
+            }
+            selectedBox = box;
+            box.element.classList.add('selected');
+            
+            if (selectedConnection) {
+                selectedConnection.element.classList.remove('selected');
+                selectedConnection = null;
+            }
+        }
+
+        function createConnection(box1, side1, box2, side2) {
+            // Vérifier si une connexion existe déjà
+            const exists = connections.some(conn => 
+                (conn.box1 === box1 && conn.side1 === side1 && conn.box2 === box2 && conn.side2 === side2) ||
+                (conn.box1 === box2 && conn.side1 === side2 && conn.box2 === box1 && conn.side2 === side1)
+            );
+            
+            if (exists) return;
+            
+            const conn = {
+                id: connections.length,
+                box1: box1,
+                side1: side1,
+                box2: box2,
+                side2: side2,
+                element: null
+            };
+            
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.classList.add('connection');
+            path.style.pointerEvents = 'stroke';
+            path.setAttribute('marker-end', 'url(#arrowhead)'); // Add this line
+            
+            path.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectConnection(conn);
+            });
+            
+            conn.element = path;
+            connections.push(conn);
+            svg.appendChild(path);
+            
+            updateConnection(conn);
+        }
+
+        function updateConnection(conn) {
+            const pos1 = getEndpointPosition(conn.box1, conn.side1);
+            const pos2 = getEndpointPosition(conn.box2, conn.side2);
+            
+            // Récupérer les normales des endpoints
+            const normal1 = ENDPOINT_NORMALS[conn.side1];
+            const normal2 = ENDPOINT_NORMALS[conn.side2];
+            
+            // Distance pour les points de contrôle (ajustable)
+            const controlDistance = 100;
+            
+            // Points de contrôle basés sur les normales
+            const cx1 = pos1.x + normal1.x * controlDistance;
+            const cy1 = pos1.y + normal1.y * controlDistance;
+            const cx2 = pos2.x + normal2.x * controlDistance;
+            const cy2 = pos2.y + normal2.y * controlDistance;
+            
+            const d = `M ${pos1.x} ${pos1.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${pos2.x} ${pos2.y}`;
+            conn.element.setAttribute('d', d);
+        }
+
+        function updateAllConnections() {
+            connections.forEach(conn => updateConnection(conn));
+        }
+
+        function selectConnection(conn) {
+            if (selectedConnection) {
+                selectedConnection.element.classList.remove('selected');
+            }
+            selectedConnection = conn;
+            conn.element.classList.add('selected');
+            
+            if (selectedBox) {
+                selectedBox.element.classList.remove('selected');
+                selectedBox = null;
+            }
+        }
+
+        function deleteBox(id) {
+            const boxIndex = boxes.findIndex(b => b.id === id);
+            if (boxIndex === -1) return;
+            
+            const box = boxes[boxIndex];
+            
+            connections = connections.filter(conn => {
+                if (conn.box1 === box || conn.box2 === box) {
+                    conn.element.remove();
+                    return false;
+                }
+                return true;
+            });
+            
+            box.element.remove();
+            boxes.splice(boxIndex, 1);
+            
+            if (selectedBox === box) selectedBox = null;
+        }
+
+        function deleteSelected() {
+            if (selectedConnection) {
+                const index = connections.indexOf(selectedConnection);
+                if (index > -1) {
+                    selectedConnection.element.remove();
+                    connections.splice(index, 1);
+                    selectedConnection = null;
+                }
+            } else if (selectedBox) {
+                deleteBox(selectedBox.id);
+            }
+        }
+
+        function findEndpointUnderMouse(x, y) {
+            var min_dist = 9999;
+            var result = null;
+            for (let box of boxes) {
+                if (draggedEndpoint && box === draggedEndpoint.box) continue;
+
+                for (let side of ['top_left', 'top', 'top_right', 'right_top', 'right', 'right_bottom',
+                                  'bottom_left', 'bottom', 'bottom_right', 'left_top', 'left', 'left_bottom']) {
+                    const pos = getEndpointPosition(box, side);
+                    const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+                    
+                    if (dist < min_dist) {
+                        min_dist = dist;
+                        result = { box, side };
+                    }
+                }
+            }
+            return result;
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (draggedBox) {
+                draggedBox.x = e.clientX - offset.x;
+                draggedBox.y = e.clientY - offset.y;
+                draggedBox.element.style.left = draggedBox.x + 'px';
+                draggedBox.element.style.top = draggedBox.y + 'px';
+                updateAllConnections();
+            } else if (draggedEndpoint) {
+                updateTempConnection(e.clientX, e.clientY);
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (draggedBox) {
+                draggedBox = null;
+                canvas.style.cursor = 'grab';
+            } else if (draggedEndpoint) {
+                // Chercher un endpoint proche
+                const targetEndpoint = findEndpointUnderMouse(e.clientX, e.clientY);
+                
+                if (targetEndpoint) {
+                    createConnection(
+                        draggedEndpoint.box, 
+                        draggedEndpoint.side,
+                        targetEndpoint.box,
+                        targetEndpoint.side
+                    );
+                }
+                
+                // Nettoyer la connexion temporaire
+                if (tempConnection) {
+                    tempConnection.remove();
+                    tempConnection = null;
+                }
+                
+                draggedEndpoint = null;
+            }
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (e.target === canvas) {
+                if (selectedBox) {
+                    selectedBox.element.classList.remove('selected');
+                    selectedBox = null;
+                }
+                if (selectedConnection) {
+                    selectedConnection.element.classList.remove('selected');
+                    selectedConnection = null;
+                }
+            }
+        });
+
+        // Touche Delete pour supprimer
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (document.activeElement.hasAttribute('contenteditable')) return;
+                deleteSelected();
+            }
+        });
+
+        // Drag & Drop depuis la sidebar
+        let draggedShape = null;
+
+        document.querySelectorAll('.shape-item').forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                draggedShape = e.currentTarget.dataset.shape;
+                e.dataTransfer.effectAllowed = 'copy';
+            });
+
+            item.addEventListener('dragend', () => {
+                draggedShape = null;
+            });
+        });
+
+        canvas.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        });
+
+        canvas.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (draggedShape) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left - 60; // Centrer approximativement
+                const y = e.clientY - rect.top - 40;
+
+                let text = '';
+                switch(draggedShape) {
+                    case 'rectangle': text = 'Rectangle'; break;
+                    case 'triangle': text = 'Triangle'; break;
+                    case 'pipe': text = 'Pipe'; break;
+                    case 'square': text = 'Carré'; break;
+                    case 'circle': text = 'Cercle'; break;
+                }
+
+                createBox(x, y, text, draggedShape);
+                draggedShape = null;
+            }
+        });
+
+        // Initialisation avec quelques boxes
+        createBox(200, 200, 'Box 1');
+        createBox(500, 200, 'Box 2');
+        createBox(800, 200, 'Box 3');
+        createBox(350, 400, 'Box 4');
+        createBox(650, 400, 'Box 5');
+    </script>
+</body>
+</html>

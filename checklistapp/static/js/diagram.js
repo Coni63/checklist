@@ -1,7 +1,7 @@
     const arrows = JSON.parse(document.getElementById('arrows-data').textContent);
 
     window.addEventListener('load', function() {
-        const jp = window.jsPlumb || window.jsPlumbBrowserUI;
+        const jp = window.jsPlumb; // || window.jsPlumbBrowserUI;
         
         if (!jp) return;
 
@@ -18,7 +18,17 @@
                 },
                 connectionOverlays: [
                     { type: "Arrow", options: { location: 1, width: 12, length: 12 } }
-                ]
+                ],
+                defaults: {
+                    edgesAvoidVertices: true,
+                    connector: "Orthogonal"
+                },
+                grid: {
+                    size: {
+                    w: 20,
+                    h: 20
+                    }
+                }
             });
 
             // // Event listener pour les nouvelles connexions créées par drag & drop
@@ -34,6 +44,8 @@
             //         }
             //     });
             // });
+
+            console.error(instance);
 
             instance.batch(() => {
 
@@ -162,6 +174,8 @@
                             // }
                         });
 
+                        console.log(conn);
+
                         // Permettre la suppression avec double-clic pour les connexions initiales aussi
                         // if (conn) {
                         //     console.log(conn);
@@ -198,18 +212,18 @@
 
             instance.bind("beforeStartDetach", (params) => {
                 console.log("beforeStartDetach", params);
-                return true;
+                // return true;
 
                 const endpoint = params.endpoint;
-                // const connection = info.connection;
+                const connection = info.connection;
                 
-                // // Vérifier si cette connexion a l'endpoint comme TARGET
-                // const isTarget = connection.targetId === endpoint.element.id;
+                // Vérifier si cette connexion a l'endpoint comme TARGET
+                const isTarget = connection.targetId === endpoint.element.id;
                 
-                // // Toujours autoriser le détachement des connexions entrantes
-                // if (isTarget) {
-                //     return true;
-                // }
+                // Toujours autoriser le détachement des connexions entrantes
+                if (isTarget) {
+                    return true;
+                }
                 
                 // Pour les connexions sortantes, vérifier s'il y a des entrantes
                 const incomingConnections = endpoint.connections.filter(conn => 
@@ -236,7 +250,7 @@
             instance.bind("beforeDrag", (params) => {
                 console.log("beforeDrag", params);
                 
-                // console.log(params.endpoint.connections);
+                console.log(params.endpoint.connections);
 
                 return true;
             });
@@ -254,7 +268,7 @@
                 if (existing_conn.length == 0) {
                     console.log("tamere");
                     // instance.setEndpointEnabled(info.dropEndpoint, false);
-                    // instance.setSource(info.dropEndpoint.element, false);
+                    setSource(info.dropEndpoint.element, false);
                     // info.dropEndpoint.enabled = false;
                 }
 
@@ -276,6 +290,7 @@
                 
                 // return true; // Autorise la connexion
             });
+
 
             // Fonction pour exporter l'état du diagramme en JSON
             window.exportDiagramState = function() {
