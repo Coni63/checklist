@@ -1,7 +1,6 @@
-import pytest
 from datetime import date
-from unittest.mock import patch
 
+import pytest
 from django.contrib.auth import get_user_model
 
 from projects.models import Project
