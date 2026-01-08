@@ -16,7 +16,7 @@ class ProjectCreationForm(forms.ModelForm):
 
     class Meta:
         model = Project
-        fields = ["name", "status", "description"]
+        fields = ["name", "status", "description", "expected_completion_date"]
         widgets = {
             "name": forms.TextInput(
                 attrs={
@@ -30,16 +30,23 @@ class ProjectCreationForm(forms.ModelForm):
                     "rows": 4,
                 }
             ),
+            "expected_completion_date": forms.DateInput(
+                attrs={
+                    "type": "date",
+                }
+            ),
         }
         labels = {
             "name": "Project Name",
             "description": "Description",
             "status": "Status",
+            "expected_completion_date": "Expected completion date",
         }
         help_texts = {
             "name": "Give your project a clear, descriptive name",
             "description": "Add any notes or context about this project",
             "status": "Set the current status of your project",
+            "expected_completion_date": "Optional: Set a target date for project completion",
         }
 
     def clean_name(self):

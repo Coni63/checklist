@@ -26,8 +26,14 @@
                             <p class="mb-2 text-sm text-base-content/70">{{ project.description|truncatechars:100 }}</p>
                         </div>
                     </div>
+                    <div class="h-6 mt-2 flex items-center text-sm text-base-content/70"> {# This div will always reserve space #}
+                        {% if project.expected_completion_date %}
+                        <i data-lucide="calendar" class="mr-2" style="width: 16px; height: 16px;"></i>
+                        <span>{{ project.expected_completion_date|date:"d M, Y" }}</span>
+                        {% endif %}
+                    </div>
                     {% with completion=project.get_completion_percentage %}
-                    <div class="mt-4">
+                    <div class="mt-2">
                             <div class="flex justify-between text-sm">
                                 <span class="text-base-content/70">Progress</span>
                                 <span class="font-semibold">{{ completion }}</span>
