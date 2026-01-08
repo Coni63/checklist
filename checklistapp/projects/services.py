@@ -1,5 +1,6 @@
 from accounts.services import AccountService
 from core.exceptions import RecordNotFoundError
+from django.db.models import F
 
 from .models import Project
 
@@ -27,4 +28,4 @@ class ProjectService:
         if status != "all":
             qs = qs.filter(status=status)
 
-        return qs
+        return qs.order_by(F("expected_completion_date").asc(nulls_first=True))

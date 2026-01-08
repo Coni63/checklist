@@ -46,22 +46,42 @@
                 </div>
             </div>
 
-            {# Description field #}
-            <div class="form-control mb-4">
-                <label for="{{ form.description.id_for_label }}" class="label">
-                    <span class="label-text font-semibold">{{ form.description.label }}</span>
-                </label>
-                {{ form.description|add_class:"textarea textarea-bordered w-full" }}
-                {% if form.description.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.description.errors.0 }}</span>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                {# Description field #}
+                <div class="form-control">
+                    <label for="{{ form.description.id_for_label }}" class="label">
+                        <span class="label-text font-semibold">{{ form.description.label }}</span>
                     </label>
-                {% endif %}
-                {% if form.description.help_text %}
-                    <label class="label">
-                        <span class="label-text-alt">{{ form.description.help_text }}</span>
+                    {{ form.description|add_class:"textarea textarea-bordered w-full" }}
+                    {% if form.description.errors %}
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.description.errors.0 }}</span>
+                        </label>
+                    {% endif %}
+                    {% if form.description.help_text %}
+                        <label class="label">
+                            <span class="label-text-alt">{{ form.description.help_text }}</span>
+                        </label>
+                    {% endif %}
+                </div>
+
+                {# Expected completion date field #}
+                <div class="form-control">
+                    <label for="{{ form.expected_completion_date.id_for_label }}" class="label">
+                        <span class="label-text font-semibold">{{ form.expected_completion_date.label }}</span>
                     </label>
-                {% endif %}
+                    {{ form.expected_completion_date|add_class:"input input-bordered w-full"|attr:"type:date" }}
+                    {% if form.expected_completion_date.errors %}
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.expected_completion_date.errors.0 }}</span>
+                        </label>
+                    {% endif %}
+                    {% if form.expected_completion_date.help_text %}
+                        <label class="label">
+                            <span class="label-text-alt">{{ form.expected_completion_date.help_text }}</span>
+                        </label>
+                    {% endif %}
+                </div>
             </div>
 
             {# Form Actions #}
