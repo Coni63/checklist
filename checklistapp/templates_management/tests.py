@@ -86,7 +86,7 @@ def test_new_task_template_is_appended_at_end(
     form = get_admin_form(step_template, sync=True)
     admin.save_related(None, form, [], True)
 
-    first = ProjectTask.objects.get(project_step=active_project_step)
+    ProjectTask.objects.get(project_step=active_project_step)
 
     # Add second template
     task2 = TaskTemplate.objects.create(
