@@ -111,7 +111,7 @@ class AddProjectStepView(ProjectAdminRequiredMixin, View):
                 project=project, template_id=step_template_id, custom_title=override_name
             )
 
-            project_step = result["step"]
+            project_step = result["project_step"]
             count_step = result["count_step"]
 
             # Compute new step counter HTML that will be updated OOB
