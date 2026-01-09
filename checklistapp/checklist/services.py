@@ -152,6 +152,8 @@ class TaskService:
         elif status == "na":
             task.mark_na(requestor)
 
+        return task
+
     @staticmethod
     @transaction.atomic
     def delete_task(project_id, step_id, task_id, requestor):
