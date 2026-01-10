@@ -6,7 +6,22 @@
     <div class="w-1/4 min-w-80 border-r border-base-300 overflow-y-auto p-6">
         <div>
             <!-- Project header -->
-            <div class="bg-base-100 rounded-xl shadow-sm p-6 mb-4">
+            <div class="bg-base-100 rounded-xl shadow-sm p-6 mb-4 relative">
+                <!-- edit button -->
+                {% if 'admin' in roles %}
+                    <a href="{% url 'projects:project_edit' project.id %}"
+                        class="absolute top-4 right-4
+                                flex items-center justify-center
+                                w-9 h-9 rounded-lg
+                                text-base-content/60 hover:text-primary
+                                hover:bg-base-200 transition"
+                        title="Edit project">
+
+                        <i data-lucide="pencil" style="width:16px; height:16px;"></i>
+                    </a>
+                {% endif %}
+
+                <!-- Project info -->
                 <div class="flex flex-col gap-2">
                     <h1 class="text-2xl font-bold text-base-content">
                         {{ project.name }}

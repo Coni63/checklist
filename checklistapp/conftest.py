@@ -1,9 +1,10 @@
 import pytest
 from accounts.models import User, UserProjectPermissions
+from checklist.models import ProjectStep
 from freezegun import freeze_time
 from inventory.models import InventoryField, ProjectInventory
 from projects.models import Project
-from templates_management.models import InventoryTemplate, TemplateField
+from templates_management.models import InventoryTemplate, StepTemplate, TaskTemplate, TemplateField
 
 
 @pytest.fixture
@@ -135,4 +136,67 @@ def inventory_field_file(project_inventory):
         field_name="Test Number Field",
         field_order=1,
         field_type="file",
+    )
+
+
+@pytest.fixture
+def active_project(project):
+    project.status = "active"
+    project.save()
+    return project
+
+
+@pytest.fixture
+def inactive_project(project2):
+    project2.status = "archived"
+    project2.save()
+    return project2
+
+
+@pytest.fixture
+def step_template(db):
+    return StepTemplate.objects.create(
+        title="Deploy",
+        default_order=1,
+        is_active=True,
+    )
+
+
+@pytest.fixture
+def task_template_1(step_template):
+    return TaskTemplate.objects.create(
+        step_template=step_template,
+        title="Build",
+        order=1,
+        is_active=True,
+    )
+
+
+@pytest.fixture
+def task_template_2(step_template):
+    return TaskTemplate.objects.create(
+        step_template=step_template,
+        title="Ship",
+        order=2,
+        is_active=True,
+    )
+
+
+@pytest.fixture
+def active_project_step(active_project, step_template):
+    return ProjectStep.objects.create(
+        project=active_project,
+        step_template=step_template,
+        title="Deploy",
+        order=1,
+    )
+
+
+@pytest.fixture
+def inactive_project_step(inactive_project, step_template):
+    return ProjectStep.objects.create(
+        project=inactive_project,
+        step_template=step_template,
+        title="Deploy",
+        order=1,
     )
