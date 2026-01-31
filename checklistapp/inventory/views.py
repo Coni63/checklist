@@ -230,12 +230,18 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
                 self.template_name = "inventory/inventory_detail.html"
                 return render(request, self.template_name, context)
 
-            inventory_id = context.get("inventory_id")
+            # inventory_id comes from URL kwarg handled by ContextMixin or View dispatch
+            inventory_id = kwargs.get("inventory_id")
             if not inventory_id:
+                # Fallback if accessed without ID (e.g. main page before selection)
                 return render(request, self.template_name, context)
+            
+            # Ensure it is in context for the form
+            context["inventory_id"] = inventory_id
 
-            inventory = InventoryService.get_inventory(context["project_id"], inventory_id, prefetch_related=["groups__fields"])
-            # context["tasks"] = inventory.fields.all() # Not used anymore
+            inventory = InventoryService.get_inventory(
+                context["project_id"], inventory_id, prefetch_related=["groups__fields"]
+            )
             context["inventory"] = inventory
 
             form = DynamicInventoryForm(inventory, context)
@@ -244,7 +250,7 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
 
             context["edit_endpoint_base"] = reverse(
                 "projects:inventory:inventory_header_edit",
-                kwargs={"project_id": context["project_id"], "inventory_id": context["inventory_id"]},
+                kwargs={"project_id": context["project_id"], "inventory_id": inventory_id},
             )
             context["can_edit"] = "edit" in context["roles"]
 
@@ -269,17 +275,18 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
                 if field_name in form.fields:
                     field.bound_field = form[field_name]
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, project_id, inventory_id):
+        # Signature aligned with URL: <int:project_id>/.../<int:inventory_id>/
         try:
             context = self.get_context_data()
+            context["inventory_id"] = inventory_id # Explicitly set from URL arg
 
             if "edit" not in context["roles"]:
                 raise PermissionError("You are not allowed to edit fields")
 
-            inventory_id = request.POST.get("inventory_id")
-            if not inventory_id:
-                raise InvalidParameterError("You need to provide an inventory ID in the data.")
-            inventory = InventoryService.get_inventory(context["project_id"], inventory_id, prefetch_related=["groups__fields"])
+            inventory = InventoryService.get_inventory(
+                project_id, inventory_id, prefetch_related=["groups__fields"]
+            )
 
             form = DynamicInventoryForm(inventory, context, request.POST, request.FILES)
             if form.is_valid():
@@ -331,9 +338,11 @@ class InventoryHeaderEditView(
     def _inner(self, request, *args, **kwargs):
         try:
             context = self.get_context_data()
-
-            project_id = context["project_id"]
-            inventory_id = context["inventory_id"]
+            
+            # Using kwargs directly is safer if get_context_data doesn't populate them yet
+            project_id = kwargs.get("project_id")
+            inventory_id = kwargs.get("inventory_id")
+            
             can_edit = "edit" in context["roles"]
 
             edit_endpoint_base = reverse(
@@ -357,19 +366,15 @@ class InventoryHeaderEditView(
 
 
 class AddInventoryGroupView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
-    def post(self, request, project_id):
-        context = self.get_context_data()
-        inventory_id = context["inventory_id"]
+    def post(self, request, project_id, inventory_id):
         group_name = request.POST.get("group_name")
 
-        print(inventory_id, group_name)
-
-        if not inventory_id or not group_name:
-            messages.error(request, "Missing inventory ID or group name.")
+        if not group_name:
+            messages.error(request, "Missing group name.")
             return HttpResponse(status=400)
 
         try:
-            inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
+            inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups"])
             # Auto-increment order
             max_order = inventory.groups.aggregate(Max("order"))["order__max"] or 0
 
@@ -378,6 +383,10 @@ class AddInventoryGroupView(ProjectAdminRequiredMixin, CommonContextMixin, Conte
             messages.success(request, "Group added successfully.")
 
             # Refresh the form
+            context = self.get_context_data()
+            # Ensure context has IDs
+            context["project_id"] = project_id
+            context["inventory_id"] = inventory_id
             return self._render_form(request, inventory, context)
 
         except Exception as e:
@@ -386,6 +395,8 @@ class AddInventoryGroupView(ProjectAdminRequiredMixin, CommonContextMixin, Conte
             return HttpResponse(status=500)
 
     def _render_form(self, request, inventory, context):
+        # Need to reload inventory to get the new group
+        inventory = InventoryService.get_inventory(inventory.project.id, inventory.id, prefetch_related=["groups__fields"])
         form = DynamicInventoryForm(inventory, context)
         context["inventory"] = inventory
         context["form"] = form
@@ -394,21 +405,16 @@ class AddInventoryGroupView(ProjectAdminRequiredMixin, CommonContextMixin, Conte
 
 
 class AddInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
-    def post(self, request, project_id):
-        context = self.get_context_data()
-        inventory_id = context["inventory_id"]
-        group_id = request.POST.get("group_id")
+    def post(self, request, project_id, inventory_id, group_id):
         field_name = request.POST.get("field_name")
         field_type = request.POST.get("field_type")
         is_secret = request.POST.get("is_secret") == "on"
 
-        if not all([inventory_id, group_id, field_name, field_type]):
+        if not all([field_name, field_type]):
             messages.error(request, "Missing required fields.")
             return HttpResponse(status=400)
 
         try:
-            # Verify group belongs to inventory/project handled by service usually,
-            # but here we trust IDs within the project context check.
             try:
                 group = InventoryGroup.objects.get(id=group_id)
             except InventoryGroup.DoesNotExist:
@@ -425,22 +431,25 @@ class AddInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, Conte
                 field_name=field_name,
                 field_type=field_type,
                 field_order=max_order + 1,
-                # NOTE: is_secret is not supported on ad-hoc fields currently as it depends on TemplateField.
             )
 
             messages.success(request, "Field added successfully.")
 
             # Refresh the form
-            return self._render_form(request, project_id, inventory_id)
+            context = self.get_context_data()
+            context["project_id"] = project_id
+            context["inventory_id"] = inventory_id
+            return self._render_form(request, project_id, inventory_id, context)
 
         except Exception as e:
             logger.error(e)
             messages.error(request, str(e))
             return HttpResponse(status=500)
 
-    def _render_form(self, request, project_id, inventory_id):
-        context = self.get_context_data()
-        inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
+    def _render_form(self, request, project_id, inventory_id, context):
+        inventory = InventoryService.get_inventory(
+            project_id, inventory_id, prefetch_related=["groups__fields"]
+        )
         form = DynamicInventoryForm(inventory, context)
         context["inventory"] = inventory
         context["form"] = form

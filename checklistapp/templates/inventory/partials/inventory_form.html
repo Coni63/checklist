@@ -3,8 +3,6 @@
           hx-post="{{ request.path }}" hx-target="#inventory-form-container" hx-swap="outerHTML">
       {% csrf_token %}
 
-      <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
-
       <div class="border border-gray-200 rounded-xl p-6 shadow-sm bg-white flex flex-col space-y-10">
         {% for group in inventory.groups.all %}
             <div class="group-container relative p-4 border rounded-lg border-base-200">
@@ -72,9 +70,11 @@
     <dialog id="add_group_modal" class="modal">
       <div class="modal-box">
         <h3 class="font-bold text-lg">Add New Group</h3>
-        <form method="POST" action="{% url 'projects:inventory:add_group' project_id inventory_id %}" hx-post="{% url 'projects:inventory:add_group' project_id inventory_id %}" hx-target="#inventory-form-container" hx-swap="outerHTML">
+        <form method="POST" 
+              action="{% url 'projects:inventory:add_group' project_id inventory_id %}" 
+              hx-post="{% url 'projects:inventory:add_group' project_id inventory_id %}" 
+              hx-target="#inventory-form-container" hx-swap="outerHTML">
              {% csrf_token %}
-             <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
              <div class="form-control w-full max-w-xs mt-4">
               <label class="label"><span class="label-text">Group Name</span></label>
               <input type="text" name="group_name" placeholder="Type here" class="input input-bordered w-full max-w-xs" required />
@@ -96,8 +96,6 @@
         <h3 class="font-bold text-lg">Add Field to <span id="modal_group_name_display"></span></h3>
         <form id="add_field_form" method="POST" hx-target="#inventory-form-container" hx-swap="outerHTML">
             {% csrf_token %}
-            <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
-            <input type="hidden" name="group_id" id="modal_group_id_input" />
             
             <div class="form-control w-full mt-4">
               <label class="label"><span class="label-text">Field Name</span></label>
@@ -137,14 +135,17 @@
 
     <script>
         function openFieldModal(groupId, groupName) {
-            document.getElementById('modal_group_id_input').value = groupId;
             document.getElementById('modal_group_name_display').innerText = groupName;
             
-            // Mettre à jour l'URL du formulaire
+            // Dynamically set action URL with group ID using Django's reverse url pattern structure
+            // We use a placeholder '0' for the group_id which we replace
+            const baseUrl = "{% url 'projects:inventory:add_field' project_id inventory_id 0 %}";
+            const url = baseUrl.replace('/0/', `/${groupId}/`);
+            
             const form = document.getElementById('add_field_form');
-            const url = "{% url 'projects:inventory:add_field' project_id inventory_id 0 %}".replace('/0/', `/${groupId}/`);
             form.setAttribute('action', url);
             form.setAttribute('hx-post', url);
+            htmx.process(form);
             
             document.getElementById('add_field_modal').showModal();
         }
@@ -152,7 +153,7 @@
     {% endif %}
 
     <script>
-      // Re-init lucide icons after HTMX swap if needed, or rely on global observer
+      // Re-init lucide icons after HTMX swap
       if (typeof lucide !== 'undefined') {
         lucide.createIcons();
       }
