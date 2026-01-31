@@ -80,7 +80,7 @@ class InventoryField(models.Model):
         """
         Return the proper value based on type
         """
-        if self.field_type in ["text", "url"]:
+        if self.field_type in ["text", "url", "longtext"]:
             return self.text_value
         elif self.field_type == "number":
             return self.number_value

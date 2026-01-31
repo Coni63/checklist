@@ -1,6 +1,6 @@
 <div id="inventory-form-container">
     <form method="POST" enctype="multipart/form-data" class="space-y-8"
-          hx-post="{{ request.path }}" hx-target="#inventory-form-container" hx-swap="outerHTML">
+          hx-post="{% url 'projects:inventory:inventory_detail' project_id inventory_id %}" hx-target="#inventory-form-container" hx-swap="outerHTML">
       {% csrf_token %}
 
       <div class="border border-gray-200 rounded-xl p-6 shadow-sm bg-white flex flex-col">

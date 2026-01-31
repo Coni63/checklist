@@ -78,6 +78,19 @@ class DynamicInventoryForm(forms.Form):
                     initial=existing_value,
                     widget=forms.TextInput(attrs={"class": "input input-bordered w-full", **ro}),
                 )
+            case "longtext":
+                return forms.CharField(
+                    label=tf.field_name,
+                    required=False,
+                    initial=existing_value,
+                    widget=forms.Textarea(
+                        attrs={
+                            "class": "textarea textarea-bordered w-full",
+                            "rows": 2,
+                            **ro,
+                        }
+                    ),
+                )
             case "number":
                 return forms.DecimalField(
                     label=tf.field_name,
@@ -154,29 +167,29 @@ class DynamicInventoryForm(forms.Form):
             if not name.startswith("field_"):
                 continue
 
+            print("Saving: ", name)
             field_id = int(name.split("_")[1])
             # Fetch field directly since we don't have a flat list related manager easily accessible
             # and we want to ensure we get the fresh object anyway.
             # We could optimize by traversing self.instance.groups if prefetched, but for safety:
             try:
                 inst_field = InventoryField.objects.get(id=field_id, group__inventory=self.instance)
+                print(inst_field, inst_field.field_type)
             except InventoryField.DoesNotExist:
                 continue
 
             new_value = self.cleaned_data.get(name)
+            print("New value: ", new_value)
 
             # SECRET FIELD: prevent non-admin from editing if there was already a value
             if inst_field.field_template and getattr(inst_field.field_template, "is_secret", False) and not is_admin:
                 # If non-admin submitted ANYTHING, ignore it completely
                 # (They see a read-only placeholder anyway)
                 continue
-
-            if not new_value:
-                continue
-
+            print("Saving", inst_field.field_type)
             # Save based on type
             match inst_field.field_type:
-                case "text" | "url":
+                case "text" | "url" | "longtext":
                     inst_field.text_value = new_value or ""
                 case "number":
                     inst_field.number_value = new_value

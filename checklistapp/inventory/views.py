@@ -221,6 +221,8 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
     def get(self, request, *args, **kwargs):
         try:
             context = self.get_context_data()
+            inventory_id = context["inventory_id"]
+            project_id = context["project_id"]
 
             if not request.htmx:
                 project = ProjectService.get(context["project_id"], prefetch_related=["inventories"])
@@ -231,15 +233,12 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
                 return render(request, self.template_name, context)
 
             # inventory_id comes from URL kwarg handled by ContextMixin or View dispatch
-            inventory_id = kwargs.get("inventory_id")
+            inventory_id = context["inventory_id"]
             if not inventory_id:
                 # Fallback if accessed without ID (e.g. main page before selection)
                 return render(request, self.template_name, context)
 
-            # Ensure it is in context for the form
-            context["inventory_id"] = inventory_id
-
-            inventory = InventoryService.get_inventory(context["project_id"], inventory_id, prefetch_related=["groups__fields"])
+            inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
             context["inventory"] = inventory
 
             form = DynamicInventoryForm(inventory, context)
@@ -248,7 +247,7 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
 
             context["edit_endpoint_base"] = reverse(
                 "projects:inventory:inventory_header_edit",
-                kwargs={"project_id": context["project_id"], "inventory_id": inventory_id},
+                kwargs={"project_id": project_id, "inventory_id": inventory_id},
             )
             context["can_edit"] = "edit" in context["roles"]
 
@@ -279,6 +278,8 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             context = self.get_context_data()
             context["inventory_id"] = inventory_id  # Explicitly set from URL arg
 
+            print(request.POST)
+
             if "edit" not in context["roles"]:
                 raise PermissionError("You are not allowed to edit fields")
 
@@ -290,10 +291,9 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
                 messages.success(request, "Form saved successfully !")
 
                 if request.htmx:
-                    # return freshly rendered partial
-                    context["form"] = DynamicInventoryForm(inventory, context)
-                    InventoryDetail._attach_form_fields(inventory, context["form"])
-                    return render(request, "inventory/partials/inventory_form.html", context)
+                    # On save, if everything is OK, just return the message
+                    return reswap(HttpResponse(status=200), "none")
+
                 return redirect(request.path)
             else:
                 for field, errors in form.errors.items():
