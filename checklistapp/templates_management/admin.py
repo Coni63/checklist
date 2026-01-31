@@ -3,7 +3,7 @@ from django import forms
 from django.contrib import admin
 from django.db import models
 
-from .models import InventoryTemplate, StepTemplate, TaskTemplate, TemplateField, FieldTemplate, GroupTemplate
+from .models import InventoryTemplate, StepTemplate, TaskTemplate, FieldTemplate, GroupTemplate
 
 from nested_admin import NestedStackedInline, NestedModelAdmin
 
@@ -113,26 +113,3 @@ class StepTemplateAdmin(admin.ModelAdmin):
 
                 if tasks_to_create:
                     ProjectTask.objects.bulk_create(tasks_to_create)
-
-
-# class TemplateFieldInline(admin.TabularInline):
-#     model = TemplateField
-#     extra = 1
-
-#     fields = [
-#         "group_name",
-#         "group_order",
-#         "field_name",
-#         "field_order",
-#         "field_type",
-#         "is_secret",
-#     ]
-
-#     ordering = ["group_order", "field_order"]
-
-
-# @admin.register(InventoryTemplate)
-# class MetadataTemplateAdmin(admin.ModelAdmin):
-#     list_display = ["icon", "title", "description", "default_order", "is_active"]
-#     search_fields = ["title"]
-#     inlines = [TemplateFieldInline]

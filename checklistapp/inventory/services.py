@@ -1,7 +1,7 @@
 from core.exceptions import RecordNotFoundError
 from django.db import transaction
 from django.db.models import Count, Max, Prefetch
-from templates_management.models import InventoryTemplate, TemplateField
+from templates_management.models import InventoryTemplate, GroupTemplate, FieldTemplate
 
 from .models import InventoryField, ProjectInventory
 
@@ -11,7 +11,8 @@ class InventoryService:
     def get_template(template_id: int | None = None, load_fields=False):
         qs = InventoryTemplate.objects.filter(is_active=True).order_by("default_order")
         if load_fields:
-            qs = qs.prefetch_related(Prefetch("fields", queryset=TemplateField.objects.order_by("group_order", "field_order")))
+            qs = qs.prefetch_related(Prefetch("groups", queryset=GroupTemplate.objects.order_by("group_order", "field_order")))
+            # TODO: add prefect of Fields
         if template_id:
             template = qs.filter(id=template_id).first()
             if not template:

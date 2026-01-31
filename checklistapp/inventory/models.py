@@ -1,6 +1,6 @@
 from django.db import models
 from encrypted_fields.fields import EncryptedTextField
-from templates_management.models import InventoryTemplate, TemplateField
+from templates_management.models import InventoryTemplate, GroupTemplate, FieldTemplate
 
 
 class ProjectInventory(models.Model):
@@ -30,25 +30,40 @@ class ProjectInventory(models.Model):
         return f"ProjectInventory(id={self.id}, name={self.title})"
 
 
+class InventoryGroup(models.Model):
+    inventory = models.ForeignKey(ProjectInventory, on_delete=models.CASCADE, related_name="groups")
+    group_template = models.ForeignKey(
+        GroupTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Template this group was created from",
+    )
+    name = models.CharField(max_length=100)
+    order = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return self.name
+
+
 class InventoryField(models.Model):
-    inventory = models.ForeignKey(ProjectInventory, on_delete=models.CASCADE, related_name="fields")
+    group = models.ForeignKey(InventoryGroup, on_delete=models.CASCADE, related_name="fields")
     field_template = models.ForeignKey(
-        TemplateField,
+        FieldTemplate,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         help_text="Template this task was created from",
     )
 
-    group_name = models.CharField(max_length=100)
-    group_order = models.PositiveIntegerField(default=1)
-
     field_name = models.CharField(max_length=200)
     field_order = models.PositiveIntegerField(default=1)
-    field_type = models.CharField(max_length=20, choices=TemplateField.FIELD_TYPES)
+    field_type = models.CharField(max_length=20, choices=FieldTemplate.FIELD_TYPES)
 
-    text_value = models.CharField(
-        max_length=500,  # Augmenté la taille pour être plus flexible pour les URL/texte long
+    text_value = models.TextField(
         blank=True,
         default="",
     )
