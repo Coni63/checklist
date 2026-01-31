@@ -232,8 +232,10 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             if not inventory_id:
                 return render(request, self.template_name, context)
 
-            inventory = InventoryService.get_inventory(context["project_id"], inventory_id, prefetch_related=["fields"])
-            context["tasks"] = inventory.fields.all()
+            inventory = InventoryService.get_inventory(
+                context["project_id"], inventory_id, prefetch_related=["groups__fields"]
+            )
+            # context["tasks"] = inventory.fields.all() # Not used anymore
             context["inventory"] = inventory
 
             form = DynamicInventoryForm(inventory, context)
@@ -300,7 +302,9 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             inventory_id = request.POST.get("inventory_id")
             if not inventory_id:
                 raise InvalidParameterError("You need to provide an inventory ID in the data.")
-            inventory = InventoryService.get_inventory(context["project_id"], inventory_id, prefetch_related=["fields"])
+            inventory = InventoryService.get_inventory(
+                context["project_id"], inventory_id, prefetch_related=["groups__fields"]
+            )
 
             form = DynamicInventoryForm(inventory, context, request.POST, request.FILES)
             if form.is_valid():

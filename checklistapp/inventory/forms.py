@@ -14,34 +14,40 @@ class DynamicInventoryForm(forms.Form):
 
         self.instance = inventory
 
-        # Make sure they’re sorted
-        template_fields = inventory.fields.all().order_by("group_order", "field_order")
+        # Iterate over groups and their fields
+        # Note: inventory should have groups pre-fetched with fields
+        groups = inventory.groups.all()  # Assuming correct prefetch and ordering in view/service
 
-        for inst_field in template_fields:
-            field_name = f"field_{inst_field.id}"
+        for group in groups:
+            for inst_field in group.fields.all():
+                field_name = f"field_{inst_field.id}"
 
-            existing_value = inst_field.get_value()
+                existing_value = inst_field.get_value()
 
-            # hide fields if it's secret for non admin roles
-            hide_value = (
-                inst_field.field_template
-                and getattr(inst_field.field_template, "is_secret", False)
-                and existing_value not in (None, "", [])
-                and "admin" not in context["roles"]
-            )
+                # hide fields if it's secret for non admin roles
+                hide_value = (
+                    inst_field.field_template
+                    and getattr(inst_field.field_template, "is_secret", False)
+                    and existing_value not in (None, "", [])
+                    and "admin" not in context["roles"]
+                )
 
-            read_only = "edit" not in context["roles"]
+                read_only = "edit" not in context["roles"]
 
-            form_field = self.build_field(
-                inst_field, hide_value, read_only, project_id=context["project_id"], inventory_id=context["inventory_id"]
-            )
+                form_field = self.build_field(
+                    inst_field,
+                    hide_value,
+                    read_only,
+                    project_id=context["project_id"],
+                    inventory_id=context["inventory_id"],
+                )
 
-            # store grouping metadata
-            form_field.group_name = inst_field.group_name or "Other"
-            form_field.group_order = inst_field.group_order
-            form_field.is_password = (inst_field.field_type == "password") and not hide_value
+                # store grouping metadata from the Group object
+                form_field.group_name = group.name
+                form_field.group_order = group.order
+                form_field.is_password = (inst_field.field_type == "password") and not hide_value
 
-            self.fields[field_name] = form_field
+                self.fields[field_name] = form_field
 
     def build_field(self, tf, hide_value=False, read_only=False, project_id=None, inventory_id=None):
         existing_value = tf.get_value()
@@ -140,6 +146,7 @@ class DynamicInventoryForm(forms.Form):
         """
         Store all posted dynamic values into InventoryField model entries.
         """
+        from .models import InventoryField  # avoid circular import
 
         for name, field in self.fields.items():
             # field_<id>
@@ -147,7 +154,14 @@ class DynamicInventoryForm(forms.Form):
                 continue
 
             field_id = int(name.split("_")[1])
-            inst_field = self.instance.fields.get(id=field_id)
+            # Fetch field directly since we don't have a flat list related manager easily accessible
+            # and we want to ensure we get the fresh object anyway.
+            # We could optimize by traversing self.instance.groups if prefetched, but for safety:
+            try:
+                inst_field = InventoryField.objects.get(id=field_id, group__inventory=self.instance)
+            except InventoryField.DoesNotExist:
+                continue
+
             new_value = self.cleaned_data.get(name)
 
             # SECRET FIELD: prevent non-admin from editing if there was already a value

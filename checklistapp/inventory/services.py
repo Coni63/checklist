@@ -3,7 +3,7 @@ from django.db import transaction
 from django.db.models import Count, Max, Prefetch
 from templates_management.models import InventoryTemplate, GroupTemplate, FieldTemplate
 
-from .models import InventoryField, ProjectInventory
+from .models import InventoryField, InventoryGroup, ProjectInventory
 
 
 class InventoryService:
@@ -11,8 +11,14 @@ class InventoryService:
     def get_template(template_id: int | None = None, load_fields=False):
         qs = InventoryTemplate.objects.filter(is_active=True).order_by("default_order")
         if load_fields:
-            qs = qs.prefetch_related(Prefetch("groups", queryset=GroupTemplate.objects.order_by("group_order", "field_order")))
-            # TODO: add prefect of Fields
+            qs = qs.prefetch_related(
+                Prefetch(
+                    "groups",
+                    queryset=GroupTemplate.objects.order_by("group_order", "group_name").prefetch_related(
+                        Prefetch("fields", queryset=FieldTemplate.objects.order_by("field_order", "field_name"))
+                    ),
+                )
+            )
         if template_id:
             template = qs.filter(id=template_id).first()
             if not template:
@@ -37,15 +43,15 @@ class InventoryService:
     @staticmethod
     def get_inventory_for_project(project):
         return (
-            ProjectInventory.objects.filter(project=project)  # i need the project Id that is in url
+            ProjectInventory.objects.filter(project=project)
             .select_related("inventory_template")
-            .prefetch_related("fields")
+            .prefetch_related("groups__fields")
             .order_by("order")
         )
 
     @staticmethod
     def get_fields(project_id, inventory_id, field_id: int | None = None):
-        qs = InventoryField.objects.filter(inventory__project__id=project_id, inventory__id=inventory_id)
+        qs = InventoryField.objects.filter(group__inventory__project__id=project_id, group__inventory__id=inventory_id)
         if field_id:
             field = qs.filter(id=field_id).first()
             if not field:
@@ -61,8 +67,6 @@ class InventoryService:
         # Determine inventory order and count
         result = ProjectInventory.objects.filter(project=project).aggregate(max_order=Max("order"), total=Count("id"))
 
-        # Reorder does not follow the count, for example we can have task 1, 2, 3. Delete the 2, add a task and we have 1, 3, 4.
-        # Max Order is 3 avec the delete but count is 2
         current_max_order = result["max_order"] or 0
         count_step = result["total"]
 
@@ -76,19 +80,32 @@ class InventoryService:
             order=current_max_order + 1,
         )
 
-        # Create fields from template
-        fields_to_create = [
-            InventoryField(
+        # Create Groups and Fields
+        groups_to_create = []
+        fields_to_create = []
+
+        # We need to save groups first to get their IDs, so we can't do a full bulk_create for everything at once easily without IDs.
+        # However, we can iterate and save groups, then bulk create fields per group or globally if we track ids.
+        # Since number of groups per inventory is small, iterative save for groups is fine.
+
+        for group_template in inventory_template.groups.all():
+            group = InventoryGroup.objects.create(
                 inventory=inventory,
-                field_template=field_template,
-                group_name=field_template.group_name,
-                group_order=field_template.group_order,
-                field_name=field_template.field_name,
-                field_order=field_template.field_order,
-                field_type=field_template.field_type,
+                group_template=group_template,
+                name=group_template.group_name,
+                order=group_template.group_order,
             )
-            for field_template in inventory_template.fields.all()
-        ]
+
+            for field_template in group_template.fields.all():
+                fields_to_create.append(
+                    InventoryField(
+                        group=group,
+                        field_template=field_template,
+                        field_name=field_template.field_name,
+                        field_order=field_template.field_order,
+                        field_type=field_template.field_type,
+                    )
+                )
 
         if fields_to_create:
             InventoryField.objects.bulk_create(fields_to_create)
