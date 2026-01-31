@@ -6,20 +6,20 @@
       <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
 
       <div class="border border-gray-200 rounded-xl p-6 shadow-sm bg-white flex flex-col space-y-10">
-        {% for group_info, fields in groups.items %}
-            {% with group_id=group_info.0 group_name=group_info.1 %}
+        {% for group_data in groups %}
+            {% with group=group_data.group fields=group_data.fields %}
             <div class="group-container relative p-4 border rounded-lg border-base-200">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold">{{ group_name }}</h3>
+                    <h3 class="text-lg font-semibold">{{ group.name }}</h3>
                      {% if 'edit' in roles %}
-                    <button type="button" class="btn btn-xs btn-outline" onclick="openFieldModal('{{ group_id }}', '{{ group_name }}')">
+                    <button type="button" class="btn btn-xs btn-outline" onclick="openFieldModal('{{ group.id }}', '{{ group.name }}')">
                         + Field
                     </button>
                     {% endif %}
                 </div>
 
                 <div class="grid gap-2">
-                  {% for field_name, field in fields %}
+                  {% for field in fields %}
                   <div class="grid grid-cols-[200px_1fr] items-center">
                     <label for="{{ field.id_for_label }}" class="font-semibold text-gray-700">
                       {{ field.label }}:
