@@ -6,8 +6,7 @@
       <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
 
       <div class="border border-gray-200 rounded-xl p-6 shadow-sm bg-white flex flex-col space-y-10">
-        {% for group_data in groups %}
-            {% with group=group_data.group fields=group_data.fields %}
+        {% for group in inventory.groups.all %}
             <div class="group-container relative p-4 border rounded-lg border-base-200">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold">{{ group.name }}</h3>
@@ -19,36 +18,39 @@
                 </div>
 
                 <div class="grid gap-2">
-                  {% for field in fields %}
-                  <div class="grid grid-cols-[200px_1fr] items-center">
-                    <label for="{{ field.id_for_label }}" class="font-semibold text-gray-700">
-                      {{ field.label }}:
-                    </label>
+                  {% for field_model in group.fields.all %}
+                    {% with field=field_model.bound_field %}
+                      {% if field %}
+                      <div class="grid grid-cols-[200px_1fr] items-center">
+                        <label for="{{ field.id_for_label }}" class="font-semibold text-gray-700">
+                          {{ field.label }}:
+                        </label>
 
-                    {% if field.field.is_password %}
-                    <div class="relative">
-                      {{ field }}
-                      <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" onclick="togglePassword(this)">
-                        <i data-lucide="eye" style="width: 16px; height: 16px"></i>
-                      </button>
-                    </div>
-                    {% else %}
-                    <div>
-                      {{ field }}
-                      {% if field.help_text %}
-                      <label class="label"><span class="label-text-alt text-xs">{{ field.help_text|safe }}</span></label>
+                        {% if field.field.is_password %}
+                        <div class="relative">
+                          {{ field }}
+                          <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" onclick="togglePassword(this)">
+                            <i data-lucide="eye" style="width: 16px; height: 16px"></i>
+                          </button>
+                        </div>
+                        {% else %}
+                        <div>
+                          {{ field }}
+                          {% if field.help_text %}
+                          <label class="label"><span class="label-text-alt text-xs">{{ field.help_text|safe }}</span></label>
+                          {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if field.errors %}
+                        <p class="text-red-500 text-sm mt-1 col-start-2">{{ field.errors }}</p>
+                        {% endif %}
+                      </div>
                       {% endif %}
-                    </div>
-                    {% endif %}
-                    
-                    {% if field.errors %}
-                    <p class="text-red-500 text-sm mt-1 col-start-2">{{ field.errors }}</p>
-                    {% endif %}
-                  </div>
+                    {% endwith %}
                   {% endfor %}
                 </div>
             </div>
-            {% endwith %}
         {% endfor %}
 
         {% if 'edit' in roles %}
@@ -70,7 +72,7 @@
     <dialog id="add_group_modal" class="modal">
       <div class="modal-box">
         <h3 class="font-bold text-lg">Add New Group</h3>
-        <form method="POST" action="{% url 'projects:inventory:add_group' project_id %}" hx-post="{% url 'projects:inventory:add_group' project_id %}" hx-target="#inventory-form-container" hx-swap="outerHTML">
+        <form method="POST" action="{% url 'projects:inventory:add_group' project_id inventory_id %}" hx-post="{% url 'projects:inventory:add_group' project_id inventory_id %}" hx-target="#inventory-form-container" hx-swap="outerHTML">
              {% csrf_token %}
              <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
              <div class="form-control w-full max-w-xs mt-4">
@@ -92,17 +94,17 @@
     <dialog id="add_field_modal" class="modal">
       <div class="modal-box">
         <h3 class="font-bold text-lg">Add Field to <span id="modal_group_name_display"></span></h3>
-        <form method="POST" action="{% url 'projects:inventory:add_field' project_id %}" hx-post="{% url 'projects:inventory:add_field' project_id %}" hx-target="#inventory-form-container" hx-swap="outerHTML">
-             {% csrf_token %}
-             <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
-             <input type="hidden" name="group_id" id="modal_group_id_input" />
-             
-             <div class="form-control w-full mt-4">
+        <form id="add_field_form" method="POST" hx-target="#inventory-form-container" hx-swap="outerHTML">
+            {% csrf_token %}
+            <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
+            <input type="hidden" name="group_id" id="modal_group_id_input" />
+            
+            <div class="form-control w-full mt-4">
               <label class="label"><span class="label-text">Field Name</span></label>
               <input type="text" name="field_name" class="input input-bordered w-full" required />
             </div>
 
-             <div class="form-control w-full mt-4">
+            <div class="form-control w-full mt-4">
               <label class="label"><span class="label-text">Field Type</span></label>
               <select name="field_type" class="select select-bordered w-full" required>
                   <option value="text">Text</option>
@@ -115,7 +117,7 @@
               </select>
             </div>
 
-             <div class="form-control w-52 mt-4">
+            <div class="form-control w-52 mt-4">
               <label class="cursor-pointer label">
                 <span class="label-text">Is Secret?</span> 
                 <input type="checkbox" name="is_secret" class="checkbox checkbox-primary" />
@@ -137,6 +139,13 @@
         function openFieldModal(groupId, groupName) {
             document.getElementById('modal_group_id_input').value = groupId;
             document.getElementById('modal_group_name_display').innerText = groupName;
+            
+            // Mettre à jour l'URL du formulaire
+            const form = document.getElementById('add_field_form');
+            const url = "{% url 'projects:inventory:add_field' project_id inventory_id 0 %}".replace('/0/', `/${groupId}/`);
+            form.setAttribute('action', url);
+            form.setAttribute('hx-post', url);
+            
             document.getElementById('add_field_modal').showModal();
         }
     </script>

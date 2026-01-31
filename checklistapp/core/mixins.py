@@ -104,6 +104,7 @@ class CommonContextMixin:
         context["project_id"] = self.kwargs.get("project_id")
         context["comment_id"] = self.kwargs.get("comment_id")
         context["inventory_id"] = self.kwargs.get("inventory_id")
+        context["group_id"] = self.kwargs.get("group_id")
         context["field_id"] = self.kwargs.get("field_id")
 
         context["roles"] = self._compute_user_roles(self.request.user, context["project_id"])

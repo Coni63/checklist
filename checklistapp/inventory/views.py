@@ -240,7 +240,7 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
 
             form = DynamicInventoryForm(inventory, context)
             context["form"] = form
-            context["groups"] = InventoryDetail._get_inventory_structure(inventory, form)
+            self._attach_form_fields(inventory, form)
 
             context["edit_endpoint_base"] = reverse(
                 "projects:inventory:inventory_header_edit",
@@ -258,33 +258,16 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             return render(request, self.template_name, context)
 
     @staticmethod
-    def _get_inventory_structure(inventory, form):
+    def _attach_form_fields(inventory, form):
         """
-        Build a structure for rendering:
-        [
-            {
-                'group': group_obj,
-                'fields': [bound_field, bound_field, ...]
-            },
-            ...
-        ]
-        Includes empty groups.
+        Attach bound form fields directly to the model instances.
+        This avoids complex structure building and allows direct iteration in templates.
         """
-        structure = []
-
-        # inventory.groups.all() should be prefetched and ordered
         for group in inventory.groups.all():
-            group_data = {"group": group, "fields": []}
-
-            # Iterate over fields in the group (prefetched)
-            for field_model in group.fields.all():
-                field_name = f"field_{field_model.id}"
+            for field in group.fields.all():
+                field_name = f"field_{field.id}"
                 if field_name in form.fields:
-                    group_data["fields"].append(form[field_name])
-
-            structure.append(group_data)
-
-        return structure
+                    field.bound_field = form[field_name]
 
     def post(self, request, *args, **kwargs):
         try:
@@ -306,7 +289,7 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
                 if request.htmx:
                     # return freshly rendered partial
                     context["form"] = DynamicInventoryForm(inventory, context)
-                    context["groups"] = InventoryDetail._get_inventory_structure(inventory, context["form"])
+                    InventoryDetail._attach_form_fields(inventory, context["form"])
                     return render(request, "inventory/partials/inventory_form.html", context)
                 return redirect(request.path)
             else:
@@ -315,7 +298,7 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
                         messages.error(request, f"{field}: {error}")
 
             context["form"] = form
-            context["groups"] = InventoryDetail._get_inventory_structure(inventory, form)
+            self._attach_form_fields(inventory, form)
 
             if request.htmx:
                 return render(request, "inventory/partials/inventory_form.html", context)
@@ -375,15 +358,18 @@ class InventoryHeaderEditView(
 
 class AddInventoryGroupView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
     def post(self, request, project_id):
-        inventory_id = request.POST.get("inventory_id")
+        context = self.get_context_data()
+        inventory_id = context["inventory_id"]
         group_name = request.POST.get("group_name")
+
+        print(inventory_id, group_name)
 
         if not inventory_id or not group_name:
             messages.error(request, "Missing inventory ID or group name.")
             return HttpResponse(status=400)
 
         try:
-            inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups"])
+            inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
             # Auto-increment order
             max_order = inventory.groups.aggregate(Max("order"))["order__max"] or 0
 
@@ -392,27 +378,25 @@ class AddInventoryGroupView(ProjectAdminRequiredMixin, CommonContextMixin, Conte
             messages.success(request, "Group added successfully.")
 
             # Refresh the form
-            return self._render_form(request, project_id, inventory_id)
+            return self._render_form(request, inventory, context)
 
         except Exception as e:
             logger.error(e)
             messages.error(request, str(e))
             return HttpResponse(status=500)
 
-    def _render_form(self, request, project_id, inventory_id):
-        # Helper to re-render the inventory form partial
-        context = self.get_context_data()
-        inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
+    def _render_form(self, request, inventory, context):
         form = DynamicInventoryForm(inventory, context)
         context["inventory"] = inventory
         context["form"] = form
-        context["groups"] = InventoryDetail._get_inventory_structure(inventory, form)
+        InventoryDetail._attach_form_fields(inventory, form)
         return render(request, "inventory/partials/inventory_form.html", context)
 
 
 class AddInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
     def post(self, request, project_id):
-        inventory_id = request.POST.get("inventory_id")
+        context = self.get_context_data()
+        inventory_id = context["inventory_id"]
         group_id = request.POST.get("group_id")
         field_name = request.POST.get("field_name")
         field_type = request.POST.get("field_type")
@@ -460,5 +444,5 @@ class AddInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, Conte
         form = DynamicInventoryForm(inventory, context)
         context["inventory"] = inventory
         context["form"] = form
-        context["groups"] = InventoryDetail._get_inventory_structure(inventory, form)
+        InventoryDetail._attach_form_fields(inventory, form)
         return render(request, "inventory/partials/inventory_form.html", context)

@@ -44,6 +44,6 @@ urlpatterns = [
     ),
     path("<int:inventory_id>/field/<int:field_id>/download", views.download_inventory_file, name="download_inventory_file"),
     path("<int:inventory_id>/header/", views.InventoryHeaderEditView.as_view(), name="inventory_header_edit"),
-    path("add_group/", views.AddInventoryGroupView.as_view(), name="add_group"),
-    path("add_field/", views.AddInventoryFieldView.as_view(), name="add_field"),
+    path("<int:inventory_id>/add_group/", views.AddInventoryGroupView.as_view(), name="add_group"),
+    path("<int:inventory_id>/group/<int:group_id>/add_field/", views.AddInventoryFieldView.as_view(), name="add_field"),
 ]
