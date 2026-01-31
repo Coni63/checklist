@@ -2,13 +2,14 @@ import base64
 import logging
 
 from common.views import editable_header_view
-from core.exceptions import InvalidParameterError
+from core.exceptions import InvalidParameterError, RecordNotFoundError
 from core.mixins import (
     CommonContextMixin,
     ProjectAdminRequiredMixin,
     ProjectReadRequiredMixin,
 )
 from django.contrib import messages
+from django.db.models import Max
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
@@ -19,9 +20,10 @@ from django.views.generic.base import ContextMixin
 from django_htmx.http import reswap
 from projects.models import Project
 from projects.services import ProjectService
+from templates_management.models import FieldTemplate
 
 from .forms import DynamicInventoryForm
-from .models import ProjectInventory
+from .models import InventoryField, InventoryGroup, ProjectInventory
 from .services import InventoryService
 
 logger = logging.getLogger(__name__)
@@ -232,9 +234,7 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             if not inventory_id:
                 return render(request, self.template_name, context)
 
-            inventory = InventoryService.get_inventory(
-                context["project_id"], inventory_id, prefetch_related=["groups__fields"]
-            )
+            inventory = InventoryService.get_inventory(context["project_id"], inventory_id, prefetch_related=["groups__fields"])
             # context["tasks"] = inventory.fields.all() # Not used anymore
             context["inventory"] = inventory
 
@@ -259,20 +259,23 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
 
     @staticmethod
     def _group_fields_by_group(form):
+        """
+        Group form fields by their assigned group.
+        Returns a dict: { (group_id, group_name, group_order): [(field_name, bound_field), ...] }
+        """
         groups = {}
 
-        # Copy metadata for sorting
-        meta = {}
-
         for name, field in form.fields.items():
-            group = getattr(field, "group_name", "Other")
-            order = getattr(field, "group_order", 999)
+            # Retrieve metadata attached in form.__init__
+            g_id = getattr(field, "group_id", None)
+            g_name = getattr(field, "group_name", "Other")
+            g_order = getattr(field, "group_order", 999)
 
-            groups.setdefault(group, []).append((name, form[name]))
-            meta[group] = order
+            key = (g_id, g_name, g_order)
+            groups.setdefault(key, []).append((name, form[name]))
 
-        # Sort groups by group_order
-        sorted_groups = dict(sorted(groups.items(), key=lambda item: meta[item[0]]))
+        # Sort groups by group_order (index 2 of the key tuple)
+        sorted_groups = dict(sorted(groups.items(), key=lambda item: item[0][2]))
 
         return sorted_groups
 
@@ -302,9 +305,7 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             inventory_id = request.POST.get("inventory_id")
             if not inventory_id:
                 raise InvalidParameterError("You need to provide an inventory ID in the data.")
-            inventory = InventoryService.get_inventory(
-                context["project_id"], inventory_id, prefetch_related=["groups__fields"]
-            )
+            inventory = InventoryService.get_inventory(context["project_id"], inventory_id, prefetch_related=["groups__fields"])
 
             form = DynamicInventoryForm(inventory, context, request.POST, request.FILES)
             if form.is_valid():
@@ -362,7 +363,8 @@ class InventoryHeaderEditView(
             can_edit = "edit" in context["roles"]
 
             edit_endpoint_base = reverse(
-                "projects:inventory:inventory_header_edit", kwargs={"project_id": project_id, "inventory_id": inventory_id}
+                "projects:inventory:inventory_header_edit",
+                kwargs={"project_id": project_id, "inventory_id": inventory_id},
             )
 
             return editable_header_view(
@@ -378,3 +380,94 @@ class InventoryHeaderEditView(
             logger.error(e)
             messages.error(request, "Something went wrong.")
             return redirect(request.path)
+
+
+class AddInventoryGroupView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
+    def post(self, request, project_id):
+        inventory_id = request.POST.get("inventory_id")
+        group_name = request.POST.get("group_name")
+
+        if not inventory_id or not group_name:
+            messages.error(request, "Missing inventory ID or group name.")
+            return HttpResponse(status=400)
+
+        try:
+            inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups"])
+            # Auto-increment order
+            max_order = inventory.groups.aggregate(Max("order"))["order__max"] or 0
+
+            InventoryGroup.objects.create(inventory=inventory, name=group_name, order=max_order + 1)
+
+            messages.success(request, "Group added successfully.")
+
+            # Refresh the form
+            return self._render_form(request, project_id, inventory_id)
+
+        except Exception as e:
+            logger.error(e)
+            messages.error(request, str(e))
+            return HttpResponse(status=500)
+
+    def _render_form(self, request, project_id, inventory_id):
+        # Helper to re-render the inventory form partial
+        context = self.get_context_data()
+        inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
+        form = DynamicInventoryForm(inventory, context)
+        context["inventory"] = inventory
+        context["form"] = form
+        context["groups"] = InventoryDetail._group_fields_by_group(form)
+        return render(request, "inventory/partials/inventory_form.html", context)
+
+
+class AddInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
+    def post(self, request, project_id):
+        inventory_id = request.POST.get("inventory_id")
+        group_id = request.POST.get("group_id")
+        field_name = request.POST.get("field_name")
+        field_type = request.POST.get("field_type")
+        is_secret = request.POST.get("is_secret") == "on"
+
+        if not all([inventory_id, group_id, field_name, field_type]):
+            messages.error(request, "Missing required fields.")
+            return HttpResponse(status=400)
+
+        try:
+            # Verify group belongs to inventory/project handled by service usually,
+            # but here we trust IDs within the project context check.
+            try:
+                group = InventoryGroup.objects.get(id=group_id)
+            except InventoryGroup.DoesNotExist:
+                raise RecordNotFoundError(f"Group {group_id} not found")
+
+            if group.inventory.id != int(inventory_id) or group.inventory.project.id != int(project_id):
+                raise PermissionError("Group mismatch.")
+
+            # Auto-increment order
+            max_order = group.fields.aggregate(Max("field_order"))["field_order__max"] or 0
+
+            InventoryField.objects.create(
+                group=group,
+                field_name=field_name,
+                field_type=field_type,
+                field_order=max_order + 1,
+                # NOTE: is_secret is not supported on ad-hoc fields currently as it depends on TemplateField.
+            )
+
+            messages.success(request, "Field added successfully.")
+
+            # Refresh the form
+            return self._render_form(request, project_id, inventory_id)
+
+        except Exception as e:
+            logger.error(e)
+            messages.error(request, str(e))
+            return HttpResponse(status=500)
+
+    def _render_form(self, request, project_id, inventory_id):
+        context = self.get_context_data()
+        inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
+        form = DynamicInventoryForm(inventory, context)
+        context["inventory"] = inventory
+        context["form"] = form
+        context["groups"] = InventoryDetail._group_fields_by_group(form)
+        return render(request, "inventory/partials/inventory_form.html", context)

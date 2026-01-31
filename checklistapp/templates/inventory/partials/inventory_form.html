@@ -1,84 +1,167 @@
-<form method="POST" enctype="multipart/form-data" class="space-y-8">
-  {% csrf_token %}
+<div id="inventory-form-container">
+    <form method="POST" enctype="multipart/form-data" class="space-y-8"
+          hx-post="{{ request.path }}" hx-target="#inventory-form-container" hx-swap="outerHTML">
+      {% csrf_token %}
 
-  <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
+      <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
 
-  <div
-    class="border border-gray-200 rounded-xl p-6 shadow-sm bg-white flex flex-col space-y-10"
-  >
-    {% for group_name, fields in groups.items %}
-    <h3 class="text-lg font-semibold mb-4">{{ group_name }}</h3>
+      <div class="border border-gray-200 rounded-xl p-6 shadow-sm bg-white flex flex-col space-y-10">
+        {% for group_info, fields in groups.items %}
+            {% with group_id=group_info.0 group_name=group_info.1 %}
+            <div class="group-container relative p-4 border rounded-lg border-base-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">{{ group_name }}</h3>
+                     {% if 'edit' in roles %}
+                    <button type="button" class="btn btn-xs btn-outline" onclick="openFieldModal('{{ group_id }}', '{{ group_name }}')">
+                        + Field
+                    </button>
+                    {% endif %}
+                </div>
 
-    <div class="grid gap-2">
-      {% for field_name, field in fields %}
-      <div class="grid grid-cols-[200px_1fr] items-center">
-        <label
-          for="{{ field.id_for_label }}"
-          class="font-semibold text-gray-700"
-        >
-          {{ field.label }}:
-        </label>
+                <div class="grid gap-2">
+                  {% for field_name, field in fields %}
+                  <div class="grid grid-cols-[200px_1fr] items-center">
+                    <label for="{{ field.id_for_label }}" class="font-semibold text-gray-700">
+                      {{ field.label }}:
+                    </label>
 
-        {% if field.field.is_password %}
-        <div class="relative">
-          {{ field }}
+                    {% if field.field.is_password %}
+                    <div class="relative">
+                      {{ field }}
+                      <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" onclick="togglePassword(this)">
+                        <i data-lucide="eye" style="width: 16px; height: 16px"></i>
+                      </button>
+                    </div>
+                    {% else %}
+                    <div>
+                      {{ field }}
+                      {% if field.help_text %}
+                      <label class="label"><span class="label-text-alt text-xs">{{ field.help_text|safe }}</span></label>
+                      {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if field.errors %}
+                    <p class="text-red-500 text-sm mt-1 col-start-2">{{ field.errors }}</p>
+                    {% endif %}
+                  </div>
+                  {% endfor %}
+                </div>
+            </div>
+            {% endwith %}
+        {% endfor %}
 
-          <button
-            type="button"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-            onclick="togglePassword(this)"
-          >
-            <i data-lucide="eye" style="width: 16px; height: 16px"></i>
-          </button>
+        {% if 'edit' in roles %}
+        <div class="flex justify-between items-center mt-4">
+             <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('add_group_modal').showModal()">
+                + Add Group
+            </button>
+            <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              Save Values
+            </button>
         </div>
-
-        {% if field.errors %}
-        <p class="text-red-500 text-sm mt-1">{{ field.errors }}</p>
-        {% endif %} {% else %}
-
-        <div>
-          {{ field }} {% if field.help_text %}
-          <label class="label">
-            <span class="label-text-alt text-xs">
-              {{ field.help_text|safe }}
-            </span>
-          </label>
-          {% endif %} {% if field.errors %}
-          <p class="text-red-500 text-sm mt-1">{{ field.errors }}</p>
-          {% endif %}
-        </div>
-
         {% endif %}
       </div>
-      {% endfor %}
-    </div>
-    {% endfor %} {% if 'edit' in roles %}
-    <button
-      type="submit"
-      class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-    >
-      Save
-    </button>
+    </form>
+
+    <!-- Modals -->
+    {% if 'edit' in roles %}
+    <!-- Add Group Modal -->
+    <dialog id="add_group_modal" class="modal">
+      <div class="modal-box">
+        <h3 class="font-bold text-lg">Add New Group</h3>
+        <form method="POST" action="{% url 'projects:inventory:add_group' project_id %}" hx-post="{% url 'projects:inventory:add_group' project_id %}" hx-target="#inventory-form-container" hx-swap="outerHTML">
+             {% csrf_token %}
+             <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
+             <div class="form-control w-full max-w-xs mt-4">
+              <label class="label"><span class="label-text">Group Name</span></label>
+              <input type="text" name="group_name" placeholder="Type here" class="input input-bordered w-full max-w-xs" required />
+            </div>
+            <div class="modal-action">
+              <button type="submit" class="btn btn-primary">Add</button>
+              <button type="button" class="btn" onclick="document.getElementById('add_group_modal').close()">Close</button>
+            </div>
+        </form>
+      </div>
+       <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <!-- Add Field Modal -->
+    <dialog id="add_field_modal" class="modal">
+      <div class="modal-box">
+        <h3 class="font-bold text-lg">Add Field to <span id="modal_group_name_display"></span></h3>
+        <form method="POST" action="{% url 'projects:inventory:add_field' project_id %}" hx-post="{% url 'projects:inventory:add_field' project_id %}" hx-target="#inventory-form-container" hx-swap="outerHTML">
+             {% csrf_token %}
+             <input type="hidden" name="inventory_id" value="{{ inventory_id }}" />
+             <input type="hidden" name="group_id" id="modal_group_id_input" />
+             
+             <div class="form-control w-full mt-4">
+              <label class="label"><span class="label-text">Field Name</span></label>
+              <input type="text" name="field_name" class="input input-bordered w-full" required />
+            </div>
+
+             <div class="form-control w-full mt-4">
+              <label class="label"><span class="label-text">Field Type</span></label>
+              <select name="field_type" class="select select-bordered w-full" required>
+                  <option value="text">Text</option>
+                  <option value="longtext">Long Text</option>
+                  <option value="number">Number</option>
+                  <option value="url">URL</option>
+                  <option value="file">File</option>
+                  <option value="password">Password</option>
+                  <option value="datetime">Datetime</option>
+              </select>
+            </div>
+
+             <div class="form-control w-52 mt-4">
+              <label class="cursor-pointer label">
+                <span class="label-text">Is Secret?</span> 
+                <input type="checkbox" name="is_secret" class="checkbox checkbox-primary" />
+              </label>
+            </div>
+
+            <div class="modal-action">
+              <button type="submit" class="btn btn-primary">Add Field</button>
+              <button type="button" class="btn" onclick="document.getElementById('add_field_modal').close()">Close</button>
+            </div>
+        </form>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+
+    <script>
+        function openFieldModal(groupId, groupName) {
+            document.getElementById('modal_group_id_input').value = groupId;
+            document.getElementById('modal_group_name_display').innerText = groupName;
+            document.getElementById('add_field_modal').showModal();
+        }
+    </script>
     {% endif %}
-  </div>
-</form>
 
-{% block extra_js %}
-<script>
-  function togglePassword(btn) {
-    const input = btn.parentElement.querySelector("input[data-password-field]");
-    if (!input) return;
+    <script>
+      // Re-init lucide icons after HTMX swap if needed, or rely on global observer
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+      
+       function togglePassword(btn) {
+        const input = btn.parentElement.querySelector("input[data-password-field]");
+        if (!input) return;
 
-    if (input.type === "password") {
-      input.type = "text";
-      btn.innerHTML =
-        '<i data-lucide="eye-closed" style="width:16px;height:16px;"></i>';
-    } else {
-      input.type = "password";
-      btn.innerHTML =
-        '<i data-lucide="eye" style="width:16px;height:16px;"></i>';
-    }
-    lucide.createIcons();
-  }
-</script>
-{% endblock %}
+        if (input.type === "password") {
+          input.type = "text";
+          btn.innerHTML =
+            '<i data-lucide="eye-closed" style="width:16px;height:16px;"></i>';
+        } else {
+          input.type = "password";
+          btn.innerHTML =
+            '<i data-lucide="eye" style="width:16px;height:16px;"></i>';
+        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+      }
+    </script>
+</div>

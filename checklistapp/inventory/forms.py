@@ -44,6 +44,7 @@ class DynamicInventoryForm(forms.Form):
 
                 # store grouping metadata from the Group object
                 form_field.group_name = group.name
+                form_field.group_id = group.id
                 form_field.group_order = group.order
                 form_field.is_password = (inst_field.field_type == "password") and not hide_value
 
