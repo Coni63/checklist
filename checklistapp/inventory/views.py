@@ -278,8 +278,6 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             context = self.get_context_data()
             context["inventory_id"] = inventory_id  # Explicitly set from URL arg
 
-            print(request.POST)
-
             if "edit" not in context["roles"]:
                 raise PermissionError("You are not allowed to edit fields")
 
@@ -292,7 +290,7 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
 
                 if request.htmx:
                     # On save, if everything is OK, just return the message
-                    return reswap(HttpResponse(status=200), "none")
+                    return reswap(HttpResponse(status=200), "none show:top")
 
                 return redirect(request.path)
             else:
@@ -314,7 +312,7 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             else:
                 messages.error(request, "Something went wrong when listing the inventory.")
             if request.htmx:
-                return reswap(HttpResponse(status=200), "none")
+                return reswap(HttpResponse(status=200), "none show:top")
             else:
                 return redirect(request.path)
 

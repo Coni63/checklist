@@ -1,11 +1,10 @@
 <div id="inventory-form-container">
-    <form method="POST" enctype="multipart/form-data" class="space-y-8"
-          hx-post="{% url 'projects:inventory:inventory_detail' project_id inventory_id %}" hx-target="#inventory-form-container" hx-swap="outerHTML">
+    <form method="POST" enctype="multipart/form-data" class="space-y-2"
+          hx-post="{% url 'projects:inventory:inventory_detail' project_id inventory_id %}" hx-target="#inventory-form-container" hx-swap="outerHTML show:top">
       {% csrf_token %}
 
-      <div class="border border-gray-200 rounded-xl p-6 shadow-sm bg-white flex flex-col">
 {% for group in inventory.groups.all %}
-    <div class="group-container card bg-base-100 border border-base-300 shadow-sm mb-4">
+    <div class="group-container card bg-base-100 border border-base-300 shadow-sm">
         <div class="card-body p-4">
             <!-- En-tête du groupe -->
             <div class="flex justify-between items-center mb-4 border-b border-base-200">
@@ -116,7 +115,6 @@
             </button>
         </div>
         {% endif %}
-      </div>
     </form>
 
     <!-- Modals -->

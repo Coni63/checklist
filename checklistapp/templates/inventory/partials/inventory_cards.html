@@ -3,7 +3,7 @@
     class="card card-compact bg-base-100 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 p-0 {% if inventory.id == inventory_id %}active-step{% endif %}"
     hx-get="{% url 'projects:inventory:inventory_detail' project_id=project_id inventory_id=inventory.id %}"
     hx-target="#content-block"
-    hx-swap="innerHTML"
+    hx-swap="innerHTML show:top"
     hx-push-url="true"
     {% if oob %}
       hx-swap-oob="true"

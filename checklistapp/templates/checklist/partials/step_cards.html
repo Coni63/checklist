@@ -4,7 +4,7 @@
     class="card card-compact bg-base-100 shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 p-0 {% if status == 'Not Started' %}border-error {% elif status == 'In Progress' %}border-warning {% elif status == 'Completed' %}border-success {% else %}border-base-300{% endif %} {% if step.id == active_step_id %}active-step{% endif %}"
     hx-get="{% url 'projects:checklist:step_detail' project_id=project_id step_id=step.id %}"
     hx-target="#content-block"
-    hx-swap="innerHTML"
+    hx-swap="innerHTML show:top"
     hx-push-url="true"
     {% if oob %} hx-swap-oob="true" {% endif %}
     hx-on::before-request="document.querySelectorAll('#sidebar .card').forEach(el => el.classList.remove('active-step')); this.classList.add('active-step')"
