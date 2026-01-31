@@ -235,13 +235,11 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             if not inventory_id:
                 # Fallback if accessed without ID (e.g. main page before selection)
                 return render(request, self.template_name, context)
-            
+
             # Ensure it is in context for the form
             context["inventory_id"] = inventory_id
 
-            inventory = InventoryService.get_inventory(
-                context["project_id"], inventory_id, prefetch_related=["groups__fields"]
-            )
+            inventory = InventoryService.get_inventory(context["project_id"], inventory_id, prefetch_related=["groups__fields"])
             context["inventory"] = inventory
 
             form = DynamicInventoryForm(inventory, context)
@@ -279,14 +277,12 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
         # Signature aligned with URL: <int:project_id>/.../<int:inventory_id>/
         try:
             context = self.get_context_data()
-            context["inventory_id"] = inventory_id # Explicitly set from URL arg
+            context["inventory_id"] = inventory_id  # Explicitly set from URL arg
 
             if "edit" not in context["roles"]:
                 raise PermissionError("You are not allowed to edit fields")
 
-            inventory = InventoryService.get_inventory(
-                project_id, inventory_id, prefetch_related=["groups__fields"]
-            )
+            inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
 
             form = DynamicInventoryForm(inventory, context, request.POST, request.FILES)
             if form.is_valid():
@@ -338,11 +334,11 @@ class InventoryHeaderEditView(
     def _inner(self, request, *args, **kwargs):
         try:
             context = self.get_context_data()
-            
+
             # Using kwargs directly is safer if get_context_data doesn't populate them yet
             project_id = kwargs.get("project_id")
             inventory_id = kwargs.get("inventory_id")
-            
+
             can_edit = "edit" in context["roles"]
 
             edit_endpoint_base = reverse(
@@ -447,9 +443,67 @@ class AddInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, Conte
             return HttpResponse(status=500)
 
     def _render_form(self, request, project_id, inventory_id, context):
-        inventory = InventoryService.get_inventory(
-            project_id, inventory_id, prefetch_related=["groups__fields"]
-        )
+        inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
+        form = DynamicInventoryForm(inventory, context)
+        context["inventory"] = inventory
+        context["form"] = form
+        InventoryDetail._attach_form_fields(inventory, form)
+        return render(request, "inventory/partials/inventory_form.html", context)
+
+
+class DeleteInventoryGroupView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
+    def delete(self, request, project_id, inventory_id, group_id):
+        try:
+            context = self.get_context_data()
+            if "admin" not in context["roles"]:
+                raise PermissionError("Only admins can delete groups.")
+
+            InventoryService.delete_group(group_id)
+            messages.success(request, "Group deleted successfully.")
+
+            context["project_id"] = project_id
+            context["inventory_id"] = inventory_id
+            return self._render_form(request, project_id, inventory_id, context)
+        except Exception as e:
+            logger.error(e)
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Failed to delete group.")
+            return HttpResponse(status=500)
+
+    def _render_form(self, request, project_id, inventory_id, context):
+        inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
+        form = DynamicInventoryForm(inventory, context)
+        context["inventory"] = inventory
+        context["form"] = form
+        InventoryDetail._attach_form_fields(inventory, form)
+        return render(request, "inventory/partials/inventory_form.html", context)
+
+
+class DeleteInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
+    def delete(self, request, project_id, inventory_id, group_id, field_id):
+        try:
+            context = self.get_context_data()
+            if "admin" not in context["roles"]:
+                raise PermissionError("Only admins can delete fields.")
+
+            InventoryService.delete_field(group_id, field_id)
+            messages.success(request, "Field deleted successfully.")
+
+            context["project_id"] = project_id
+            context["inventory_id"] = inventory_id
+            return self._render_form(request, project_id, inventory_id, group_id, context)
+        except Exception as e:
+            logger.error(e)
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Failed to delete field.")
+            return HttpResponse(status=500)
+
+    def _render_form(self, request, project_id, inventory_id, context):
+        inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
         form = DynamicInventoryForm(inventory, context)
         context["inventory"] = inventory
         context["form"] = form

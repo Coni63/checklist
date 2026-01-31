@@ -3,53 +3,108 @@
           hx-post="{{ request.path }}" hx-target="#inventory-form-container" hx-swap="outerHTML">
       {% csrf_token %}
 
-      <div class="border border-gray-200 rounded-xl p-6 shadow-sm bg-white flex flex-col space-y-10">
-        {% for group in inventory.groups.all %}
-            <div class="group-container relative p-4 border rounded-lg border-base-200">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold">{{ group.name }}</h3>
-                     {% if 'edit' in roles %}
-                    <button type="button" class="btn btn-xs btn-outline" onclick="openFieldModal('{{ group.id }}', '{{ group.name }}')">
-                        + Field
+      <div class="border border-gray-200 rounded-xl p-6 shadow-sm bg-white flex flex-col">
+{% for group in inventory.groups.all %}
+    <div class="group-container card bg-base-100 border border-base-300 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <!-- En-tête du groupe -->
+            <div class="flex justify-between items-center mb-4 border-b border-base-200">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    {{ group.name }}
+                    {% if 'admin' in roles %}
+                      <button type="button" 
+                              class="btn btn-ghost btn-sm btn-square text-error text-base-content/40 hover:text-error hover:bg-error/10" 
+                              hx-delete="{% url 'projects:inventory:delete_group' project_id inventory_id group.id %}"
+                              hx-confirm="Delete '{{ group.name }}' and all its fields?"
+                              hx-target="#inventory-form-container"
+                              hx-swap="outerHTML"
+                              title="Delete Group">
+                          <i data-lucide="x" class="w-4 h-4"></i>
+                      </button>
+                    {% endif %}
+                </h3>
+                <div class="flex items-center gap-2">
+                    {% if 'edit' in roles %}
+                    <button type="button" 
+                            class="btn btn-sm btn-primary btn-outline gap-1" 
+                            onclick="openFieldModal('{{ group.id }}', '{{ group.name }}')">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        Add Field
                     </button>
                     {% endif %}
-                </div>
 
-                <div class="grid gap-2">
-                  {% for field_model in group.fields.all %}
-                    {% with field=field_model.bound_field %}
-                      {% if field %}
-                      <div class="grid grid-cols-[200px_1fr] items-center">
-                        <label for="{{ field.id_for_label }}" class="font-semibold text-gray-700">
-                          {{ field.label }}:
-                        </label>
-
-                        {% if field.field.is_password %}
-                        <div class="relative">
-                          {{ field }}
-                          <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" onclick="togglePassword(this)">
-                            <i data-lucide="eye" style="width: 16px; height: 16px"></i>
-                          </button>
-                        </div>
-                        {% else %}
-                        <div>
-                          {{ field }}
-                          {% if field.help_text %}
-                          <label class="label"><span class="label-text-alt text-xs">{{ field.help_text|safe }}</span></label>
-                          {% endif %}
-                        </div>
-                        {% endif %}
-                        
-                        {% if field.errors %}
-                        <p class="text-red-500 text-sm mt-1 col-start-2">{{ field.errors }}</p>
-                        {% endif %}
-                      </div>
-                      {% endif %}
-                    {% endwith %}
-                  {% endfor %}
                 </div>
             </div>
-        {% endfor %}
+
+            <!-- Liste des champs -->
+            <div class="space-y-3">
+                {% for field_model in group.fields.all %}
+                    {% with field=field_model.bound_field %}
+                        {% if field %}
+                        <div class="form-control">
+                            <div class="flex items-center gap-3">
+                                <!-- Label -->
+                                <label for="{{ field.id_for_label }}" class="label">
+                                    <span class="label-text font-semibold text-gray-700">{{ field.label }} :</span>
+                                </label>
+                                <!-- Input -->
+                                <div class="flex-1 min-w-0">
+                                    {% if field.field.is_password %}
+                                    <div class="relative">
+                                        {{ field }}
+                                        <button type="button" 
+                                                class="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content transition-colors" 
+                                                onclick="togglePassword(this)">
+                                            <i data-lucide="eye" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                    {% else %}
+                                        {{ field }}
+                                    {% endif %}
+                                    
+                                    {% if field.help_text %}
+                                    <label class="label py-1">
+                                        <span class="label-text-alt text-base-content/60">{{ field.help_text|safe }}</span>
+                                    </label>
+                                    {% endif %}
+                                    
+                                    {% if field.errors %}
+                                    <label class="label py-1">
+                                        <span class="label-text-alt text-error">{{ field.errors }}</span>
+                                    </label>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Actions -->
+                                {% if 'admin' in roles %}
+                                <div class="flex-shrink-0">
+                                    <button type="button" 
+                                            class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-error hover:bg-error/10" 
+                                            hx-delete="{% url 'projects:inventory:delete_field' project_id inventory_id group.id field_model.id %}"
+                                            hx-confirm="Delete field '{{ field.label }}'?"
+                                            hx-target="#inventory-form-container"
+                                            hx-swap="outerHTML"
+                                            title="Delete Field">
+                                        <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endwith %}
+                {% endfor %}
+                
+                {% if not group.fields.all %}
+                <div class="text-center py-8 text-base-content/50">
+                    <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+                    <p class="text-sm">No fields yet. Click "Add Field" to get started.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endfor %}
 
         {% if 'edit' in roles %}
         <div class="flex justify-between items-center mt-4">
@@ -145,7 +200,6 @@
             const form = document.getElementById('add_field_form');
             form.setAttribute('action', url);
             form.setAttribute('hx-post', url);
-            htmx.process(form);
             
             document.getElementById('add_field_modal').showModal();
         }

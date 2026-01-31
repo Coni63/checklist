@@ -140,3 +140,21 @@ class InventoryService:
         inventory = InventoryService.get_inventory(project_id, inventory_id)
 
         inventory.delete()
+
+    @staticmethod
+    def delete_group(group_id):
+        try:
+            group = InventoryGroup.objects.get(id=group_id)
+            group.delete()
+        except InventoryGroup.DoesNotExist:
+            raise RecordNotFoundError(f"Group {group_id} not found.")
+
+    @staticmethod
+    def delete_field(group_id, field_id):
+        try:
+            field = InventoryField.objects.get(id=field_id)
+            if field.group.id != group_id:
+                raise RecordNotFoundError(f"Field {field_id} does not belong to the group you provided.")
+            field.delete()
+        except InventoryField.DoesNotExist:
+            raise RecordNotFoundError(f"Field {field_id} not found.")
