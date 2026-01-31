@@ -18,6 +18,27 @@
             "problemMatcher": []
         },
         {
+            "label": "Dajngo Makemigrations",
+            "type": "shell",
+            "command": "cd checklistapp && uv run python manage.py makemigrations",
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Django Migrate",
+            "type": "shell",
+            "command": "cd checklistapp && uv run python manage.py migrate",
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Run tests",
+            "type": "shell",
+            "command": "cd checklistapp && uv run pytest",
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
             "label": "Start App",
             "dependsOn": [
                 "Start Tailwind",

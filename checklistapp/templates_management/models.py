@@ -58,6 +58,56 @@ class InventoryTemplate(models.Model):
         return self.title
 
 
+class GroupTemplate(models.Model):
+    template = models.ForeignKey(InventoryTemplate, related_name="groups", on_delete=models.CASCADE)
+
+    # Grouping
+    group_name = models.CharField(max_length=100)
+    group_order = models.PositiveIntegerField(default=1)
+
+    def save(self, *args, **kwargs):
+        self.group_name = self.group_name.upper().strip()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.group_name}"
+
+    class Meta:
+        verbose_name = "Group Template"
+        verbose_name_plural = "Groups Templates"
+        ordering = ["group_order", "group_name"]
+        constraints = [models.UniqueConstraint(fields=["template", "group_name"], name="unique_group_name_by_inventory")]
+
+
+class FieldTemplate(models.Model):
+    FIELD_TYPES = [
+        ("text", "Text"),
+        ("longtext", "Long text"),
+        ("number", "Number"),
+        ("url", "URL"),
+        ("file", "File"),
+        ("password", "Password"),
+        ("datetime", "Datetime"),
+    ]
+
+    group_template = models.ForeignKey(GroupTemplate, related_name="fields", on_delete=models.CASCADE)
+
+    field_name = models.CharField(max_length=200)
+    field_order = models.PositiveIntegerField(default=1)
+    field_type = models.CharField(max_length=20, choices=FIELD_TYPES)
+    is_secret = models.BooleanField(default=False, help_text="Only allow admin to see the value")
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.field_name}"
+
+    class Meta:
+        verbose_name = "Field Template"
+        verbose_name_plural = "Fields Templates"
+        ordering = ["field_order", "field_name"]
+        constraints = [models.UniqueConstraint(fields=["group_template", "field_name"], name="unique_field_name_by_group")]
+
+
 class TemplateField(models.Model):
     FIELD_TYPES = [
         ("text", "Text"),

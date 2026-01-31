@@ -3,7 +3,27 @@ from django import forms
 from django.contrib import admin
 from django.db import models
 
-from .models import InventoryTemplate, StepTemplate, TaskTemplate, TemplateField
+from .models import InventoryTemplate, StepTemplate, TaskTemplate, TemplateField, FieldTemplate, GroupTemplate
+
+from nested_admin import NestedStackedInline, NestedModelAdmin
+
+
+class FieldInline(NestedStackedInline):
+    model = FieldTemplate
+    extra = 1
+    sortable_field_name = "field_order"
+
+
+class GroupInline(NestedStackedInline):
+    model = GroupTemplate
+    extra = 1
+    inlines = [FieldInline]  # C'est ici que la magie opère
+    sortable_field_name = "group_order"
+
+
+@admin.register(InventoryTemplate)
+class InventoryAdmin(NestedModelAdmin):
+    inlines = [GroupInline]
 
 
 class TaskTemplateInline(admin.TabularInline):
@@ -95,24 +115,24 @@ class StepTemplateAdmin(admin.ModelAdmin):
                     ProjectTask.objects.bulk_create(tasks_to_create)
 
 
-class TemplateFieldInline(admin.TabularInline):
-    model = TemplateField
-    extra = 1
+# class TemplateFieldInline(admin.TabularInline):
+#     model = TemplateField
+#     extra = 1
 
-    fields = [
-        "group_name",
-        "group_order",
-        "field_name",
-        "field_order",
-        "field_type",
-        "is_secret",
-    ]
+#     fields = [
+#         "group_name",
+#         "group_order",
+#         "field_name",
+#         "field_order",
+#         "field_type",
+#         "is_secret",
+#     ]
 
-    ordering = ["group_order", "field_order"]
+#     ordering = ["group_order", "field_order"]
 
 
-@admin.register(InventoryTemplate)
-class MetadataTemplateAdmin(admin.ModelAdmin):
-    list_display = ["icon", "title", "description", "default_order", "is_active"]
-    search_fields = ["title"]
-    inlines = [TemplateFieldInline]
+# @admin.register(InventoryTemplate)
+# class MetadataTemplateAdmin(admin.ModelAdmin):
+#     list_display = ["icon", "title", "description", "default_order", "is_active"]
+#     search_fields = ["title"]
+#     inlines = [TemplateFieldInline]

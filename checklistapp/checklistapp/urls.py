@@ -21,6 +21,7 @@ from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("_nested_admin/", include("nested_admin.urls")),
     path("", include("home.urls")),
     path("projects/", include("projects.urls")),
     path("accounts/", include("accounts.urls")),  # include("django.contrib.auth.urls")

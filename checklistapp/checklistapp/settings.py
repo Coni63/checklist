@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "crispy_tailwind",
     "widget_tweaks",
     "django_htmx",
+    "nested_admin",
     "home",
     "core",
     "projects",
