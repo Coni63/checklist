@@ -20,7 +20,6 @@ from django.views.generic.base import ContextMixin
 from django_htmx.http import reswap
 from projects.models import Project
 from projects.services import ProjectService
-from templates_management.models import FieldTemplate
 
 from .forms import DynamicInventoryForm
 from .models import InventoryField, InventoryGroup, ProjectInventory
@@ -425,6 +424,7 @@ class AddInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, Conte
                 field_name=field_name,
                 field_type=field_type,
                 field_order=max_order + 1,
+                is_secret=is_secret,
             )
 
             messages.success(request, "Field added successfully.")

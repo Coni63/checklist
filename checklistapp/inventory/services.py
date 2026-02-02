@@ -1,7 +1,7 @@
 from core.exceptions import RecordNotFoundError
 from django.db import transaction
 from django.db.models import Count, Max, Prefetch
-from templates_management.models import InventoryTemplate, GroupTemplate, FieldTemplate
+from templates_management.models import FieldTemplate, GroupTemplate, InventoryTemplate
 
 from .models import InventoryField, InventoryGroup, ProjectInventory
 
@@ -81,7 +81,6 @@ class InventoryService:
         )
 
         # Create Groups and Fields
-        groups_to_create = []
         fields_to_create = []
 
         # We need to save groups first to get their IDs, so we can't do a full bulk_create for everything at once easily without IDs.
@@ -104,6 +103,7 @@ class InventoryService:
                         field_name=field_template.field_name,
                         field_order=field_template.field_order,
                         field_type=field_template.field_type,
+                        is_secret=field_template.is_secret,
                     )
                 )
 

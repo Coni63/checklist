@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("templates_management", "0005_rename_name_inventorytemplate_title_and_more"),
     ]
@@ -71,9 +70,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "is_secret",
-                    models.BooleanField(
-                        default=False, help_text="Only allow admin to see the value"
-                    ),
+                    models.BooleanField(default=False, help_text="Only allow admin to see the value"),
                 ),
                 ("is_active", models.BooleanField(default=True)),
                 (
@@ -93,9 +90,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name="grouptemplate",
-            constraint=models.UniqueConstraint(
-                fields=("template", "group_name"), name="unique_group_name_by_inventory"
-            ),
+            constraint=models.UniqueConstraint(fields=("template", "group_name"), name="unique_group_name_by_inventory"),
         ),
         migrations.AddConstraint(
             model_name="fieldtemplate",

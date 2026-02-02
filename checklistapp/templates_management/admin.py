@@ -2,10 +2,9 @@ from checklist.models import ProjectStep, ProjectTask
 from django import forms
 from django.contrib import admin
 from django.db import models
+from nested_admin import NestedModelAdmin, NestedStackedInline
 
-from .models import InventoryTemplate, StepTemplate, TaskTemplate, FieldTemplate, GroupTemplate
-
-from nested_admin import NestedStackedInline, NestedModelAdmin
+from .models import FieldTemplate, GroupTemplate, InventoryTemplate, StepTemplate, TaskTemplate
 
 
 class FieldInline(NestedStackedInline):

@@ -1,6 +1,6 @@
 from django.db import models
 from encrypted_fields.fields import EncryptedTextField
-from templates_management.models import InventoryTemplate, GroupTemplate, FieldTemplate
+from templates_management.models import FieldTemplate, GroupTemplate, InventoryTemplate
 
 
 class ProjectInventory(models.Model):
@@ -62,6 +62,7 @@ class InventoryField(models.Model):
     field_name = models.CharField(max_length=200)
     field_order = models.PositiveIntegerField(default=1)
     field_type = models.CharField(max_length=20, choices=FieldTemplate.FIELD_TYPES)
+    is_secret = models.BooleanField(default=False, help_text="Only allow admin to see the value")
 
     text_value = models.TextField(
         blank=True,

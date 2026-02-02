@@ -16,6 +16,7 @@ django-crispy-forms==2.5
 django-environ==0.12.0
 django-fernet-encrypted-fields==0.3.1
 django-htmx==1.27.0
+django-nested-admin==4.1.6
 django-tailwind==4.4.2
 django-widget-tweaks==1.5.0
 gunicorn==23.0.0
@@ -31,6 +32,7 @@ pycparser==2.23 ; implementation_name != 'PyPy' and platform_python_implementati
 pygments==2.19.2
 pytailwindcss==0.3.0
 python-dateutil==2.9.0.post0
+python-monkey-business==1.1.0
 python-slugify==8.0.4
 pyyaml==6.0.3
 requests==2.32.5
