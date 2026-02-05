@@ -1,3 +1,4 @@
+from inventory.widgets import LockedFieldWidget
 from core.forms import Base64FileField
 from django import forms
 from django.conf import settings
@@ -25,12 +26,7 @@ class DynamicInventoryForm(forms.Form):
                 existing_value = inst_field.get_value()
 
                 # hide fields if it's secret for non admin roles
-                hide_value = (
-                    inst_field.field_template
-                    and getattr(inst_field.field_template, "is_secret", False)
-                    and existing_value not in (None, "", [])
-                    and "admin" not in context["roles"]
-                )
+                hide_value = inst_field.is_secret and existing_value not in (None, "", []) and "admin" not in context["roles"]
 
                 read_only = "edit" not in context["roles"]
 
@@ -59,15 +55,7 @@ class DynamicInventoryForm(forms.Form):
             return forms.CharField(
                 label=tf.field_name,
                 required=False,
-                disabled=True,
-                initial="••••••",
-                widget=forms.TextInput(
-                    attrs={
-                        "placeholder": "••••••",
-                        "readonly": True,
-                        "class": "input input-bordered w-full bg-gray-100 cursor-not-allowed",
-                    }
-                ),
+                widget=LockedFieldWidget(),
             )
 
         match tf.field_type:
@@ -179,7 +167,7 @@ class DynamicInventoryForm(forms.Form):
             new_value = self.cleaned_data.get(name)
 
             # SECRET FIELD: prevent non-admin from editing if there was already a value
-            if inst_field.field_template and getattr(inst_field.field_template, "is_secret", False) and not is_admin:
+            if inst_field.is_secret and not is_admin:
                 # If non-admin submitted ANYTHING, ignore it completely
                 # (They see a read-only placeholder anyway)
                 continue
