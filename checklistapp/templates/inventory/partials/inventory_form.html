@@ -198,6 +198,10 @@
             const form = document.getElementById('add_field_form');
             form.setAttribute('action', url);
             form.setAttribute('hx-post', url);
+            form.setAttribute('hx-target', "#inventory-form-container");
+            form.setAttribute('hx-swap', "outerHTML");
+            
+            htmx.process(form);
             
             document.getElementById('add_field_modal').showModal();
         }
