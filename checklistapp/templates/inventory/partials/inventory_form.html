@@ -1,52 +1,57 @@
-
 {% partialdef section_field %}
-    <div class="form-control">
+    <div class="form-control" id="field_{{ field.id }}">
         <div class="flex items-center gap-3">
             <!-- Label -->
-            <label for="{{ field.id_for_label }}" class="label">
-                <span class="label-text font-semibold text-gray-700">{{ field.label }} :</span>
+            <label for="label_field_{{ field.id }}" class="label">
+                <span class="label-text font-semibold text-gray-700">{{ field.field_name }} :</span>
             </label>
             <!-- Input -->
             <div class="flex-1 min-w-0">
-                {% if field.field.is_password %}
-                <div class="relative">
-                    {{ field }}
-                    <button type="button" 
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content transition-colors" 
-                            onclick="togglePassword(this)">
-                        <i data-lucide="eye" class="w-4 h-4"></i>
-                    </button>
-                </div>
+                {% if field.field_type == 'text' %}
+                    {% include 'inventory/partials/fields/text_field.html' %}
+                {% elif field.field_type == 'longtext' %}
+                    {% include 'inventory/partials/fields/longtext_field.html' %}
+                {% elif field.field_type == 'number' %}
+                    {% include 'inventory/partials/fields/number_field.html' %}
+                {% elif field.field_type == 'url' %}
+                    {% include 'inventory/partials/fields/url_field.html' %}
+                {% elif field.field_type == 'file' %}
+                    {% include 'inventory/partials/fields/file_field.html' %}
+                {% elif field.field_type == 'password' %}
+                    {% include 'inventory/partials/fields/password_field.html' %}
+                {% elif field.field_type == 'datetime' %}
+                    {% include 'inventory/partials/fields/datetime_field.html' %}
                 {% else %}
-                    {{ field }}
-                {% endif %}
-                
-                {% if field.help_text %}
-                <label class="label py-1">
-                    <span class="label-text-alt text-base-content/60">{{ field.help_text|safe }}</span>
-                </label>
-                {% endif %}
-                
-                {% if field.errors %}
-                <label class="label py-1">
-                    <span class="label-text-alt text-error">{{ field.errors }}</span>
-                </label>
+                    {# Fallback #}
+                    {% include 'inventory/partials/fields/text_field.html' %}
                 {% endif %}
             </div>
             
             <!-- Actions -->
+             {% if 'edit' in roles %}
+                <div class="flex-shrink-0">
+                    <button type="button" 
+                            class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-error hover:bg-error/10" 
+                            hx-delete="{% url 'projects:inventory:update_field' project_id inventory_id group_id field.id %}"
+                            hx-target="#field_{{ field.id }}"
+                            hx-swap="outerHTML"
+                            title="Save Field">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            {% endif %}
             {% if 'admin' in roles %}
-            <div class="flex-shrink-0">
-                <button type="button" 
-                        class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-error hover:bg-error/10" 
-                        hx-delete="{% url 'projects:inventory:delete_field' project_id inventory_id group.id field_model.id %}"
-                        hx-confirm="Delete field '{{ field.label }}'?"
-                        hx-target="#inventory-form-container"
-                        hx-swap="outerHTML"
-                        title="Delete Field">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            </div>
+                <div class="flex-shrink-0">
+                    <button type="button" 
+                            class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-error hover:bg-error/10" 
+                            hx-delete="{% url 'projects:inventory:delete_field' project_id inventory_id group_id field.id %}"
+                            hx-confirm="Delete field '{{ field.field_name }}'?"
+                            hx-target="#field_{{ field.id }}"
+                            hx-swap="outerHTML"
+                            title="Delete Field">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
             {% endif %}
         </div>
     </div>
@@ -87,8 +92,8 @@
 
             <!-- Liste des champs -->
             <div class="space-y-3">
-                {% for field_model in group.fields.all %}
-                    {% partial section_field with field=field_model.bound_field %}
+                {% for field in group.fields.all %}
+                    {% partial section_field %}
                 {% empty %}
                     <div class="text-center py-8 text-base-content/50">
                         <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
@@ -102,28 +107,23 @@
 
 
 <div id="inventory-form-container">
-    <form method="POST" enctype="multipart/form-data" class="space-y-2"
-          hx-post="{% url 'projects:inventory:inventory_detail' project_id inventory_id %}" hx-target="#inventory-form-container" hx-swap="outerHTML show:top">
-      {% csrf_token %}
+    {% for group in inventory.groups.all %}
+        {% partial section_group %}
+    {% endfor %}
 
-{% for group in inventory.groups.all %}
-    
-{% endfor %}
-
-        {% if 'edit' in roles %}
-        <div class="flex justify-between items-center mt-4">
-             <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('add_group_modal').showModal()">
-                + Add Group
-            </button>
-            <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              Save Values
-            </button>
-        </div>
-        {% endif %}
-    </form>
+    {% if 'edit' in roles %}
+    <div class="flex justify-between items-center mt-4">
+            <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('add_group_modal').showModal()">
+            + Add Group
+        </button>
+        <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            Save Values
+        </button>
+    </div>
+    {% endif %}
 
     <!-- Modals -->
-    {% if 'edit' in roles %}
+    {% if 'edit' in roles and inventory_id is not None %}
     <!-- Add Group Modal -->
     <dialog id="add_group_modal" class="modal">
       <div class="modal-box">

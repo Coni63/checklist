@@ -1,0 +1,26 @@
+<div class="form-control w-full">
+    <label class="label" for="field_{{ field.id }}">
+        <span class="label-text">{{ field.field_name }}</span>
+    </label>
+    <input 
+        type="url" 
+        id="field_{{ field.id }}"
+        name="value"
+        value="{{ field.text_value|default:'' }}"
+        class="input input-bordered w-full"
+        {% if readonly %}disabled{% endif %}
+        {% comment %} hx-post="{% url 'projects:inventory:update_field' project.id inventory.id group.id field.id %}"
+        hx-trigger="change"
+        hx-target="closest .form-control"
+        hx-swap="outerHTML" {% endcomment %}
+    />
+    {% if field.text_value %}
+    <label class="label">
+        <span class="label-text-alt">
+            <a href="{{ field.text_value }}" target="_blank" class="link link-primary">
+                Ouvrir le lien →
+            </a>
+        </span>
+    </label>
+    {% endif %}
+</div>

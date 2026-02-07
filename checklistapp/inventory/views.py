@@ -22,7 +22,6 @@ from django_htmx.http import reswap
 from projects.models import Project
 from projects.services import ProjectService
 
-from .forms import DynamicInventoryForm
 from .models import InventoryField, InventoryGroup, ProjectInventory
 from .services import InventoryService
 
@@ -220,30 +219,20 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
 
     def get(self, request, *args, **kwargs):
         try:
+            print(args, kwargs)
             context = self.get_context_data()
+            print(context)
             inventory_id = context["inventory_id"]
             project_id = context["project_id"]
 
-            if not request.htmx:
-                project = ProjectService.get(context["project_id"], prefetch_related=["inventories"])
-
-                context["project"] = project
-                context["inventories"] = project.inventories.all()
-                self.template_name = "inventory/inventory_detail.html"
-                return render(request, self.template_name, context)
-
             # inventory_id comes from URL kwarg handled by ContextMixin or View dispatch
-            inventory_id = context["inventory_id"]
             if not inventory_id:
+                context["project"] = ProjectService.get(context["project_id"])
                 # Fallback if accessed without ID (e.g. main page before selection)
-                return render(request, self.template_name, context)
+                return render(request, "inventory/inventory_detail.html", context)
 
             inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
             context["inventory"] = inventory
-
-            form = DynamicInventoryForm(inventory, context)
-            context["form"] = form
-            self._attach_form_fields(inventory, form)
 
             context["edit_endpoint_base"] = reverse(
                 "projects:inventory:inventory_header_edit",
@@ -259,62 +248,6 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             else:
                 messages.error(request, "Something went wrong when listing the inventory.")
             return render(request, self.template_name, context)
-
-    @staticmethod
-    def _attach_form_fields(inventory, form):
-        """
-        Attach bound form fields directly to the model instances.
-        This avoids complex structure building and allows direct iteration in templates.
-        """
-        for group in inventory.groups.all():
-            for field in group.fields.all():
-                field_name = f"field_{field.id}"
-                if field_name in form.fields:
-                    field.bound_field = form[field_name]
-
-    def post(self, request, project_id, inventory_id):
-        # Signature aligned with URL: <int:project_id>/.../<int:inventory_id>/
-        try:
-            context = self.get_context_data()
-            context["inventory_id"] = inventory_id  # Explicitly set from URL arg
-
-            if "edit" not in context["roles"]:
-                raise PermissionError("You are not allowed to edit fields")
-
-            inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
-
-            form = DynamicInventoryForm(inventory, context, request.POST, request.FILES)
-            if form.is_valid():
-                form.save(is_admin="admin" in context["roles"])
-                messages.success(request, "Form saved successfully !")
-
-                if request.htmx:
-                    # On save, if everything is OK, just return the message
-                    return reswap(HttpResponse(status=200), "none show:top")
-
-                return redirect(request.path)
-            else:
-                for field, errors in form.errors.items():
-                    for error in errors:
-                        messages.error(request, f"{field}: {error}")
-
-            context["form"] = form
-            self._attach_form_fields(inventory, form)
-
-            if request.htmx:
-                return render(request, "inventory/partials/inventory_form.html", context)
-
-            return redirect(request.path)
-        except Exception as e:
-            logger.error(e)
-            if hasattr(e, "custom"):
-                messages.error(request, str(e))
-            else:
-                messages.error(request, "Something went wrong when listing the inventory.")
-            if request.htmx:
-                return reswap(HttpResponse(status=200), "none show:top")
-            else:
-                return redirect(request.path)
 
 
 class InventoryHeaderEditView(
@@ -383,9 +316,9 @@ class AddInventoryGroupView(ProjectEditRequiredMixin, CommonContextMixin, Contex
 
 class DetailInventoryGroupView(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin, View):
     def get(self, request, project_id, inventory_id, group_id):
+        context = self.get_context_data()
         try:
             group = InventoryService.get_group(project_id, inventory_id, group_id)
-            context = self.get_context_data()
             context["group"] = group
             return render(request, "inventory/partials/inventory_form.html#section_group", context)
         except Exception as e:
@@ -437,11 +370,11 @@ class AddInventoryFieldView(ProjectEditRequiredMixin, CommonContextMixin, Contex
 
 class DetailInventoryFieldView(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin, View):
     def post(self, request, project_id, inventory_id, group_id, field_id):
+        context = self.get_context_data()
         try:
             field = InventoryService.get_field(project_id, inventory_id, group_id, field_id)
 
             # Refresh the form
-            context = self.get_context_data()
             context["field"] = field
             return render(request, "inventory/partials/inventory_form.html#section_field", context)
 

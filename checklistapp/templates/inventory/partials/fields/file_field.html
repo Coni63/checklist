@@ -1,0 +1,32 @@
+<div class="form-control w-full">
+    <label class="label" for="field_{{ field.id }}">
+        <span class="label-text">{{ field.field_name }}</span>
+    </label>
+    
+    {% if field.file_value %}
+    <div class="alert alert-info mb-2">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div>
+            <span>Fichier actuel: </span>
+            <a href="{% url 'projects:inventory:download_inventory_file' project.id inventory.id field.id %}" 
+               target="_blank" 
+               class="link link-primary">
+                {{ field.text_value|default:"Télécharger" }}
+            </a>
+        </div>
+    </div>
+    {% endif %}
+    
+    <input 
+        type="file" 
+        id="field_{{ field.id }}"
+        name="value"
+        class="file-input file-input-bordered w-full"
+        {% if readonly %}disabled{% endif %}
+        {% comment %} hx-post="{% url 'projects:inventory:update_field' project.id inventory.id group.id field.id %}"
+        hx-trigger="change"
+        hx-target="closest .form-control"
+        hx-swap="outerHTML"
+        hx-encoding="multipart/form-data" {% endcomment %}
+    />
+</div>

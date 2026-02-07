@@ -48,7 +48,7 @@ urlpatterns = [
     path("<int:inventory_id>/group/<int:group_id>/", views.DetailInventoryGroupView.as_view(), name="detail_group"),
     path("<int:inventory_id>/group/<int:group_id>/delete/", views.DeleteInventoryGroupView.as_view(), name="delete_group"),
     path(
-        "<int:inventory_id>/group/<int:group_id>/field/<int:field_id>/add_field/",
+        "<int:inventory_id>/group/<int:group_id>/add_field/",
         views.AddInventoryFieldView.as_view(),
         name="add_field",
     ),
