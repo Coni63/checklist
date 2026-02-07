@@ -50,16 +50,6 @@ class InventoryService:
         )
 
     @staticmethod
-    def get_fields(project_id, inventory_id, field_id: int | None = None):
-        qs = InventoryField.objects.filter(group__inventory__project__id=project_id, group__inventory__id=inventory_id)
-        if field_id:
-            field = qs.filter(id=field_id).first()
-            if not field:
-                raise RecordNotFoundError(f"Field {field_id} not found in inventory {inventory_id}.")
-            return field
-        return qs
-
-    @staticmethod
     @transaction.atomic
     def add_inventory_to_project(project, template_id, custom_title: str | None = None) -> int:
         inventory_template = InventoryService.get_template(template_id, load_fields=True)
@@ -142,19 +132,99 @@ class InventoryService:
         inventory.delete()
 
     @staticmethod
-    def delete_group(group_id):
+    def get_group(project_id, inventory_id, group_id) -> InventoryGroup:
+        field = InventoryGroup.objects.filter(
+            id=group_id, inventory__project__id=project_id, inventory__id=inventory_id
+        ).first()
+        if not field:
+            raise RecordNotFoundError(f"Group {group_id} not found in inventory {inventory_id}.")
+        return field
+
+    @staticmethod
+    def add_group(project_id, inventory_id, group_name) -> InventoryGroup:
+        inventory = InventoryService.get_inventory(project_id, inventory_id)
+
+        # Auto-increment order
+        max_order = inventory.groups.aggregate(Max("order"))["order__max"] or 0
+        return InventoryGroup.objects.create(inventory=inventory, name=group_name, order=max_order + 1)
+
+    @staticmethod
+    def delete_group(project_id, inventory_id, group_id):
         try:
-            group = InventoryGroup.objects.get(id=group_id)
+            group = InventoryService.get_group(project_id, inventory_id, group_id)
             group.delete()
         except InventoryGroup.DoesNotExist:
             raise RecordNotFoundError(f"Group {group_id} not found.")
 
     @staticmethod
-    def delete_field(group_id, field_id):
+    def get_field(project_id, inventory_id, group_id, field_id: int | None = None) -> InventoryField:
+        field = InventoryField.objects.filter(
+            id=field_id, group__id=group_id, group__inventory__project__id=project_id, group__inventory__id=inventory_id
+        ).first()
+        if not field:
+            raise RecordNotFoundError(f"Field {field_id} not found in inventory {inventory_id}.")
+        return field
+
+    @staticmethod
+    def add_field(project_id, inventory_id, group_id, field_name, field_type, is_secret):
+        group = InventoryService.get_group(project_id, inventory_id, group_id)
+
+        # Auto-increment order
+        max_order = group.fields.aggregate(Max("field_order"))["field_order__max"] or 0
+
+        return InventoryField.objects.create(
+            group=group,
+            field_name=field_name,
+            field_type=field_type,
+            field_order=max_order + 1,
+            is_secret=is_secret,
+        )
+
+    @staticmethod
+    def delete_field(project_id, inventory_id, group_id, field_id):
         try:
-            field = InventoryField.objects.get(id=field_id)
-            if field.group.id != group_id:
-                raise RecordNotFoundError(f"Field {field_id} does not belong to the group you provided.")
+            field = InventoryService.get_field(project_id, inventory_id, group_id, field_id)
             field.delete()
         except InventoryField.DoesNotExist:
             raise RecordNotFoundError(f"Field {field_id} not found.")
+
+    @staticmethod
+    def update_field_type(project_id, inventory_id, group_id, field_id, new_type, is_secret: bool = False):
+        field = InventoryService.get_field(project_id, inventory_id, group_id, field_id)
+        field = InventoryService._update_value(field, None, None)
+        field.field_type = new_type
+        field.is_secret = is_secret
+
+        field.save()
+
+        return field
+
+    @staticmethod
+    def set_field_value(project_id, inventory_id, group_id, field_id, value, filename: str | None = None):
+        field = InventoryService.get_field(project_id, inventory_id, group_id, field_id)
+        field = InventoryService._update_value(field, value, filename)
+
+        field.save()
+
+        return field
+
+    @staticmethod
+    def _update_value(field: InventoryField, value, filename: str | None = None):
+        match field.field_type:
+            case "text" | "url" | "longtext":
+                field.text_value = value
+            case "number":
+                field.number_value = value
+            case "file":
+                if filename:
+                    field.text_value = filename
+                    field.file_value = value
+                else:
+                    raise ValueError("The uploaded file does not have a filename")
+            case "password":
+                # Stored encrypted
+                field.password_value = value
+            case "datetime":
+                field.datetime_value = value
+
+        return field

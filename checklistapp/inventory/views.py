@@ -6,6 +6,7 @@ from core.exceptions import InvalidParameterError, RecordNotFoundError
 from core.mixins import (
     CommonContextMixin,
     ProjectAdminRequiredMixin,
+    ProjectEditRequiredMixin,
     ProjectReadRequiredMixin,
 )
 from django.contrib import messages
@@ -163,10 +164,10 @@ Detail page
 """
 
 
-def download_inventory_file(request, project_id, inventory_id, field_id):
+def download_inventory_file(request, project_id, inventory_id, group_id, field_id):
     try:
         # 1. Récupérer l'instance du champ
-        inventory_field = InventoryService.get_fields(project_id, inventory_id, field_id)
+        inventory_field = InventoryService.get_field(project_id, inventory_id, group_id, field_id)
 
         # Sécurité : vérifier que c'est bien un champ de type 'file'
         if inventory_field.field_type != "file":
@@ -317,7 +318,7 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
 
 
 class InventoryHeaderEditView(
-    ProjectReadRequiredMixin,
+    ProjectEditRequiredMixin,
     CommonContextMixin,
     ContextMixin,
     View,
@@ -358,46 +359,58 @@ class InventoryHeaderEditView(
             return redirect(request.path)
 
 
-class AddInventoryGroupView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
+class AddInventoryGroupView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
     def post(self, request, project_id, inventory_id):
         group_name = request.POST.get("group_name")
 
         if not group_name:
             messages.error(request, "Missing group name.")
-            return HttpResponse(status=400)
+            return reswap(HttpResponse(status=200), "none")
 
         try:
-            inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups"])
-            # Auto-increment order
-            max_order = inventory.groups.aggregate(Max("order"))["order__max"] or 0
-
-            InventoryGroup.objects.create(inventory=inventory, name=group_name, order=max_order + 1)
-
+            group = InventoryService.add_group(project_id, inventory_id, group_name)
             messages.success(request, "Group added successfully.")
 
-            # Refresh the form
             context = self.get_context_data()
-            # Ensure context has IDs
-            context["project_id"] = project_id
-            context["inventory_id"] = inventory_id
-            return self._render_form(request, inventory, context)
+            context["group"] = group
+            return render(request, "inventory/partials/inventory_form.html#section_group", context)
 
         except Exception as e:
             logger.error(e)
             messages.error(request, str(e))
             return HttpResponse(status=500)
 
-    def _render_form(self, request, inventory, context):
-        # Need to reload inventory to get the new group
-        inventory = InventoryService.get_inventory(inventory.project.id, inventory.id, prefetch_related=["groups__fields"])
-        form = DynamicInventoryForm(inventory, context)
-        context["inventory"] = inventory
-        context["form"] = form
-        InventoryDetail._attach_form_fields(inventory, form)
-        return render(request, "inventory/partials/inventory_form.html", context)
+
+class DetailInventoryGroupView(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin, View):
+    def get(self, request, project_id, inventory_id, group_id):
+        try:
+            group = InventoryService.get_group(project_id, inventory_id, group_id)
+            context = self.get_context_data()
+            context["group"] = group
+            return render(request, "inventory/partials/inventory_form.html#section_group", context)
+        except Exception as e:
+            logger.error(e)
+            messages.error(request, str(e))
+            return HttpResponse(status=500)
 
 
-class AddInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
+class DeleteInventoryGroupView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
+    def delete(self, request, project_id, inventory_id, group_id):
+        try:
+            InventoryService.delete_group(project_id, inventory_id, group_id)
+            messages.success(request, "Group deleted successfully.")
+
+            return HttpResponse(status=200)
+        except Exception as e:
+            logger.error(e)
+            if hasattr(e, "custom"):
+                messages.error(request, str(e))
+            else:
+                messages.error(request, "Failed to delete group.")
+            return HttpResponse(status=500)
+
+
+class AddInventoryFieldView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
     def post(self, request, project_id, inventory_id, group_id):
         field_name = request.POST.get("field_name")
         field_type = request.POST.get("field_type")
@@ -408,90 +421,104 @@ class AddInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, Conte
             return HttpResponse(status=400)
 
         try:
-            try:
-                group = InventoryGroup.objects.get(id=group_id)
-            except InventoryGroup.DoesNotExist:
-                raise RecordNotFoundError(f"Group {group_id} not found")
-
-            if group.inventory.id != int(inventory_id) or group.inventory.project.id != int(project_id):
-                raise PermissionError("Group mismatch.")
-
-            # Auto-increment order
-            max_order = group.fields.aggregate(Max("field_order"))["field_order__max"] or 0
-
-            InventoryField.objects.create(
-                group=group,
-                field_name=field_name,
-                field_type=field_type,
-                field_order=max_order + 1,
-                is_secret=is_secret,
-            )
-
+            field = InventoryService.add_field(project_id, inventory_id, group_id, field_name, field_type, is_secret)
             messages.success(request, "Field added successfully.")
 
             # Refresh the form
             context = self.get_context_data()
-            context["project_id"] = project_id
-            context["inventory_id"] = inventory_id
-            return self._render_form(request, project_id, inventory_id, context)
+            context["field"] = field
+            return render(request, "inventory/partials/inventory_form.html#section_field", context)
 
         except Exception as e:
             logger.error(e)
             messages.error(request, str(e))
             return HttpResponse(status=500)
 
-    def _render_form(self, request, project_id, inventory_id, context):
-        inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
-        form = DynamicInventoryForm(inventory, context)
-        context["inventory"] = inventory
-        context["form"] = form
-        InventoryDetail._attach_form_fields(inventory, form)
-        return render(request, "inventory/partials/inventory_form.html", context)
 
-
-class DeleteInventoryGroupView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
-    def delete(self, request, project_id, inventory_id, group_id):
+class DetailInventoryFieldView(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin, View):
+    def post(self, request, project_id, inventory_id, group_id, field_id):
         try:
+            field = InventoryService.get_field(project_id, inventory_id, group_id, field_id)
+
+            # Refresh the form
             context = self.get_context_data()
-            if "admin" not in context["roles"]:
-                raise PermissionError("Only admins can delete groups.")
+            context["field"] = field
+            return render(request, "inventory/partials/inventory_form.html#section_field", context)
 
-            InventoryService.delete_group(group_id)
-            messages.success(request, "Group deleted successfully.")
-
-            context["project_id"] = project_id
-            context["inventory_id"] = inventory_id
-            return self._render_form(request, project_id, inventory_id, context)
         except Exception as e:
             logger.error(e)
-            if hasattr(e, "custom"):
-                messages.error(request, str(e))
-            else:
-                messages.error(request, "Failed to delete group.")
+            messages.error(request, str(e))
             return HttpResponse(status=500)
 
-    def _render_form(self, request, project_id, inventory_id, context):
-        inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
-        form = DynamicInventoryForm(inventory, context)
-        context["inventory"] = inventory
-        context["form"] = form
-        InventoryDetail._attach_form_fields(inventory, form)
-        return render(request, "inventory/partials/inventory_form.html", context)
+
+class EditInventoryFieldView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
+    def post(self, request, project_id, inventory_id, group_id, field_id):
+        field_name = request.POST.get("field_name")
+        field_type = request.POST.get("field_type")
+        is_secret = request.POST.get("is_secret") == "on"
+
+        if not all([field_name, field_type]):
+            messages.error(request, "Missing required fields.")
+            return HttpResponse(status=400)
+
+        try:
+            field = InventoryService.update_field_type(
+                project_id, inventory_id, group_id, field_id, field_name, field_type, is_secret
+            )
+            messages.success(request, "Field updated successfully.")
+
+            # Refresh the form
+            context = self.get_context_data()
+            context["field"] = field
+            return render(request, "inventory/partials/inventory_form.html#section_field", context)
+
+        except Exception as e:
+            logger.error(e)
+            messages.error(request, str(e))
+            return HttpResponse(status=500)
+
+
+class UpdateInventoryFieldView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
+    def post(self, request, project_id, inventory_id, group_id, field_id):
+        # Récupérer la valeur ou le fichier selon le type de champ
+        value = request.POST.get("value")
+        uploaded_file = request.FILES.get("value")  # Récupère le fichier uploadé
+        filename = None
+
+        # Si un fichier est uploadé, on l'utilise au lieu de la valeur texte
+        if uploaded_file:
+            value = uploaded_file
+            filename = uploaded_file.name
+
+        try:
+            field = InventoryService.set_field_value(
+                project_id,
+                inventory_id,
+                group_id,
+                field_id,
+                value,
+                filename=filename,
+            )
+            messages.success(request, "Field updated successfully.")
+
+            # Refresh the form
+            context = self.get_context_data()
+            context["field"] = field
+            return render(request, "inventory/partials/inventory_form.html#section_field", context)
+
+        except Exception as e:
+            logger.error(e)
+            messages.error(request, str(e))
+            return HttpResponse(status=500)
 
 
 class DeleteInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):
     def delete(self, request, project_id, inventory_id, group_id, field_id):
         try:
-            context = self.get_context_data()
-            if "admin" not in context["roles"]:
-                raise PermissionError("Only admins can delete fields.")
-
-            InventoryService.delete_field(group_id, field_id)
+            InventoryService.delete_field(project_id, inventory_id, group_id, field_id)
             messages.success(request, "Field deleted successfully.")
 
-            context["project_id"] = project_id
-            context["inventory_id"] = inventory_id
-            return self._render_form(request, project_id, inventory_id, group_id, context)
+            return HttpResponse(status=200)
         except Exception as e:
             logger.error(e)
             if hasattr(e, "custom"):
@@ -499,11 +526,3 @@ class DeleteInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, Co
             else:
                 messages.error(request, "Failed to delete field.")
             return HttpResponse(status=500)
-
-    def _render_form(self, request, project_id, inventory_id, context):
-        inventory = InventoryService.get_inventory(project_id, inventory_id, prefetch_related=["groups__fields"])
-        form = DynamicInventoryForm(inventory, context)
-        context["inventory"] = inventory
-        context["form"] = form
-        InventoryDetail._attach_form_fields(inventory, form)
-        return render(request, "inventory/partials/inventory_form.html", context)

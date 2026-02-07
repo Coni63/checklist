@@ -1,9 +1,59 @@
-<div id="inventory-form-container">
-    <form method="POST" enctype="multipart/form-data" class="space-y-2"
-          hx-post="{% url 'projects:inventory:inventory_detail' project_id inventory_id %}" hx-target="#inventory-form-container" hx-swap="outerHTML show:top">
-      {% csrf_token %}
 
-{% for group in inventory.groups.all %}
+{% partialdef section_field %}
+    <div class="form-control">
+        <div class="flex items-center gap-3">
+            <!-- Label -->
+            <label for="{{ field.id_for_label }}" class="label">
+                <span class="label-text font-semibold text-gray-700">{{ field.label }} :</span>
+            </label>
+            <!-- Input -->
+            <div class="flex-1 min-w-0">
+                {% if field.field.is_password %}
+                <div class="relative">
+                    {{ field }}
+                    <button type="button" 
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content transition-colors" 
+                            onclick="togglePassword(this)">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                {% else %}
+                    {{ field }}
+                {% endif %}
+                
+                {% if field.help_text %}
+                <label class="label py-1">
+                    <span class="label-text-alt text-base-content/60">{{ field.help_text|safe }}</span>
+                </label>
+                {% endif %}
+                
+                {% if field.errors %}
+                <label class="label py-1">
+                    <span class="label-text-alt text-error">{{ field.errors }}</span>
+                </label>
+                {% endif %}
+            </div>
+            
+            <!-- Actions -->
+            {% if 'admin' in roles %}
+            <div class="flex-shrink-0">
+                <button type="button" 
+                        class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-error hover:bg-error/10" 
+                        hx-delete="{% url 'projects:inventory:delete_field' project_id inventory_id group.id field_model.id %}"
+                        hx-confirm="Delete field '{{ field.label }}'?"
+                        hx-target="#inventory-form-container"
+                        hx-swap="outerHTML"
+                        title="Delete Field">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{% endpartialdef %}
+
+
+{% partialdef section_group %}
     <div class="group-container card bg-base-100 border border-base-300 shadow-sm">
         <div class="card-body p-4">
             <!-- En-tête du groupe -->
@@ -38,71 +88,26 @@
             <!-- Liste des champs -->
             <div class="space-y-3">
                 {% for field_model in group.fields.all %}
-                    {% with field=field_model.bound_field %}
-                        {% if field %}
-                        <div class="form-control">
-                            <div class="flex items-center gap-3">
-                                <!-- Label -->
-                                <label for="{{ field.id_for_label }}" class="label">
-                                    <span class="label-text font-semibold text-gray-700">{{ field.label }} :</span>
-                                </label>
-                                <!-- Input -->
-                                <div class="flex-1 min-w-0">
-                                    {% if field.field.is_password %}
-                                    <div class="relative">
-                                        {{ field }}
-                                        <button type="button" 
-                                                class="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content transition-colors" 
-                                                onclick="togglePassword(this)">
-                                            <i data-lucide="eye" class="w-4 h-4"></i>
-                                        </button>
-                                    </div>
-                                    {% else %}
-                                        {{ field }}
-                                    {% endif %}
-                                    
-                                    {% if field.help_text %}
-                                    <label class="label py-1">
-                                        <span class="label-text-alt text-base-content/60">{{ field.help_text|safe }}</span>
-                                    </label>
-                                    {% endif %}
-                                    
-                                    {% if field.errors %}
-                                    <label class="label py-1">
-                                        <span class="label-text-alt text-error">{{ field.errors }}</span>
-                                    </label>
-                                    {% endif %}
-                                </div>
-                                
-                                <!-- Actions -->
-                                {% if 'admin' in roles %}
-                                <div class="flex-shrink-0">
-                                    <button type="button" 
-                                            class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-error hover:bg-error/10" 
-                                            hx-delete="{% url 'projects:inventory:delete_field' project_id inventory_id group.id field_model.id %}"
-                                            hx-confirm="Delete field '{{ field.label }}'?"
-                                            hx-target="#inventory-form-container"
-                                            hx-swap="outerHTML"
-                                            title="Delete Field">
-                                        <i data-lucide="x" class="w-4 h-4"></i>
-                                    </button>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endif %}
-                    {% endwith %}
+                    {% partial section_field with field=field_model.bound_field %}
+                {% empty %}
+                    <div class="text-center py-8 text-base-content/50">
+                        <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+                        <p class="text-sm">No fields yet. Click "Add Field" to get started.</p>
+                    </div>
                 {% endfor %}
-                
-                {% if not group.fields.all %}
-                <div class="text-center py-8 text-base-content/50">
-                    <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
-                    <p class="text-sm">No fields yet. Click "Add Field" to get started.</p>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
+{% endpartialdef %}
+
+
+<div id="inventory-form-container">
+    <form method="POST" enctype="multipart/form-data" class="space-y-2"
+          hx-post="{% url 'projects:inventory:inventory_detail' project_id inventory_id %}" hx-target="#inventory-form-container" hx-swap="outerHTML show:top">
+      {% csrf_token %}
+
+{% for group in inventory.groups.all %}
+    
 {% endfor %}
 
         {% if 'edit' in roles %}
