@@ -1,9 +1,11 @@
 import base64
-from inventory.validators import InventoryFieldValidator
+
 from core.exceptions import RecordNotFoundError
 from django.db import transaction
 from django.db.models import Count, Max, Prefetch
 from templates_management.models import FieldTemplate, GroupTemplate, InventoryTemplate
+
+from inventory.validators import InventoryFieldValidator
 
 from .models import InventoryField, InventoryGroup, ProjectInventory
 

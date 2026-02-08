@@ -1,7 +1,8 @@
-from django.core.validators import URLValidator
-from django.core.exceptions import ValidationError
-from datetime import datetime
 import base64
+from datetime import datetime
+
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 
 
 class InventoryFieldValidator:

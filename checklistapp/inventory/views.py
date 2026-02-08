@@ -1,10 +1,8 @@
 import base64
 import logging
 
-from django.core.exceptions import ValidationError
-
 from common.views import editable_header_view
-from core.exceptions import InvalidParameterError, RecordNotFoundError
+from core.exceptions import InvalidParameterError
 from core.mixins import (
     CommonContextMixin,
     ProjectAdminRequiredMixin,
@@ -12,7 +10,6 @@ from core.mixins import (
     ProjectReadRequiredMixin,
 )
 from django.contrib import messages
-from django.db.models import Max
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
@@ -24,7 +21,7 @@ from django_htmx.http import reswap
 from projects.models import Project
 from projects.services import ProjectService
 
-from .models import InventoryField, InventoryGroup, ProjectInventory
+from .models import ProjectInventory
 from .services import InventoryService
 
 logger = logging.getLogger(__name__)
@@ -244,7 +241,6 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             if request.htmx:
                 return render(request, self.template_name, context)
 
-            print(context)
             return render(request, "inventory/inventory_detail.html", context)
         except Exception as e:
             logger.error(e)
@@ -418,19 +414,14 @@ class EditInventoryFieldView(ProjectEditRequiredMixin, CommonContextMixin, Conte
 
 
 class UpdateInventoryFieldView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
-    # TODO: test
     def post(self, request, project_id, inventory_id, group_id, field_id):
         try:
             context = self.get_context_data()
-
-            print(project_id, inventory_id, group_id, field_id)
 
             # Récupérer la valeur ou le fichier selon le type de champ
             value = request.POST.get("value")
             uploaded_file = request.FILES.get("value")  # Récupère le fichier uploadé
             filename = None
-
-            print(value)
 
             # Si un fichier est uploadé, on l'utilise au lieu de la valeur texte
             if uploaded_file:
