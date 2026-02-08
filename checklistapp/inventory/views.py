@@ -209,7 +209,6 @@ class InventoryList(ProjectReadRequiredMixin, CommonContextMixin, ListView):
 
 
 class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin, View):
-    # TODO: Fix error with missing sidebar
     """
     View to display project details, including steps and tasks.
     Supports HTMX requests to load tasks for a specific step.
