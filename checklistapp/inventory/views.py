@@ -1,6 +1,8 @@
 import base64
 import logging
 
+from django.core.exceptions import ValidationError
+
 from common.views import editable_header_view
 from core.exceptions import InvalidParameterError, RecordNotFoundError
 from core.mixins import (
@@ -210,6 +212,7 @@ class InventoryList(ProjectReadRequiredMixin, CommonContextMixin, ListView):
 
 
 class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin, View):
+    # TODO: Fix error with missing sidebar
     """
     View to display project details, including steps and tasks.
     Supports HTMX requests to load tasks for a specific step.
@@ -238,10 +241,10 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             )
             context["can_edit"] = "edit" in context["roles"]
 
-            print(request.htmx)
             if request.htmx:
                 return render(request, self.template_name, context)
 
+            print(context)
             return render(request, "inventory/inventory_detail.html", context)
         except Exception as e:
             logger.error(e)
@@ -387,6 +390,7 @@ class DetailInventoryFieldView(ProjectReadRequiredMixin, CommonContextMixin, Con
 
 
 class EditInventoryFieldView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
+    # TODO: Impl + test
     def post(self, request, project_id, inventory_id, group_id, field_id):
         field_name = request.POST.get("field_name")
         field_type = request.POST.get("field_type")
@@ -414,37 +418,47 @@ class EditInventoryFieldView(ProjectEditRequiredMixin, CommonContextMixin, Conte
 
 
 class UpdateInventoryFieldView(ProjectEditRequiredMixin, CommonContextMixin, ContextMixin, View):
+    # TODO: test
     def post(self, request, project_id, inventory_id, group_id, field_id):
-        # Récupérer la valeur ou le fichier selon le type de champ
-        value = request.POST.get("value")
-        uploaded_file = request.FILES.get("value")  # Récupère le fichier uploadé
-        filename = None
-
-        # Si un fichier est uploadé, on l'utilise au lieu de la valeur texte
-        if uploaded_file:
-            value = uploaded_file
-            filename = uploaded_file.name
-
         try:
-            field = InventoryService.set_field_value(
-                project_id,
-                inventory_id,
-                group_id,
-                field_id,
-                value,
-                filename=filename,
-            )
-            messages.success(request, "Field updated successfully.")
+            context = self.get_context_data()
+
+            print(project_id, inventory_id, group_id, field_id)
+
+            # Récupérer la valeur ou le fichier selon le type de champ
+            value = request.POST.get("value")
+            uploaded_file = request.FILES.get("value")  # Récupère le fichier uploadé
+            filename = None
+
+            print(value)
+
+            # Si un fichier est uploadé, on l'utilise au lieu de la valeur texte
+            if uploaded_file:
+                value = uploaded_file.read()
+                filename = uploaded_file.name
+
+            if value:
+                field = InventoryService.set_field_value(
+                    project_id,
+                    inventory_id,
+                    group_id,
+                    field_id,
+                    value,
+                    filename=filename,
+                )
+                messages.success(request, "Field updated successfully.")
+            else:
+                field = InventoryService.get_field(project_id, inventory_id, group_id, field_id)
+
+            context["field"] = field
 
             # Refresh the form
-            context = self.get_context_data()
-            context["field"] = field
             return render(request, "inventory/partials/inventory_form.html#section_field", context)
 
         except Exception as e:
             logger.error(e)
             messages.error(request, str(e))
-            return HttpResponse(status=500)
+            return reswap(HttpResponse(status=200), "none")
 
 
 class DeleteInventoryFieldView(ProjectAdminRequiredMixin, CommonContextMixin, ContextMixin, View):

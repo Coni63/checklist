@@ -1,59 +1,68 @@
 {% partialdef section_field %}
     <div class="form-control" id="field_{{ field.id }}">
-        <div class="flex items-center gap-3">
-            <!-- Label -->
-            <label for="label_field_{{ field.id }}" class="label">
-                <span class="label-text font-semibold text-gray-700">{{ field.field_name }} :</span>
-            </label>
-            <!-- Input -->
-            <div class="flex-1 min-w-0">
-                {% if field.field_type == 'text' %}
-                    {% include 'inventory/partials/fields/text_field.html' %}
-                {% elif field.field_type == 'longtext' %}
-                    {% include 'inventory/partials/fields/longtext_field.html' %}
-                {% elif field.field_type == 'number' %}
-                    {% include 'inventory/partials/fields/number_field.html' %}
-                {% elif field.field_type == 'url' %}
-                    {% include 'inventory/partials/fields/url_field.html' %}
-                {% elif field.field_type == 'file' %}
-                    {% include 'inventory/partials/fields/file_field.html' %}
-                {% elif field.field_type == 'password' %}
-                    {% include 'inventory/partials/fields/password_field.html' %}
-                {% elif field.field_type == 'datetime' %}
-                    {% include 'inventory/partials/fields/datetime_field.html' %}
-                {% else %}
-                    {# Fallback #}
-                    {% include 'inventory/partials/fields/text_field.html' %}
+        <form id="form_field_{{ field.id }}" 
+              hx-post="{% url 'projects:inventory:update_field' project_id inventory_id group_id field.id %}"
+              hx-target="#field_{{ field.id }}"
+              hx-swap="outerHTML"
+              hx-encoding="multipart/form-data"
+              hx-trigger="submit">
+            <div class="flex items-center gap-3">
+                <!-- Label -->
+                <label for="label_field_{{ field.id }}" class="label">
+                    <span class="label-text font-semibold text-gray-700">{{ field.field_name }} :</span>
+                </label>
+                <!-- Input -->
+                <div class="flex-1 min-w-0">
+                    {% if field.is_secret and 'admin' not in roles %}
+                        {% include 'inventory/partials/fields/locked_field.html' %}
+                    {% elif field.field_type == 'text' %}
+                        {% include 'inventory/partials/fields/text_field.html' %}
+                    {% elif field.field_type == 'longtext' %}
+                        {% include 'inventory/partials/fields/longtext_field.html' %}
+                    {% elif field.field_type == 'number' %}
+                        {% include 'inventory/partials/fields/number_field.html' %}
+                    {% elif field.field_type == 'url' %}
+                        {% include 'inventory/partials/fields/url_field.html' %}
+                    {% elif field.field_type == 'file' %}
+                        {% include 'inventory/partials/fields/file_field.html' %}
+                    {% elif field.field_type == 'password' %}
+                        {% include 'inventory/partials/fields/password_field.html' %}
+                    {% elif field.field_type == 'datetime' %}
+                        {% include 'inventory/partials/fields/datetime_field.html' %}
+                    {% else %}
+                        {# Fallback #}
+                        {% include 'inventory/partials/fields/text_field.html' %}
+                    {% endif %}
+                </div>
+                
+                <!-- Actions -->
+                {% if 'edit' in roles %}
+                    {% if not field.is_secret or 'admin' in roles %}
+                        <div class="flex-shrink-0">
+                            <button type="submit" 
+                                    class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-error hover:bg-error/10" 
+                                    hx-post="{% url 'projects:inventory:update_field' project_id inventory_id group_id field.id %}"
+                                    title="Save Field">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    {% endif %}
+                {% endif %}
+                {% if 'admin' in roles %}
+                    <div class="flex-shrink-0">
+                        <button type="button" 
+                                class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-error hover:bg-error/10" 
+                                hx-delete="{% url 'projects:inventory:delete_field' project_id inventory_id group_id field.id %}"
+                                hx-confirm="Delete field '{{ field.field_name }}'?"
+                                hx-target="#field_{{ field.id }}"
+                                hx-swap="outerHTML"
+                                title="Delete Field">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 {% endif %}
             </div>
-            
-            <!-- Actions -->
-             {% if 'edit' in roles %}
-                <div class="flex-shrink-0">
-                    <button type="button" 
-                            class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-error hover:bg-error/10" 
-                            hx-post="{% url 'projects:inventory:update_field' project_id inventory_id group_id field.id %}"
-                            hx-target="#field_{{ field.id }}"
-                            hx-swap="outerHTML"
-                            title="Save Field">
-                        <i data-lucide="save" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            {% endif %}
-            {% if 'admin' in roles %}
-                <div class="flex-shrink-0">
-                    <button type="button" 
-                            class="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-error hover:bg-error/10" 
-                            hx-delete="{% url 'projects:inventory:delete_field' project_id inventory_id group_id field.id %}"
-                            hx-confirm="Delete field '{{ field.field_name }}'?"
-                            hx-target="#field_{{ field.id }}"
-                            hx-swap="outerHTML"
-                            title="Delete Field">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            {% endif %}
-        </div>
+        </form>
     </div>
 {% endpartialdef %}
 
@@ -91,7 +100,7 @@
             </div>
 
             <!-- Liste des champs -->
-            <div class="space-y-3">
+            <div class="space-y-3" id="group_container_{{ group.id }}">
                 {% for field in group.fields.all %}
                     {% with group_id=group.id %}
                         {% partial section_field %}
@@ -109,7 +118,7 @@
 
 
 <div id="inventory-form-container">
-    <div id="inventory-group-container">
+    <div id="inventory-group-container" class="space-y-2">
         {% for group in inventory.groups.all %}
             {% partial section_group %}
         {% endfor %}
@@ -117,11 +126,8 @@
 
     {% if 'edit' in roles %}
     <div class="flex justify-between items-center mt-4">
-            <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('add_group_modal').showModal()">
+            <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('add_group_modal').showModal()">
             + Add Group
-        </button>
-        <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            Save Values
         </button>
     </div>
     {% endif %}
@@ -194,9 +200,10 @@
         <button>close</button>
       </form>
     </dialog>
+    {% endif %}
 
     <script>
-        function openFieldModal(groupId, groupName) {
+      function openFieldModal(groupId, groupName) {
             document.getElementById('modal_group_name_display').innerText = groupName;
             
             // Dynamically set action URL with group ID using Django's reverse url pattern structure
@@ -207,21 +214,13 @@
             const form = document.getElementById('add_field_form');
             form.setAttribute('action', url);
             form.setAttribute('hx-post', url);
-            form.setAttribute('hx-target', "#inventory-form-container");
+            form.setAttribute('hx-target', `#group_container_${groupId}`);
             form.setAttribute('hx-swap', "beforeend");
             
             htmx.process(form);
 
             document.getElementById('add_field_modal').showModal();
         }
-    </script>
-    {% endif %}
-
-    <script>
-      // Re-init lucide icons after HTMX swap
-      if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-      }
       
        function togglePassword(btn) {
         const input = btn.parentElement.querySelector("input[data-password-field]");

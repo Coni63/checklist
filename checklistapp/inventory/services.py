@@ -1,3 +1,5 @@
+import base64
+from inventory.validators import InventoryFieldValidator
 from core.exceptions import RecordNotFoundError
 from django.db import transaction
 from django.db.models import Count, Max, Prefetch
@@ -211,20 +213,24 @@ class InventoryService:
     @staticmethod
     def _update_value(field: InventoryField, value, filename: str | None = None):
         match field.field_type:
-            case "text" | "url" | "longtext":
-                field.text_value = value
+            case "text":
+                field.text_value = InventoryFieldValidator.validate_text(value, 255)
+            case "url":
+                field.text_value = InventoryFieldValidator.validate_url(value)
+            case "longtext":
+                field.text_value = InventoryFieldValidator.validate_text(value, None)
             case "number":
-                field.number_value = value
+                field.number_value = InventoryFieldValidator.validate_text(value)
             case "file":
-                if filename:
-                    field.text_value = filename
-                    field.file_value = value
-                else:
-                    raise ValueError("The uploaded file does not have a filename")
+                MAX_FILE_SIZE = 100 * 1024  # 100 KB en bytes
+                value, filename = InventoryFieldValidator.validate_text(value, filename, MAX_FILE_SIZE)
+
+                field.text_value = filename
+                field.file_value = base64.b64encode(value).decode("utf-8")
             case "password":
                 # Stored encrypted
-                field.password_value = value
+                field.password_value = InventoryFieldValidator.validate_password(value)
             case "datetime":
-                field.datetime_value = value
+                field.datetime_value = InventoryFieldValidator.validate_datetime(value)
 
         return field

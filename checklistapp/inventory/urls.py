@@ -73,7 +73,7 @@ urlpatterns = [
         name="delete_field",
     ),
     path(
-        "<int:inventory_id>//group/<int:group_id>/field/<int:field_id>/download",
+        "<int:inventory_id>/group/<int:group_id>/field/<int:field_id>/download",
         views.download_inventory_file,
         name="download_inventory_file",
     ),

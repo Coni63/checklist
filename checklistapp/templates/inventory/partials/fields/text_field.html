@@ -1,8 +1,7 @@
 <input 
     type="text" 
-    id="field_{{ field.id }}"
     name="value"
-    value="{{ field.text_value|default:'' }}"
+    value="{{ field.get_value|default:'' }}"
     class="input input-bordered w-full"
     {% if readonly %}disabled{% endif %}
     {% comment %} hx-post="{% url 'projects:inventory:update_field' project.id inventory.id group.id field.id %}"

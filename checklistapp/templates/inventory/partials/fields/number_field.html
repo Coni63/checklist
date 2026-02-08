@@ -1,8 +1,7 @@
 <input 
     type="number" 
-    id="field_{{ field.id }}"
     name="value"
-    value="{{ field.number_value|default:'' }}"
+    value="{{ field.get_value|default:'' }}"
     step="any"
     class="input input-bordered w-full"
     {% if readonly %}disabled{% endif %}

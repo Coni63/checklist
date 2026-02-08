@@ -1,6 +1,5 @@
 
 <textarea 
-    id="field_{{ field.id }}"
     name="value"
     rows="2"
     class="textarea textarea-bordered w-full"
@@ -9,4 +8,4 @@
     hx-trigger="change"
     hx-target="closest .form-control"
     hx-swap="outerHTML" {% endcomment %}
->{{ field.text_value|default:'' }}</textarea>
+>{{ field.get_value|default:'' }}</textarea>

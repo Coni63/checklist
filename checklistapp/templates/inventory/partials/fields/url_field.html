@@ -1,21 +1,14 @@
+<div class="join w-full">
 <input 
     type="url" 
-    id="field_{{ field.id }}"
     name="value"
-    value="{{ field.text_value|default:'' }}"
+    value="{{ field.get_value|default:'' }}"
     class="input input-bordered w-full"
     {% if readonly %}disabled{% endif %}
-    {% comment %} hx-post="{% url 'projects:inventory:update_field' project.id inventory.id group.id field.id %}"
-    hx-trigger="change"
-    hx-target="closest .form-control"
-    hx-swap="outerHTML" {% endcomment %}
 />
 {% if field.text_value %}
-<label class="label">
-    <span class="label-text-alt">
-        <a href="{{ field.text_value }}" target="_blank" class="link link-primary">
-            Ouvrir le lien →
-        </a>
-    </span>
-</label>
+<a href="{{ field.text_value }}" target="_blank" class="btn btn-bordered join-item px-3">
+    <i data-lucide="external-link" class="w-4 h-4"></i>
+</a>
 {% endif %}
+</div>
