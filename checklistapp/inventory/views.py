@@ -241,6 +241,8 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             if request.htmx:
                 return render(request, self.template_name, context)
 
+            context["inventories"] = InventoryService.get_inventory_for_project(project_id)
+
             return render(request, "inventory/inventory_detail.html", context)
         except Exception as e:
             logger.error(e)

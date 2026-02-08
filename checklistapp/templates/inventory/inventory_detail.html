@@ -2,8 +2,6 @@
 
 {% block title %}Status Project: {{ project.name }} - Checklist Manager{% endblock %}
 
-
-
 {% block sidebar %}
     {% if not inventory_id %}
         <div hx-get="{% url 'projects:inventory:list_inventory' project_id=project_id %}"
