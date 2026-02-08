@@ -1,21 +1,13 @@
-<div class="form-control w-full">
-    <label class="label" for="field_{{ field.id }}">
-        <span class="label-text">{{ field.field_name }}</span>
-    </label>
-    <input 
-        type="datetime-local" 
-        id="field_{{ field.id }}"
-        name="value"
-        value="{{ field.datetime_value|date:'Y-m-d\TH:i:s' }}"
-        step="1"
-        class="input input-bordered w-full"
-        {% if readonly %}disabled{% endif %}
-        {% comment %} hx-post="{% url 'projects:inventory:update_field' project.id inventory.id group.id field.id %}"
-        hx-trigger="change"
-        hx-target="closest .form-control"
-        hx-swap="outerHTML" {% endcomment %}
-    />
-    <label class="label">
-        <span class="label-text-alt">TZ: {{ timezone }}</span>
-    </label>
-</div>
+<input 
+    type="datetime-local" 
+    id="field_{{ field.id }}"
+    name="value"
+    value="{{ field.datetime_value|date:'Y-m-d\TH:i:s' }}"
+    step="1"
+    class="input input-bordered w-full"
+    {% if readonly %}disabled{% endif %}
+    {% comment %} hx-post="{% url 'projects:inventory:update_field' project.id inventory.id group.id field.id %}"
+    hx-trigger="change"
+    hx-target="closest .form-control"
+    hx-swap="outerHTML" {% endcomment %}
+/>

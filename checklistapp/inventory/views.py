@@ -219,15 +219,13 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
 
     def get(self, request, *args, **kwargs):
         try:
-            print(args, kwargs)
             context = self.get_context_data()
-            print(context)
             inventory_id = context["inventory_id"]
             project_id = context["project_id"]
+            context["project"] = ProjectService.get(context["project_id"])
 
             # inventory_id comes from URL kwarg handled by ContextMixin or View dispatch
             if not inventory_id:
-                context["project"] = ProjectService.get(context["project_id"])
                 # Fallback if accessed without ID (e.g. main page before selection)
                 return render(request, "inventory/inventory_detail.html", context)
 
@@ -240,7 +238,11 @@ class InventoryDetail(ProjectReadRequiredMixin, CommonContextMixin, ContextMixin
             )
             context["can_edit"] = "edit" in context["roles"]
 
-            return render(request, self.template_name, context)
+            print(request.htmx)
+            if request.htmx:
+                return render(request, self.template_name, context)
+
+            return render(request, "inventory/inventory_detail.html", context)
         except Exception as e:
             logger.error(e)
             if hasattr(e, "custom"):

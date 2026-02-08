@@ -1,18 +1,13 @@
-<div class="form-control w-full">
-    <label class="label" for="field_{{ field.id }}">
-        <span class="label-text">{{ field.field_name }}</span>
-    </label>
-    <input 
-        type="number" 
-        id="field_{{ field.id }}"
-        name="value"
-        value="{{ field.number_value|default:'' }}"
-        step="any"
-        class="input input-bordered w-full"
-        {% if readonly %}disabled{% endif %}
-        {% comment %} hx-post="{% url 'projects:inventory:update_field' project.id inventory.id group.id field.id %}"
-        hx-trigger="change"
-        hx-target="closest .form-control"
-        hx-swap="outerHTML" {% endcomment %}
-    />
-</div>
+<input 
+    type="number" 
+    id="field_{{ field.id }}"
+    name="value"
+    value="{{ field.number_value|default:'' }}"
+    step="any"
+    class="input input-bordered w-full"
+    {% if readonly %}disabled{% endif %}
+    {% comment %} hx-post="{% url 'projects:inventory:update_field' project.id inventory.id group.id field.id %}"
+    hx-trigger="change"
+    hx-target="closest .form-control"
+    hx-swap="outerHTML" {% endcomment %}
+/>
